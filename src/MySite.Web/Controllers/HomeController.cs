@@ -1,21 +1,21 @@
+using CIMC.WebSite.Services;
 using Microsoft.AspNetCore.Mvc;
-using MySite.Web.Services;
 
 namespace MySite.Web.Controllers;
 
 public class HomeController : Controller
 {
-    private readonly ISitePageStore _store;
+    private readonly ISiteBuilderService _siteBuilderService;
 
-    public HomeController(ISitePageStore store)
+    public HomeController(ISiteBuilderService siteBuilderService)
     {
-        _store = store;
+        _siteBuilderService = siteBuilderService;
     }
 
     public async Task<IActionResult> Index(string? slug = null)
     {
         var pageKey = string.IsNullOrWhiteSpace(slug) ? "home" : slug.Trim().Trim('/');
-        var page = await _store.GetPageAsync(pageKey);
+        var page = await _siteBuilderService.GetPageAsync(pageKey);
         return View(page);
     }
 
