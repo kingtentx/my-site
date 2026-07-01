@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="首页" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="产品中心标题后缀" xml:space="preserve">
+    <value> - Products - Shanghai CIMC Yangshan Logistics Equipment Co., Ltd.</value>
+  </data>
+  <data name="产品服务" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="产品中心" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="联系我们" xml:space="preserve">
+    <value>Contact Us</value>
+  </data>
+  <data name="箱型参数" xml:space="preserve">
+    <value>Specifications</value>
+  </data>
+  <data name="相关箱型" xml:space="preserve">
+    <value>Related Products</value>
+  </data>
+</root>

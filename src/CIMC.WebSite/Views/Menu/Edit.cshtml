@@ -1,0 +1,233 @@
+@{
+    Layout = null;
+}
+@model MenuModel;
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>角色编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/resource/css/site.css" media="all">
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-card">
+            <div class="layui-card-header">@(Model.Id > 0 ? "修改" : "添加")</div>
+            <div class="layui-card-body" style="padding: 15px;">
+                <form class="layui-form" lay-filter="component-form-group">
+                    <div class="layui-form-item">
+                        <label for="" class="layui-form-label">父级菜单</label>
+                        <div class="layui-input-inline w300">
+                            <input type="text" id="menuTree" lay-filter="tree" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-form-item" lay-filter="component-form-element">
+                        <label class="layui-form-label">菜单类型</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md12">
+                                <input type="radio" name="MenuType" lay-verify="requiredType" value="1" title="模块" @Html.Raw(Model.MenuType == 1 ? " checked=\"checked\"" : "")>
+                                <input type="radio" name="MenuType" lay-verify="requiredType" value="2" title="菜单" @Html.Raw(Model.MenuType == 2 ? " checked=\"checked\"" : "")>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">菜单名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Title" lay-verify="required" autocomplete="off" placeholder="请输入菜单名称" class="layui-input w300" value="@Html.Raw(@Model.Title)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label for="" class="layui-form-label">菜单图标</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Icon" id="icon" value="@Html.Raw(string.IsNullOrWhiteSpace(Model.Icon)?"layui-icon-app":Model.Icon)" lay-filter="iconPicker" style="display:none;">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">菜单路径</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Path" lay-verify="requiredPath" autocomplete="off" placeholder="请输入菜单路径" class="layui-input w300" value="@Html.Raw(@Model.Path)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">权限代码</label>
+                        <div class="layui-input-inline">
+                            <select name="PermissionKey" lay-verify="required" lay-search="">
+                                <option value="">直接选择或搜索选择</option>
+                                @{
+                                    foreach (var item in Model.PermissionKeys)
+                                    {
+                                        <option value="@item" @Html.Raw(Model.PermissionKey == item ? "selected" : "")>@Html.Raw(item)</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item" lay-filter="component-form-element">
+                        <label class="layui-form-label">按钮权限</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md12 layui-form" id="role_check">
+                                @foreach (var item in Model.PermissionTypes)
+                                {
+                                    <input type="checkbox" name="chkButton" value="@Html.Raw(item.Key)" title="@Html.Raw(item.Value)" lay-skin="primary" lay-filter="chkButton"
+                                    @if (!string.IsNullOrWhiteSpace(Model.Buttons))
+                                    {
+                                        @Html.Raw(Model.Buttons.Split(',').Contains(item.Key) ? "checked=\"checked\"" : "")
+                                    }>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">排序</label>
+                        <div class="layui-input-inline">
+                            <input type="text" name="Sort" lay-verify="number" placeholder="请输入商品销售价" autocomplete="off" class="layui-input w180" value="@Model.Sort">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">是否显示</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="chkIsShow" lay-skin="switch" @Html.Raw(Model.IsShow == true ? " checked=\"checked\"" : "") lay-text="显示|隐藏">
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-layout-admin">
+                        <div class="layui-input-block">
+                            <div class="layui-footer" style="left: 0; z-index: 20000">
+                                <button class="layui-btn" lay-submit="" lay-filter="component-form-page">立即保存</button>
+                                <a href="@Url.Content("~")/Menu/Index" class="layui-btn layui-btn-primary">返回列表</a>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="Pid" id="Pid" value="@Model.Pid" />
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({
+            base: '@Url.Content("~")/resource/layuiadmin/' //静态资源所在路径
+        }).extend({
+            index: 'lib/index' //主入口模块
+        }).use(['index', 'treeSelect', 'iconPicker', 'form'], function () {
+            var $ = layui.$
+                , treeSelect = layui.treeSelect
+                , iconPicker = layui.iconPicker
+                , form = layui.form;
+
+            iconPicker.render({
+                // 选择器，推荐使用input
+                elem: '#icon',
+                // 数据类型：fontClass/unicode，推荐使用fontClass
+                type: 'fontClass',
+                // 是否开启搜索：true/false
+                search: true,
+                // 是否开启分页
+                page: true,
+                // 每页显示数量，默认12
+                limit: 12,
+                // 点击回调
+                click: function (data) {
+                    //console.log(data);
+                    $('#icon').val(data.icon);
+                },
+                // 渲染成功后的回调
+                success: function (d) {
+                    //console.log(d);
+                }
+            });
+
+            treeSelect.render({
+                elem: '#menuTree',  // 选择器
+                data: '@Url.Content("~")/Menu/GetMenuData',  // 数据
+                type: 'get',
+                placeholder: '默认为父级菜单',
+                search: false, // 是否开启搜索功能：true/false，默认false // 占位符
+                // 一些可定制的样式
+                style: { line: { enable: true } },
+                // 点击回调
+                click: function (d) {
+                    //console.log(d.current.id);
+                    $('#Pid').val(d.current.id);
+                },
+                // 加载完成后的回调函数
+                success: function (d) {
+                    console.log(d.data);
+                    // 选中节点，根据id筛选
+                    if (@Model.Pid > 0) {
+                        treeSelect.checkNode('tree', @Model.Pid);
+                        //treeSelect.checkNode('tree', d.data[0].id);
+                    }
+                }
+            });
+          
+            form.render(null, 'component-form-group');
+
+            /* 自定义验证规则 */
+            form.verify({
+                requiredPath: function (value) {
+                    var menu_type = $('input[name=MenuType]:checked').val();
+                    if (value.length < 1 && menu_type == 2) {
+                        return '必填项不能为空';
+                    }
+                },
+                requiredType: function (value, item) {
+                    var verifyName = $(item).attr('name')
+                        , verifyType = $(item).attr('type')
+                        , formElem = $(item).parents('.layui-form')//获取当前所在的form元素，如果存在的话
+                        , verifyElem = formElem.find('input[name=' + verifyName + ']')//获取需要校验的元素
+                        , isTrue = verifyElem.is(':checked')//是否命中校验
+                        , focusElem = verifyElem.next().find('i.layui-icon');//焦点元素
+                    if (!isTrue || !value) {
+                        //定位焦点
+                        focusElem.css(verifyType == 'radio' ? { "color": "#FF5722" } : { "border-color": "#FF5722" });
+                        //对非输入框设置焦点
+                        focusElem.first().attr("tabIndex", "1").css("outline", "0").blur(function () {
+                            focusElem.css(verifyType == 'radio' ? { "color": "" } : { "border-color": "" });
+                        }).focus();
+                        return '必填项不能为空';
+                    }
+                }
+            });
+
+
+            ///* 监听提交 */
+            form.on('submit(component-form-page)', function (data) {
+                var buttonArr = [];
+                $('input[name=chkButton]:checked').each(function () {
+                    buttonArr.push($(this).val());
+                });
+                data.field.IsShow = data.field.chkIsShow == 'on' ? true : false;
+                data.field.Buttons = buttonArr.join(",");
+                //console.log(data.field);
+
+                $.ajax({
+                    type: "post",
+                    url: '@Url.Content("~")/Menu/Edit/@Model.Id',
+                    data: data.field,
+                    //async: false,
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.code == 200) {
+                            layer.alert(res.message, function (index) {
+                                window.location.href = '@Url.Content("~")/Menu/Index';
+                                layer.close(index);
+                            });
+                        }
+                        else {
+                            layer.msg(res.message, { icon: 5 });
+                        }
+                    }
+                });
+                //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                return false;
+            });
+        });
+    </script>
+</body>
+</html>

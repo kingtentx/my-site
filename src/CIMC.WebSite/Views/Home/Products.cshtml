@@ -1,0 +1,47 @@
+@model PublicProductViewModel
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+@{
+    var currentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name;
+    var isEn = currentCulture.StartsWith("en");
+    ViewData["Title"] = Model.Title + Localizer["产品中心标题后缀"];
+}
+
+<section class="page-hero page-hero--slider" style="background-image:url('@Model.BannerImage')" data-page-hero>
+    @foreach (var image in Model.BannerImages)
+    {
+        <div class="page-hero__slide @(image == Model.BannerImages.FirstOrDefault() ? "is-active" : "")" style="background-image:url('@image')"></div>
+    }
+    <div class="container reveal">
+        <h1>@Model.BannerTitle</h1>
+        <p>@Model.BannerSubTitle</p>
+    </div>
+</section>
+
+<section class="section product-page">
+    <div class="container">
+        <div class="tabs reveal">
+            <a class="@(Model.Type == "traditional" ? "is-active" : "")" href="/products/traditional">@Localizer["传统业务线"]</a>
+            <a class="@(Model.Type == "special" ? "is-active" : "")" href="/products/special">@Localizer["特种业务线"]</a>
+            <a class="@(Model.Type == "new" ? "is-active" : "")" href="/products/new">@Localizer["新业务线"]</a>
+        </div>
+        <div class="product-intro reveal">
+            <h2>@Model.Title</h2>
+            <p>@Model.Intro</p>
+        </div>
+        <div class="product-grid">
+            @foreach (var item in Model.Products)
+            {
+                <article class="product-card reveal">
+                    <a class="product-card__media" href="/products/detail-@(item.Id).html">
+                        <img src="@item.ImageUrl" alt="@(isEn && !string.IsNullOrWhiteSpace(item.Title_EN) ? item.Title_EN : item.Title)" />
+                    </a>
+                    <div>
+                        <h3><a href="/products/detail-@(item.Id).html">@(isEn && !string.IsNullOrWhiteSpace(item.Title_EN) ? item.Title_EN : item.Title)</a></h3>
+                        <p>@(isEn && !string.IsNullOrWhiteSpace(item.Description_EN) ? item.Description_EN : item.Description)</p>
+                        <a class="text-link" href="/products/detail-@(item.Id).html">@Localizer["查看箱型参数"]</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </div>
+</section>

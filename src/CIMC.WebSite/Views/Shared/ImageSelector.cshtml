@@ -1,0 +1,352 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>选择图片</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; overflow: hidden; background: #f2f3f5; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        .wrap { display: flex; flex-direction: column; width: 100%; height: 100%; }
+        .selector-tabs { display: flex; background: #fff; border-bottom: 1px solid #e8e8e8; flex-shrink: 0; }
+        .selector-tab { flex: 1; text-align: center; padding: 14px 0; cursor: pointer; font-size: 14px; color: #666; border-bottom: 2px solid transparent; transition: all .2s; }
+        .selector-tab i { font-size: 16px; margin-right: 6px; vertical-align: middle; }
+        .selector-tab:hover { color: #009688; }
+        .selector-tab.active { color: #009688; border-bottom-color: #009688; font-weight: 500; }
+        .content { flex: 1; overflow: hidden; position: relative; }
+        .tab-panel { display: none; width: 100%; height: 100%; }
+        .tab-panel.active { display: flex; flex-direction: column; }
+        .panel-body { flex: 1; overflow-y: auto; padding: 16px; }
+        .search-bar { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: #fff; border-bottom: 1px solid #e8e8e8; flex-shrink: 0; }
+        .search-bar .layui-input { border-radius: 4px; }
+        .search-bar .layui-btn { border-radius: 4px; }
+        .selector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; padding: 16px; }
+        .selector-item { cursor: pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.08); transition: all .2s; position: relative; }
+        .selector-item:hover { border-color: #009688; transform: translateY(-3px); box-shadow: 0 6px 16px rgba(0,0,0,.12); }
+        .selector-item.selected { border-color: #009688; box-shadow: 0 0 0 3px rgba(0,150,136,.15); }
+        .selector-item.selected::after { content: '\e605'; font-family: layui-icon; position: absolute; top: 6px; right: 6px; background: #009688; color: #fff; border-radius: 50%; width: 22px; height: 22px; line-height: 22px; text-align: center; font-size: 12px; z-index: 1; box-shadow: 0 2px 4px rgba(0,0,0,.2); }
+        .selector-item .img-wrap { width: 100%; height: 100px; overflow: hidden; background: #f8f8f8; display: flex; align-items: center; justify-content: center; }
+        .selector-item .img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .selector-item .item-name { padding: 8px 10px; font-size: 12px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: #fff; border-top: 1px solid #f5f5f5; }
+        .selector-empty { text-align: center; padding: 100px 0; color: #bbb; }
+        .selector-empty i { font-size: 56px; display: block; margin-bottom: 16px; color: #ddd; }
+        .selector-empty p { font-size: 14px; }
+        .selector-footer { padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; background: #fff; border-top: 1px solid #e8e8e8; flex-shrink: 0; }
+        .upload-drop { width: 100%; min-height: 120px; border: 2px dashed #d0d0d0; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; background: #fafbfc; transition: all .3s; padding: 24px; }
+        .upload-drop:hover, .upload-drop.dragover { border-color: #009688; background: #f0faf8; }
+        .upload-drop i { font-size: 40px; color: #c8c8c8; margin-bottom: 10px; transition: color .3s; }
+        .upload-drop:hover i { color: #009688; }
+        .upload-drop span { font-size: 14px; color: #999; }
+        .upload-drop .sub-tip { font-size: 12px; color: #bbb; margin-top: 6px; }
+        .preview-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; margin-top: 16px; }
+        .preview-item { position: relative; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,.1); background: #fff; }
+        .preview-item .img-wrap { width: 100%; height: 100px; overflow: hidden; background: #f8f8f8; display: flex; align-items: center; justify-content: center; }
+        .preview-item .img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .preview-item .preview-info { padding: 8px 10px; }
+        .preview-item .preview-name { font-size: 12px; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .preview-item .preview-size { font-size: 11px; color: #aaa; margin-top: 2px; }
+        .preview-item .preview-remove { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; line-height: 24px; text-align: center; background: rgba(0,0,0,.5); color: #fff; border-radius: 50%; cursor: pointer; font-size: 14px; border: 0; transition: background .2s; }
+        .preview-item .preview-remove:hover { background: #ff5722; }
+        .preview-item .preview-progress { position: absolute; bottom: 0; left: 0; right: 0; height: 4px; background: rgba(0,0,0,.1); }
+        .preview-item .preview-progress .bar { height: 100%; background: #009688; width: 0; transition: width .3s; border-radius: 0 2px 2px 0; }
+        .preview-item.uploading .preview-progress .bar { background: #1E9FFF; }
+        .preview-item.upload-done .preview-progress .bar { width: 100%; background: #009688; }
+        .preview-item.upload-fail .preview-progress .bar { width: 100%; background: #ff5722; }
+        .upload-actions { margin-top: auto; display: flex; gap: 12px; justify-content: center; padding-top: 24px; padding-bottom: 24px; }
+        .page-nav { display: flex; align-items: center; gap: 8px; }
+        .page-nav .layui-btn { padding: 0 12px; }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <div class="selector-tabs">
+            <div class="selector-tab active" data-tab="list"><i class="layui-icon layui-icon-picture"></i>图片列表</div>
+            <div class="selector-tab" data-tab="upload"><i class="layui-icon layui-icon-upload-drag"></i>本地上传</div>
+        </div>
+        <div class="content">
+            <div class="tab-panel active" id="panelList">
+                <div class="search-bar">
+                    <div class="layui-inline">
+                        <input type="text" id="searchKeywords" placeholder="搜索文件名..." autocomplete="off" class="layui-input" style="width:260px">
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layui-btn-sm layui-btn-normal" id="btnSearch"><i class="layui-icon layui-icon-search"></i>搜索</button>
+                    </div>
+                </div>
+                <div class="panel-body" style="padding:0">
+                    <div class="selector-grid" id="imageGrid"></div>
+                    <div class="selector-empty" id="emptyTip" style="display:none;">
+                        <i class="layui-icon layui-icon-picture"></i>
+                        <p>暂无图片</p>
+                    </div>
+                </div>
+            </div>
+            <div class="tab-panel" id="panelUpload">
+                <div class="panel-body">
+                    <div class="upload-drop" id="dropZone">
+                        <i class="layui-icon layui-icon-upload-drag"></i>
+                        <span>点击或拖拽图片到此处</span>
+                        <div class="sub-tip">支持 JPG、PNG、GIF、WEBP 格式</div>
+                    </div>
+                    <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+                    <div class="preview-list" id="previewList"></div>
+                    <div class="upload-actions" id="uploadActions" style="display:none;">
+                        <button class="layui-btn layui-btn-sm layui-btn-normal" id="btnUploadSave"><i class="layui-icon layui-icon-upload"></i>上传图片</button>
+                        <button class="layui-btn layui-btn-sm layui-btn-primary" id="btnUploadClear"><i class="layui-icon layui-icon-refresh"></i>清空</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="selector-footer">
+            <div class="page-nav">
+                <button class="layui-btn layui-btn-sm layui-btn-primary" id="btnPrev" style="display:none;"><i class="layui-icon layui-icon-prev"></i></button>
+                <span id="pageInfo" style="color:#999;font-size:13px;"></span>
+                <button class="layui-btn layui-btn-sm layui-btn-primary" id="btnNext" style="display:none;"><i class="layui-icon layui-icon-next"></i></button>
+            </div>
+            <div>
+                <button class="layui-btn layui-btn-sm layui-btn-normal" id="btnConfirm"><i class="layui-icon layui-icon-ok"></i>确定</button>
+                <button class="layui-btn layui-btn-sm layui-btn-primary" id="btnCancel">取消</button>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['upload'], function () {
+            var $ = layui.$;
+            var currentPage = 1, pageSize = 18, keywords = '';
+            var selectedUrl = '';
+            var pendingFiles = [];
+            var uploadedResults = [];
+
+            $('.selector-tab').on('click', function () {
+                var tab = $(this).attr('data-tab');
+                $('.selector-tab').removeClass('active');
+                $(this).addClass('active');
+                $('.tab-panel').removeClass('active');
+                if (tab === 'list') { $('#panelList').addClass('active'); }
+                else { $('#panelUpload').addClass('active'); }
+            });
+
+            function loadImages() {
+                $.get('/Images/GetList', { pageIndex: currentPage, pageSize: pageSize, keywords: keywords }, function (res) {
+                    if (res.code == 200 && res.data && res.data.length > 0) {
+                        renderGrid(res.data);
+                        $('#emptyTip').hide();
+                        $('#imageGrid').show();
+                        updatePageNav(res.count);
+                    } else {
+                        $('#imageGrid').html('').hide();
+                        $('#emptyTip').show();
+                        updatePageNav(0);
+                    }
+                });
+            }
+
+            function renderGrid(data) {
+                var html = '';
+                $.each(data, function (i, item) {
+                    var sel = selectedUrl === item.url ? ' selected' : '';
+                    html += '<div class="selector-item' + sel + '" data-url="' + item.url + '" data-name="' + (item.fileName || '') + '">'
+                        + '<div class="img-wrap"><img src="' + item.url + '" alt="' + (item.fileName || '') + '"></div>'
+                        + '<div class="item-name">' + (item.fileName || item.url.split('/').pop()) + '</div>'
+                        + '</div>';
+                });
+                $('#imageGrid').html(html);
+            }
+
+            function updatePageNav(total) {
+                var totalPages = Math.ceil(total / pageSize);
+                $('#pageInfo').text('第 ' + currentPage + ' / ' + (totalPages || 1) + ' 页，共 ' + total + ' 张');
+                $('#btnPrev').toggle(currentPage > 1);
+                $('#btnNext').toggle(currentPage < totalPages);
+            }
+
+            loadImages();
+
+            $('#imageGrid').on('click', '.selector-item', function () {
+                var url = $(this).attr('data-url');
+                if (selectedUrl === url) {
+                    selectedUrl = '';
+                    $(this).removeClass('selected');
+                } else {
+                    selectedUrl = url;
+                    $('.selector-item').removeClass('selected');
+                    $(this).addClass('selected');
+                }
+                $('#selectedUrl').val(selectedUrl);
+            });
+
+            $('#btnSearch').on('click', function () {
+                keywords = $('#searchKeywords').val().trim();
+                currentPage = 1;
+                loadImages();
+            });
+
+            $('#searchKeywords').on('keydown', function (e) {
+                if (e.keyCode === 13) { e.preventDefault(); $('#btnSearch').click(); }
+            });
+
+            $('#btnPrev').on('click', function () {
+                if (currentPage > 1) { currentPage--; loadImages(); }
+            });
+
+            $('#btnNext').on('click', function () {
+                currentPage++;
+                loadImages();
+            });
+
+            $('#dropZone').on('click', function () { $('#fileInput').click(); });
+
+            $('#dropZone').on('dragover', function (e) {
+                e.preventDefault();
+                $(this).addClass('dragover');
+            }).on('dragleave drop', function (e) {
+                e.preventDefault();
+                $(this).removeClass('dragover');
+            }).on('drop', function (e) {
+                var files = e.originalEvent.dataTransfer.files;
+                addPendingFiles(files);
+            });
+
+            $('#fileInput').on('change', function () {
+                addPendingFiles(this.files);
+                this.value = '';
+            });
+
+            function addPendingFiles(fileList) {
+                for (var i = 0; i < fileList.length; i++) {
+                    var file = fileList[i];
+                    if (!file.type.startsWith('image/')) continue;
+                    var id = 'pf_' + Date.now() + '_' + i;
+                    pendingFiles.push({ id: id, file: file });
+                    renderPreviewItem(id, file);
+                }
+                if (pendingFiles.length > 0) {
+                    $('#uploadActions').show();
+                }
+            }
+
+            function renderPreviewItem(id, file) {
+                var reader = new FileReader();
+                reader.onload = function (e) {
+                    var sizeText = file.size > 1024 * 1024 ? (file.size / 1024 / 1024).toFixed(1) + ' MB' : Math.round(file.size / 1024) + ' KB';
+                    var html = '<div class="preview-item" id="' + id + '">'
+                        + '<div class="img-wrap"><img src="' + e.target.result + '" alt=""></div>'
+                        + '<div class="preview-info">'
+                        + '<div class="preview-name">' + file.name + '</div>'
+                        + '<div class="preview-size">' + sizeText + '</div>'
+                        + '</div>'
+                        + '<button type="button" class="preview-remove" data-id="' + id + '">&times;</button>'
+                        + '<div class="preview-progress"><div class="bar"></div></div>'
+                        + '</div>';
+                    $('#previewList').append(html);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            $('#previewList').on('click', '.preview-remove', function () {
+                var id = $(this).attr('data-id');
+                pendingFiles = pendingFiles.filter(function (f) { return f.id !== id; });
+                $('#' + id).remove();
+                if (pendingFiles.length === 0) { $('#uploadActions').hide(); }
+            });
+
+            $('#btnUploadClear').on('click', function () {
+                pendingFiles = [];
+                uploadedResults = [];
+                $('#previewList').html('');
+                $('#uploadActions').hide();
+            });
+
+            $('#btnUploadSave').on('click', function () {
+                if (pendingFiles.length === 0) { layer.msg('没有待上传的图片', { icon: 0 }); return; }
+                var btn = $(this);
+                btn.prop('disabled', true).addClass('layui-btn-disabled');
+                var total = pendingFiles.length;
+                var failed = 0;
+
+                function uploadNext() {
+                    if (pendingFiles.length === 0) {
+                        btn.prop('disabled', false).removeClass('layui-btn-disabled');
+                        if (failed === 0) {
+                            layer.msg('全部上传成功', { icon: 1 });
+                        } else {
+                            layer.msg('上传完成：成功 ' + (total - failed) + ' 张，失败 ' + failed + ' 张', { icon: 0 });
+                        }
+                        return;
+                    }
+                    var item = pendingFiles.shift();
+                    var formData = new FormData();
+                    formData.append('file', item.file);
+                    var $item = $('#' + item.id);
+                    $item.addClass('uploading');
+                    $item.find('.bar').css('width', '30%');
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('POST', '/Upload/UploadImage', true);
+                    xhr.upload.onprogress = function (e) {
+                        if (e.lengthComputable) {
+                            var pct = Math.round((e.loaded / e.total) * 100);
+                            $item.find('.bar').css('width', pct + '%');
+                        }
+                    };
+                    xhr.onload = function () {
+                        $item.removeClass('uploading');
+                        try {
+                            var res = JSON.parse(xhr.responseText);
+                            if (res.code == 200) {
+                                $item.addClass('upload-done');
+                                uploadedResults.push({ url: res.url, name: res.imageName || '' });
+                            } else {
+                                $item.addClass('upload-fail');
+                                failed++;
+                            }
+                        } catch (ex) {
+                            $item.addClass('upload-fail');
+                            failed++;
+                        }
+                        uploadNext();
+                    };
+                    xhr.onerror = function () {
+                        $item.removeClass('uploading').addClass('upload-fail');
+                        failed++;
+                        uploadNext();
+                    };
+                    xhr.send(formData);
+                }
+
+                uploadNext();
+            });
+
+            $('#btnConfirm').on('click', function () {
+                var url = selectedUrl;
+                var name = '';
+                if (!url && uploadedResults.length > 0) {
+                    url = uploadedResults[uploadedResults.length - 1].url;
+                    name = uploadedResults[uploadedResults.length - 1].name;
+                }
+                if (!url) {
+                    layer.msg('请先选择或上传一张图片', { icon: 0 });
+                    return;
+                }
+                $('.selector-item.selected').each(function () { name = $(this).attr('data-name') || name; });
+                parent.window.postMessage({ type: 'imageSelected', url: url, name: name }, '*');
+                var index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+            });
+
+            $('#btnCancel').on('click', function () {
+                var index = parent.layer.getFrameIndex(window.name);
+                parent.layer.close(index);
+            });
+        });
+    </script>
+</body>
+</html>

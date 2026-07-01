@@ -1,0 +1,350 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>审计日志</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <style>
+        .detail-box { padding: 16px; }
+        .detail-box .detail-row { display: flex; padding: 8px 0; border-bottom: 1px solid #f2f2f2; }
+        .detail-box .detail-label { width: 100px; color: #999; flex-shrink: 0; text-align: right; padding-right: 12px; }
+        .detail-box .detail-value { flex: 1; word-break: break-all; }
+        .detail-box .detail-value pre { background: #f8f8f8; padding: 10px; border-radius: 4px; max-height: 300px; overflow: auto; white-space: pre-wrap; word-break: break-all; margin: 0; font-size: 12px; }
+        .layui-badge-success { background-color: #5FB878; }
+        .layui-badge-fail { background-color: #FF5722; }
+        .stats-card { display: inline-block; padding: 10px 20px; margin: 5px; background: #f8f8f8; border-radius: 4px; text-align: center; min-width: 100px; }
+        .stats-card .stats-num { font-size: 24px; font-weight: bold; color: #1E9FFF; }
+        .stats-card .stats-label { font-size: 12px; color: #999; margin-top: 4px; }
+        .hash-valid { color: #5FB878; }
+        .hash-invalid { color: #FF5722; }
+    </style>
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-card">
+            <div class="layui-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <span>审计日志</span>
+                <div>
+                    <button type="button" class="layui-btn layui-btn-sm layui-btn-normal" id="btnStats">统计</button>
+                    <button type="button" class="layui-btn layui-btn-sm layui-btn-warm" id="btnVerify">完整性校验</button>
+                    <button type="button" class="layui-btn layui-btn-sm layui-btn-danger" id="btnArchive">归档</button>
+                </div>
+            </div>
+            <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+                <div class="layui-form-item">
+                    <div class="layui-inline">
+                        <label class="layui-form-label">用户名</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="userName" placeholder="请输入" autocomplete="off" class="layui-input">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">操作类型</label>
+                        <div class="layui-input-block" style="width:150px">
+                            <select name="operationType">
+                                <option value="">全部</option>
+                                <option value="Login">登录</option>
+                                <option value="Logout">退出</option>
+                                <option value="View">查询</option>
+                                <option value="Add">新增</option>
+                                <option value="Edit">编辑</option>
+                                <option value="Delete">删除</option>
+                                <option value="Authorize">权限变更</option>
+                                <option value="Upload">上传</option>
+                                <option value="Export">导出</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">操作模块</label>
+                        <div class="layui-input-block" style="width:150px">
+                            <select name="operationModule">
+                                <option value="">全部</option>
+                                <option value="Article">文章管理</option>
+                                <option value="Album">产品管理</option>
+                                <option value="Job">招聘管理</option>
+                                <option value="Tag">标签管理</option>
+                                <option value="Navigation">导航管理</option>
+                                <option value="SiteModule">页面模块</option>
+                                <option value="Manager">管理员</option>
+                                <option value="Role">角色管理</option>
+                                <option value="Menu">菜单管理</option>
+                                <option value="Images">素材管理</option>
+                                <option value="Attachments">附件管理</option>
+                                <option value="Upload">文件上传</option>
+                                <option value="Admin">系统设置</option>
+                                <option value="Message">留言管理</option>
+                                <option value="Authorize">认证</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">结果状态</label>
+                        <div class="layui-input-block" style="width:120px">
+                            <select name="resultStatus">
+                                <option value="">全部</option>
+                                <option value="Success">成功</option>
+                                <option value="Fail">失败</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <label class="layui-form-label">操作时间</label>
+                        <div class="layui-input-block" style="width:400px">
+                            <input type="text" name="startTime" id="startTime" placeholder="开始时间" autocomplete="off" class="layui-input" style="width:150px;display:inline-block">
+                            <span style="padding:0 6px">-</span>
+                            <input type="text" name="endTime" id="endTime" placeholder="结束时间" autocomplete="off" class="layui-input" style="width:150px;display:inline-block">
+                        </div>
+                    </div>
+                    <div class="layui-inline">
+                        <button class="layui-btn layuiadmin-btn-admin" lay-submit lay-filter="app-search">
+                            <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
+                        </button>
+                        <button type="button" class="layui-btn layui-btn-warm" id="btnExportExcel"><i class="layui-icon"></i>导出</button>
+                        @* <button type="button" class="layui-btn layui-btn-primary" id="btnExportCsv"><i class="layui-icon layui-icon-export"></i>CSV</button> *@
+                    </div>
+                </div>
+            </div>
+            <div class="layui-card-body">
+                <table class="layui-hide" id="app-table" lay-filter="app-table"></table>
+                <script type="text/html" id="typeTpl">
+                    {{# if(d.operationType === 'Login'){ }}
+                    <span class="layui-badge layui-bg-blue">登录</span>
+                    {{# } else if(d.operationType === 'Logout'){ }}
+                    <span class="layui-badge layui-bg-blue">退出</span>
+                    {{# } else if(d.operationType === 'View'){ }}
+                    <span class="layui-badge layui-bg-gray">查询</span>
+                    {{# } else if(d.operationType === 'Add'){ }}
+                    <span class="layui-badge layui-bg-green">新增</span>
+                    {{# } else if(d.operationType === 'Edit'){ }}
+                    <span class="layui-badge layui-bg-orange">编辑</span>
+                    {{# } else if(d.operationType === 'Delete'){ }}
+                    <span class="layui-badge">删除</span>
+                    {{# } else if(d.operationType === 'Authorize'){ }}
+                    <span class="layui-badge layui-bg-cyan">权限变更</span>
+                    {{# } else if(d.operationType === 'Upload'){ }}
+                    <span class="layui-badge layui-bg-black">上传</span>
+                    {{# } else if(d.operationType === 'Export'){ }}
+                    <span class="layui-badge layui-bg-gray">导出</span>
+                    {{# } else { }}
+                    <span class="layui-badge layui-bg-gray">{{ d.operationType }}</span>
+                    {{# } }}
+                </script>
+                <script type="text/html" id="statusTpl">
+                    {{# if(d.resultStatus === 'Success'){ }}
+                    <span class="layui-badge layui-badge-success">成功</span>
+                    {{# } else { }}
+                    <span class="layui-badge layui-badge-fail">失败</span>
+                    {{# } }}
+                </script>
+                <script type="text/html" id="archiveTpl">
+                    {{# if(d.isArchived){ }}
+                    <span class="layui-badge layui-bg-gray">已归档</span>
+                    {{# } else { }}
+                    <span class="layui-badge layui-bg-green">正常</span>
+                    {{# } }}
+                </script>
+                <script type="text/html" id="app-table-bar">
+                    <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="detail"><i class="layui-icon layui-icon-about"></i>详情</a>
+                    @* <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="verify"><i class="layui-icon layui-icon-auz"></i>校验</a> *@
+                </script>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['table', 'form', 'laydate'], function () {
+            var $ = layui.$, table = layui.table, form = layui.form, laydate = layui.laydate;
+
+            laydate.render({ elem: '#startTime', type: 'datetime' });
+            laydate.render({ elem: '#endTime', type: 'datetime' });
+
+            var dataTable = table.render({
+                elem: '#app-table',
+                url: '/AuditLog/GetList',
+                response: { statusName: 'code', statusCode: '200', msgName: 'message', countName: 'count', dataName: 'data' },
+                cols: [[
+                    { field: 'id', width: 70, title: 'ID' },
+                    { field: 'userName', width: 90, title: '用户名' },
+                    { field: 'operationTime', width: 160, title: '操作时间' },
+                    { field: 'ipAddress', width: 130, title: 'IP地址' },
+                    { field: 'operationType', width: 90, title: '操作类型', templet: '#typeTpl' },
+                    { field: 'operationModule', title: '操作模块' },
+                    { field: 'operationDesc', width: 110, title: '操作描述' },
+                    { field: 'operationTable', width: 90, title: '操作表' },
+                    { field: 'recordId', width: 80, title: '记录ID' },
+                    { field: 'resultStatus', width: 70, title: '状态', templet: '#statusTpl' },
+                    { field: 'duration', width: 90, title: '耗时(ms)' },
+                    { field: 'isArchived', width: 80, title: '归档', templet: '#archiveTpl' },
+                    { align: 'center', width: 120, toolbar: '#app-table-bar', fixed: 'right' }
+                ]],
+                request: { pageName: 'pageIndex', limitName: 'pageSize' },
+                page: true
+            });
+
+            table.on('tool(app-table)', function (obj) {
+                if (obj.event === 'detail') {
+                    $.get('/AuditLog/GetDetail', { id: obj.data.id }, function (res) {
+                        if (res.code == 200 && res.data) {
+                            var d = res.data;
+                            var hashClass = d.hashValid ? 'hash-valid' : 'hash-invalid';
+                            var hashText = d.hashValid ? '校验通过' : '已被篡改';
+
+                            var html = '<div class="detail-box">'
+                                + '<div class="detail-row"><div class="detail-label">用户ID</div><div class="detail-value">' + (d.userId || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">用户名</div><div class="detail-value">' + (d.userName || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">操作时间</div><div class="detail-value">' + (d.operationTime || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">IP地址</div><div class="detail-value">' + (d.ipAddress || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">操作类型</div><div class="detail-value">' + (d.operationType || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">操作模块</div><div class="detail-value">' + (d.operationModule || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">操作描述</div><div class="detail-value">' + (d.operationDesc || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">操作表</div><div class="detail-value">' + (d.operationTable || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">记录ID</div><div class="detail-value">' + (d.recordId || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">请求地址</div><div class="detail-value">' + (d.requestUrl || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">HTTP方法</div><div class="detail-value">' + (d.httpMethod || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">结果状态</div><div class="detail-value">' + (d.resultStatus || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">结果消息</div><div class="detail-value">' + (d.resultMessage || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">耗时</div><div class="detail-value">' + (d.duration || 0) + ' ms</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">用户代理</div><div class="detail-value" style="font-size:11px;word-break:break-all;">' + (d.userAgent || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">数据签名</div><div class="detail-value" style="font-size:11px;color:#999;">' + (d.dataHash || '') + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">完整性</div><div class="detail-value ' + hashClass + '">' + hashText + '</div></div>'
+                                + '<div class="detail-row"><div class="detail-label">归档状态</div><div class="detail-value">' + (d.isArchived ? '已归档' : '正常') + '</div></div>';
+
+                            if (d.requestData) {
+                                html += '<div class="detail-row"><div class="detail-label">请求数据</div><div class="detail-value"><pre>' + formatJson(d.requestData) + '</pre></div></div>';
+                            }
+                            if (d.oldData) {
+                                html += '<div class="detail-row"><div class="detail-label">修改前数据</div><div class="detail-value"><pre>' + formatJson(d.oldData) + '</pre></div></div>';
+                            }
+                            if (d.newData) {
+                                html += '<div class="detail-row"><div class="detail-label">修改后数据</div><div class="detail-value"><pre>' + formatJson(d.newData) + '</pre></div></div>';
+                            }
+
+                            html += '</div>';
+
+                            layer.open({
+                                type: 1,
+                                title: '审计日志详情',
+                                area: ['750px', '650px'],
+                                shadeClose: true,
+                                content: html
+                            });
+                        } else {
+                            layer.msg(res.message || '获取详情失败');
+                        }
+                    });
+                } else if (obj.event === 'verify') {
+                    $.get('/AuditLog/VerifyIntegrity', { id: obj.data.id }, function (res) {
+                        if (res.code == 200 && res.data) {
+                            layer.msg(res.data.isValid ? '校验通过：数据未被篡改' : '警告：数据可能已被篡改！', { icon: res.data.isValid ? 1 : 2 });
+                        }
+                    });
+                }
+            });
+
+            function formatJson(str) {
+                try {
+                    var obj = JSON.parse(str);
+                    return JSON.stringify(obj, null, 2);
+                } catch (e) {
+                    return str;
+                }
+            }
+
+            form.on('submit(app-search)', function (data) {
+                dataTable.reload({ where: data.field, page: { curr: 1 } });
+                return false;
+            });
+
+            function getSearchParams() {
+                var params = {};
+                $('input[name],select[name]').each(function () {
+                    params[$(this).attr('name')] = $(this).val();
+                });
+                return params;
+            }
+
+            $('#btnExportExcel').on('click', function () {
+                var params = getSearchParams();
+                var qs = $.param(params);
+                window.location.href = '/AuditLog/ExportExcel?' + qs;
+            });
+
+            $('#btnExportCsv').on('click', function () {
+                var params = getSearchParams();
+                var qs = $.param(params);
+                window.location.href = '/AuditLog/ExportCsv?' + qs;
+            });
+
+            $('#btnStats').on('click', function () {
+                var params = getSearchParams();
+                $.get('/AuditLog/GetStats', params, function (res) {
+                    if (res.code == 200 && res.data) {
+                        var typeStats = res.data.typeStats || {};
+                        var moduleStats = res.data.moduleStats || {};
+
+                        var typeLabels = { Login: '登录', Logout: '退出', View: '查询', Add: '新增', Edit: '编辑', Delete: '删除', Authorize: '权限变更', Upload: '上传', Export: '导出' };
+                        var moduleLabels = { Article: '文章', Album: '产品', Job: '招聘', Tag: '标签', Navigation: '导航', SiteModule: '页面模块', Manager: '管理员', Role: '角色', Menu: '菜单', Images: '素材', Attachments: '附件', Upload: '上传', Admin: '系统', Message: '留言', Authorize: '认证' };
+
+                        var html = '<div style="padding:16px;"><h4>操作类型统计</h4><div style="margin:10px 0;">';
+                        for (var key in typeStats) {
+                            html += '<div class="stats-card"><div class="stats-num">' + typeStats[key] + '</div><div class="stats-label">' + (typeLabels[key] || key) + '</div></div>';
+                        }
+                        html += '</div><h4>操作模块统计</h4><div style="margin:10px 0;">';
+                        for (var key in moduleStats) {
+                            html += '<div class="stats-card"><div class="stats-num">' + moduleStats[key] + '</div><div class="stats-label">' + (moduleLabels[key] || key) + '</div></div>';
+                        }
+                        html += '</div></div>';
+
+                        layer.open({
+                            type: 1,
+                            title: '审计日志统计',
+                            area: ['700px', '450px'],
+                            shadeClose: true,
+                            content: html
+                        });
+                    }
+                });
+            });
+
+            $('#btnVerify').on('click', function () {
+                var loadIdx = layer.load(2);
+                $.get('/AuditLog/VerifyIntegrity', function (res) {
+                    layer.close(loadIdx);
+                    if (res.code == 200 && res.data) {
+                        var d = res.data;
+                        if (d.isValid) {
+                            layer.msg('完整性校验通过：共 ' + d.total + ' 条记录，未发现篡改', { icon: 1, time: 3000 });
+                        } else {
+                            layer.alert('警告：共 ' + d.total + ' 条记录，发现 ' + d.tampered + ' 条可能被篡改！', { icon: 2, title: '完整性校验结果' });
+                        }
+                    }
+                });
+            });
+
+            $('#btnArchive').on('click', function () {
+                layer.prompt({ formType: 0, title: '归档指定日期之前的日志', value: '', placeholder: '请输入日期，如：2025-01-01' }, function (value, index) {
+                    layer.close(index);
+                    var loadIdx = layer.load(2);
+                    $.post('/AuditLog/Archive', { beforeDate: value }, function (res) {
+                        layer.close(loadIdx);
+                        if (res.code == 200) {
+                            layer.msg(res.message, { icon: 1 });
+                            dataTable.reload();
+                        } else {
+                            layer.msg(res.message || '归档失败', { icon: 2 });
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

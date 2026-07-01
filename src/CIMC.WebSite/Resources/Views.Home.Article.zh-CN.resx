@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="新闻资讯" xml:space="preserve">
+    <value>新闻资讯</value>
+  </data>
+  <data name="News" xml:space="preserve">
+    <value>News</value>
+  </data>
+  <data name="首页" xml:space="preserve">
+    <value>首页</value>
+  </data>
+  <data name="公司新闻" xml:space="preserve">
+    <value>公司新闻</value>
+  </data>
+  <data name="来源" xml:space="preserve">
+    <value>来源：</value>
+  </data>
+  <data name="浏览" xml:space="preserve">
+    <value>浏览：</value>
+  </data>
+  <data name="返回新闻列表" xml:space="preserve">
+    <value>返回新闻列表</value>
+  </data>
+</root>

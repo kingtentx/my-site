@@ -1,0 +1,47 @@
+@model Article
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+@{
+    var currentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name;
+    var isEn = currentCulture.StartsWith("en");
+    ViewData["Title"] = (isEn && !string.IsNullOrWhiteSpace(Model.Title_EN) ? Model.Title_EN : Model.Title) + "-上海中集洋山物流装备有限公司";
+    var categoryName = ViewData["ArticleTagName"]?.ToString() ?? Localizer["公司新闻"].Value;
+    var categoryRoute = ViewData["ArticleTagRoute"]?.ToString() ?? "company";
+}
+
+<section class="page-hero page-hero--compact" style="background-image:url('/syle/images/43966034.jpg')">
+    <div class="container reveal">
+        <h1>@Localizer["新闻资讯"]</h1>
+        <p>News</p>
+    </div>
+</section>
+
+<nav class="breadcrumb-bar">
+    <div class="container">
+        <a href="/">@Localizer["首页"]</a>
+        <span>/</span>
+        <a href="@Url.Action("News", "Home")">@Localizer["新闻资讯"]</a>
+        <span>/</span>
+        <a href="@Url.Action("News", "Home", new { category = categoryRoute })">@categoryName</a>
+        <span>/</span>
+        <em>@(isEn && !string.IsNullOrWhiteSpace(Model.Title_EN) ? Model.Title_EN : Model.Title)</em>
+    </div>
+</nav>
+
+<article class="section article-detail">
+    <div class="container article-wrap">
+        <div class="article-head">
+            <h1>@(isEn && !string.IsNullOrWhiteSpace(Model.Title_EN) ? Model.Title_EN : Model.Title)</h1>
+            <div>
+                <span>@Model.CreationTime?.ToString("yyyy-MM-dd HH:mm")</span>
+                <span>@Localizer["来源"]@Model.Source</span>
+                <span>@Localizer["浏览"]@Model.ViewCount</span>
+            </div>
+        </div>
+        <div class="article-content">
+            @Html.Raw(isEn && !string.IsNullOrWhiteSpace(Model.Detail_EN) ? Model.Detail_EN : Model.Detail)
+        </div>
+        <div class="article-back">
+            <a class="btn btn-outline" href="@Url.Action("News", "Home")">@Localizer["返回新闻列表"]</a>
+        </div>
+    </div>
+</article>

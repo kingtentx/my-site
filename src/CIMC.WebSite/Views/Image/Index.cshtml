@@ -1,0 +1,179 @@
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Image组件</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/resource/css/img-selector.css" />
+    <link rel="stylesheet" href="~/resource/ssi-uploader/styles/ssi-uploader.css" />
+    <style>
+        #photos {
+            padding: 10px 10px;
+            border: rgb(25, 178, 238) 1px solid;
+            height: 200px;
+            display: none;
+        }
+
+        .img-name {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="layui-row layui-form">
+        <div class="layui-card">
+            <div class="layui-card-body">
+                <div class="layui-tab layui-tab-brief">
+                    <ul class="layui-tab-title">
+                        <li class="layui-this">本地上传</li>
+                        <li>素材库</li>
+                    </ul>
+                    <div class="layui-tab-content">
+                        <div class="layui-tab-item layui-show">
+                            <div class="z_photo" id="photos">
+                            </div>
+                            <div class="layui-form-item">
+                                <div style="padding:0 100px;">
+                                    <div>
+                                        <input type="file" name="ssi-upload" multiple id="ssi-upload" />
+                                        <h3 class="layui-form-mid layui-word-aux">单次最多上传10张图片，上传格式jpg、jpeg、gif、png文件小于3M的图片</h3>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="layui-tab-item">
+                            <ul class="z_photo" id="datalist">
+                            </ul>
+                            <div style="text-align:center;">
+                                <div id="page"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script src="~/resource/js/jquery-1.12.4.min.js"></script>
+    <script src="~/resource/ssi-uploader/js/ssi-uploader.js"></script>
+    <script>
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['element', 'form', 'upload', 'laypage'], function () {
+            var $ = layui.$,
+                element = layui.element,
+                laypage = layui.laypage,
+                form = layui.form;
+
+            $(function () {
+                initLayPage();
+                $('#datalist').css({ 'height': $(window).height() - 160 });
+            });
+
+            function initLayPage(pageConf) {
+                if (!pageConf) {
+                    pageConf = {};
+                    pageConf.pageIndex = 1;
+                    pageConf.pageSize = 14;
+                }
+
+                var loading = layer.load(1, { shade: 0.3 });
+                $.get('@Url.Content("~")/Image/GetImageList', pageConf, function (res) {
+                    laypage.render({
+                        elem: 'page',
+                        count: res.count,
+                        curr: pageConf.pageIndex,
+                        limit: pageConf.pageSize,
+                        first: "首页",
+                        last: "尾页",
+                        layout: ['prev', 'page', 'next', 'limit', 'count', 'skip'],
+                        jump: function (obj, first) {
+                            if (!first) {
+                                pageConf.pageIndex = obj.curr;
+                                pageConf.pageSize = obj.limit;
+                                initLayPage(pageConf);
+                            }
+                        }
+                    });
+
+                    fillTable(res.data, (pageConf.pageIndex - 1) * pageConf.pageSize); //页面填充
+                    layer.close(loading);
+                })
+
+            }
+
+            //填充表格数据
+            function fillTable(data, num) {
+                $("#datalist").html('');
+                $.each(data, function (index, obj) {
+                    index = index + num + 1;
+                    var imgHtml = '<li><img src="' + obj.host + obj.url + '" data-url="' + obj.host + obj.url + '"><span class="img-name">' + obj.imageName + '</span></li>';
+                    $("#datalist").append(imgHtml);
+                });
+            }
+
+
+            /***************批量上传*********************/
+            var imageArray = [];
+
+            $('#ssi-upload').ssi_uploader({
+                url: '@Url.Content("~")/Upload/SSIUploadImage',
+                allowed: ['jpg', 'jpeg', 'gif', 'png'],
+                maxNumberOfFiles: 10,//每次允许上传多少个文件
+                maxFileSize: 3,//允许上传的最大文件尺寸（单位M）
+                locale: "zh_CN",//使用中文
+                onEachUpload: function (data) {
+                    //console.log(data)
+                    //{uploadStatus: 'success', responseMsg: {…}, name: 'ae.jpg', size: '18.75', type: 'image/jpeg'}
+                    if (data.uploadStatus == 'success') {
+                        var img_obj = data.responseMsg;
+                        imageArray.push(img_obj);
+                    } else {
+                        layer.msg(data.responseMsg);
+                    }
+                },
+                onUpload: function (data) {
+                    if (imageArray.length > 0) {
+                        loadPhoto(imageArray);
+                    }
+                }
+            });
+
+            function loadPhoto(data) {
+                //console.log('new',data);
+                $("#photos").html('');
+                $.each(data, function (index, obj) {
+                    var imgHtml = '<li><img src="' + obj.host + obj.url + '" data-url="' + obj.host + obj.url + '"><span class="img-name">' + obj.imageName + '</span></li>';
+                    $("#photos").append(imgHtml);
+                });
+                $("#photos").show();
+            }
+
+            // 选择图片
+            $('.z_photo').on('click', 'li', function () {
+                $(this).toggleClass('selected');
+                var itemArray = [];
+                $('li.selected').each(function () {
+                    var str_name = $(this).find('.img-name').html();
+                    var str_url = $(this).find('img').attr('data-url');
+                    var item = {
+                        'name': str_name,
+                        'url': str_url
+                    }
+                    itemArray.push(item);
+                });
+                //console.log(itemArray);
+                localStorage.setItem('imageArray', JSON.stringify(itemArray));
+            });
+        });
+    </script>
+</body>
+</html>

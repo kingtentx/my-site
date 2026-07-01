@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="首页" xml:space="preserve">
+    <value>Home</value>
+  </data>
+  <data name="关于我们" xml:space="preserve">
+    <value>About Us</value>
+  </data>
+  <data name="产品中心" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="传统业务线" xml:space="preserve">
+    <value>Traditional</value>
+  </data>
+  <data name="特种业务线" xml:space="preserve">
+    <value>Special</value>
+  </data>
+  <data name="新业务线" xml:space="preserve">
+    <value>New Business</value>
+  </data>
+  <data name="新闻资讯" xml:space="preserve">
+    <value>News</value>
+  </data>
+  <data name="人才招聘" xml:space="preserve">
+    <value>Careers</value>
+  </data>
+  <data name="联系我们" xml:space="preserve">
+    <value>Contact</value>
+  </data>
+  <data name="打开导航" xml:space="preserve">
+    <value>Open Navigation</value>
+  </data>
+  <data name="产品中心_Footer" xml:space="preserve">
+    <value>Products</value>
+  </data>
+  <data name="联系方式" xml:space="preserve">
+    <value>Contact Info</value>
+  </data>
+  <data name="电话" xml:space="preserve">
+    <value>Tel: </value>
+  </data>
+  <data name="邮箱" xml:space="preserve">
+    <value>Email: </value>
+  </data>
+  <data name="关注我们" xml:space="preserve">
+    <value>Follow Us</value>
+  </data>
+  <data name="公司地址" xml:space="preserve">
+    <value>No. 77 Cenglin Road, Lingang New Area, Pudong New District, Shanghai</value>
+  </data>
+  <data name="电话默认" xml:space="preserve">
+    <value>021-61186770</value>
+  </data>
+  <data name="邮箱默认" xml:space="preserve">
+    <value>changhao.shen@cimc.com</value>
+  </data>
+  <data name="公司信息默认" xml:space="preserve">
+    <value>Adhering to CIMC's "Star-Driven" development strategy, we are committed to high quality, low cost, and fast delivery, aiming to become the preferred logistics equipment manufacturer for customers and a reliable employer for employees.</value>
+  </data>
+  <data name="版权默认" xml:space="preserve">
+    <value>Copyright © Shanghai CIMC Yangshan Logistics Equipment Co., Ltd.</value>
+  </data>
+</root>

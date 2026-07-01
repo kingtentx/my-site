@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="联系我们-标题" xml:space="preserve">
+    <value>Contact Us - Shanghai CIMC Yangshan Logistics Equipment Co., Ltd.</value>
+  </data>
+  <data name="联系我们" xml:space="preserve">
+    <value>Contact Us</value>
+  </data>
+  <data name="联系我们默认副标题" xml:space="preserve">
+    <value>We look forward to connecting with customers, partners and talented individuals.</value>
+  </data>
+  <data name="公司地址" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="联系电话卡片" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="电子邮箱卡片" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="区位优势" xml:space="preserve">
+    <value>Location Advantage</value>
+  </data>
+  <data name="区位优势默认描述" xml:space="preserve">
+    <value>Located in the Lingang New Area Advanced Manufacturing Zone of Shanghai Free Trade Zone, 9KM from Luchaogang Railway Container Center Station, 55KM from Yangshan Deep Water Port, and 85KM from Waigaoqiao Port Area, enjoying excellent port access.</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="在线留言" xml:space="preserve">
+    <value>Leave a Message</value>
+  </data>
+  <data name="留言默认描述" xml:space="preserve">
+    <value>For product inquiries, business cooperation, recruitment communication or visit arrangements, please leave your contact information. We will follow up as soon as possible.</value>
+  </data>
+  <data name="姓名" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="联系电话" xml:space="preserve">
+    <value>Phone</value>
+  </data>
+  <data name="电子邮箱_输入框" xml:space="preserve">
+    <value>Email</value>
+  </data>
+  <data name="留言内容" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="验证码" xml:space="preserve">
+    <value>Captcha</value>
+  </data>
+  <data name="提交留言" xml:space="preserve">
+    <value>Submit</value>
+  </data>
+</root>

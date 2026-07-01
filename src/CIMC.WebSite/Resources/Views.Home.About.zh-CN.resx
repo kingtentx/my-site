@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="关于我们-标题" xml:space="preserve">
+    <value>关于我们-上海中集洋山物流装备有限公司</value>
+  </data>
+  <data name="关于我们" xml:space="preserve">
+    <value>关于我们</value>
+  </data>
+  <data name="关于我们默认副标题" xml:space="preserve">
+    <value>了解上海中集洋山物流装备有限公司，推进智能制造与数字化工厂建设。</value>
+  </data>
+  <data name="Company Profile" xml:space="preserve">
+    <value>Company Profile</value>
+  </data>
+  <data name="上海中集洋山物流装备有限公司" xml:space="preserve">
+    <value>上海中集洋山物流装备有限公司</value>
+  </data>
+  <data name="公司简介默认P1" xml:space="preserve">
+    <value>上海中集洋山物流装备有限公司（简称"中集洋山"），是中国国际海运集装箱（集团）股份有限公司（简称"中集集团"）的全资子公司，注册资本 2,948 万美元，投资总额 6,325 万美元，设计年产能为 25 万 TEU。</value>
+  </data>
+  <data name="公司简介默认P2" xml:space="preserve">
+    <value>公司于 2006 年入驻临港新片区先进智造片区，总占地面积 33.41 万㎡，拥有 3 条完整的集装箱及先进装备制造生产线。主营各类集装箱及现代化物流装备产品的设计、生产、销售业务，客户遍及欧美、日韩、澳洲等全球各地。</value>
+  </data>
+  <data name="公司简介默认P3" xml:space="preserve">
+    <value>作为中集集团在华东区域的核心工厂，中集洋山秉承中集集团"诚信正直、成就客户、开拓创新、持续改善、合作共赢、结果导向"的核心价值观。</value>
+  </data>
+  <data name="智能制造" xml:space="preserve">
+    <value>智能制造</value>
+  </data>
+  <data name="智能制造描述" xml:space="preserve">
+    <value>冲压、焊接、总装、涂装等自动化产线持续升级</value>
+  </data>
+  <data name="数字工厂" xml:space="preserve">
+    <value>数字工厂</value>
+  </data>
+  <data name="数字工厂描述" xml:space="preserve">
+    <value>SAP、MES、IoT、AI 智能检测等系统协同推进</value>
+  </data>
+  <data name="绿色制造" xml:space="preserve">
+    <value>绿色制造</value>
+  </data>
+  <data name="绿色制造描述" xml:space="preserve">
+    <value>打造智能化、精益化绿色集装箱制造基地</value>
+  </data>
+  <data name="全球服务" xml:space="preserve">
+    <value>全球服务</value>
+  </data>
+  <data name="全球服务描述" xml:space="preserve">
+    <value>为世界头部航运公司提供长期产品与服务</value>
+  </data>
+  <data name="Certificates" xml:space="preserve">
+    <value>Certificates</value>
+  </data>
+  <data name="资质证书" xml:space="preserve">
+    <value>资质证书</value>
+  </data>
+  <data name="上一页" xml:space="preserve">
+    <value>上一页</value>
+  </data>
+  <data name="下一页" xml:space="preserve">
+    <value>下一页</value>
+  </data>
+  <data name="Partners" xml:space="preserve">
+    <value>Partners</value>
+  </data>
+  <data name="客户与合作" xml:space="preserve">
+    <value>客户与合作</value>
+  </data>
+</root>

@@ -1,0 +1,203 @@
+
+@{
+    Layout = null;
+}
+@model RoleModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>角色授权</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <style>
+        .table {
+            border-collapse: collapse;
+            border: none;
+            width: 100%;
+            vertical-align: middle;
+        }
+
+            .table td {
+                border: solid #c7d1d3 1px;
+                padding: 5px 5px 10px 10px;
+            }
+    </style>
+</head>
+<body>
+    <form class="layui-form" lay-filter="form-group">
+        <div class="layui-fluid">
+            <!-- 填充内容 -->
+            <div class="layui-card">
+                <div class="layui-card-header">角色权限</div>
+                <div class="layui-card-body">
+                    <div class="layui-form-item">
+                        <div>
+                            <h2><b>@Html.Raw(Model.RoleName)</b></h2>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <p>
+                            @Html.Raw(Model.Description)
+                        </p>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="layui-collapse">
+                            @{int module_index = 0;
+                                foreach (var module in Model.MenuList)
+                                {
+                                    if (module.IsChecked)
+                                    {
+                                        module_index++;
+                                        <div class="layui-colla-item">
+                                            <h2 class="layui-colla-title">@Html.Raw(module.Name)</h2>
+                                            <div class="layui-colla-content layui-show">
+                                                <table class="table">
+                                                    <tr>
+                                                        <td colspan="2">
+                                                            <input type="checkbox" name="chkMenu" id="chkMenu_@module_index" lay-filter="chkModule" lay-skin="primary" value="@module.PermissionKey" title="@Html.Raw(module.Name)" @(Model.PermissionList.Contains(module.PermissionKey) ? "checked" : "")>
+                                                        </td>
+                                                    </tr>
+                                                    @{int menu_index = 0;
+                                                        foreach (var menu in module.Menus)
+                                                        {
+                                                            if (menu.IsChecked)
+                                                            {
+                                                                menu_index++;
+                                                                <tr>
+                                                                    <td style="width:280px;">
+                                                                        <input type="checkbox" name="chkMenu" id="chkMenu_@module_index.ToString()_@menu_index.ToString()" lay-filter="chkMenu" lay-skin="primary" value="@menu.PermissionKey" title="@Html.Raw(menu.Name)" @(Model.PermissionList.Contains(menu.PermissionKey) ? "checked" : "")>
+                                                                    </td>
+                                                                    <td>
+                                                                        @if (menu.Buttons != null)
+                                                                        {
+                                                                            int btn_index = 0;
+                                                                            foreach (var btn in menu.Buttons)
+                                                                            {
+                                                                                if (btn.IsChecked)
+                                                                                {
+                                                                                    btn_index++;
+                                                                                    <input type="checkbox" name="chkMenu" id="chkMenu_@module_index.ToString()_@menu_index.ToString()_@btn_index.ToString()" lay-filter="chkMenu" lay-skin="primary" value="@btn.PermissionKey" title="@Html.Raw(btn.Name)" @(Model.PermissionList.Contains(btn.PermissionKey) ? "checked" : "")>
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                    </td>
+                                                                </tr>
+                                                            }
+                                                        }
+                                                    }
+                                                </table>
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-layout-admin">
+                        <div class="layui-input-block">
+                            <div class="layui-footer" style="left: 0;">
+                                <button class="layui-btn" lay-submit="" lay-filter="form-page">立即保存</button>
+                                <a href="@Url.Content("~")/Role/Index" class="layui-btn layui-btn-primary">返回列表</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({
+            base: '@Url.Content("~")/resource/layuiadmin/' //静态资源所在路径
+        }).extend({
+            index: 'lib/index' //主入口模块
+        }).use(['index', 'element', 'form'], function () {
+            var $ = layui.$
+                , layer = layui.layer
+                , element = layui.element
+                , form = layui.form;
+
+
+            form.on('checkbox(chkModule)', function (data) {
+                if (data.elem.checked) {
+                    var id = $(this).attr('id');
+                    $('input[id^=' + id + ']').prop('checked', true);
+                }
+                else {
+                    var id = $(this).attr('id');
+                    $('input[id^=' + id + ']').prop('checked', false);
+                }
+                form.render();
+            });
+
+            form.on('checkbox(chkMenu)', function (data) {
+                if (data.elem.checked) {
+                    var id = $(this).attr('id');
+                    var arrM = id.split('_');
+                    //console.log(arrM);
+                    var mStr = arrM[0]; //'chkMenu';
+                    var moduleStr
+                    var menuStr;
+                    var buttonStr;
+                    for (var i = 0; i < arrM.length - 1; i++) {
+                        if (i == 0) {
+                            moduleStr = mStr + '_' + arrM[i + 1];
+                            $('#' + moduleStr).prop('checked', true);
+                        }
+                        if (i == 1) {
+                            menuStr = moduleStr + '_' + arrM[i + 1];
+                            $('#' + menuStr).prop('checked', true);
+                            if (arrM.length == 3)
+                                $('input[id^=' + menuStr + ']').prop('checked', true);
+                        }
+                        if (i == 2) {
+                            buttonStr = menuStr + '_' + arrM[i + 1];
+                            $('#' + buttonStr).prop('checked', true);
+                        }
+                    }
+                }
+                else {
+                    var id = $(this).attr('id');
+                    $('input[id^=' + id + ']').prop('checked', false);
+                }
+                form.render();
+            });
+
+            ///* 监听提交 */
+            form.on('submit(form-page)', function (data) {
+                var menuArr = [];
+                $('input[name=chkMenu]:checked').each(function () {
+                    menuArr.push($(this).val());
+                });
+                data.field.Menus = menuArr;
+                console.log(data.field);
+
+                 $.ajax({
+                    type: 'post',
+                     url: '@Url.Content("~")/Role/SaveRoleMenu?Id=@Model.Id',
+                    data: data.field,
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.code == 200) {
+                            layer.alert(res.message, function (index) {
+                                //do something
+                                layer.close(index);
+                            });
+                        }
+                        else {
+                            layer.msg(res.message, { icon: 5 });
+                        }
+                    }
+                });
+                return false;
+            });
+        });
+
+    </script>
+</body>
+</html>

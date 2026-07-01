@@ -1,0 +1,269 @@
+
+@{
+    Layout = null;
+}
+@model List<TagModel>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>文章管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <style type="text/css">
+        .layui-table-cell {
+            height: inherit;
+        }
+
+        .viewimg {
+            width: 80px;          
+        }
+    </style>
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <!---搜索条件 begin--->
+                    <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">标题</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="keywords" placeholder="请输入" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <label class="layui-form-label">分类标签</label>
+                                <div class="layui-input-block" style="width:200px">
+                                    <select name="tagsId" id="tagsId" lay-verify="">
+                                        <option value="0">全部</option>
+                                        @foreach (var item in Model)
+                                        {
+                                            <option value="@item.Id">@item.TagName</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="layui-inline">
+                                <button class="layui-btn layuiadmin-btn-admin" lay-submit="" lay-filter="app-search">
+                                    <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!----搜索条件 end--->
+                    <div class="layui-card-body">
+                        <div style="padding-bottom: 10px;">
+                            @if ((bool)ViewData[PageCode.PAGE_Button_Add])
+                            {
+                                <a class="layui-btn layuiadmin-btn-admin" data-type="add" href="/article/edit">添加</a>
+                            }
+                            @if ((bool)ViewData[PageCode.PAGE_Button_Delete])
+                            {
+                                <button class="layui-btn layuiadmin-btn-admin" id="batchdel" data-type="batchdel">删除</button>
+                            }
+                        </div>
+                        <table class="layui-hide" id="app-table" lay-filter="app-table"></table>
+                        <script type="text/html" id="status">
+                            {{# if(d.isActive === true){ }}
+                            <span class="layui-btn layui-btn-primary layui-btn-xs">已发布</span>
+                            {{# } else if(d.isActive === false ){ }}
+                            <span class="layui-btn layui-btn-warm layui-btn-xs">未发布</span>
+                            {{# } }}
+                        </script>                    
+                        <script type="text/html" id="app-table-bar">
+                            @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
+                            {
+                                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i>编辑</a>
+                            }
+                            @if ((bool)ViewData[PageCode.PAGE_Button_Delete])
+                            {
+                                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-delete"></i>删除</a>
+                            }
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({  base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'table'], function () {
+            var $ = layui.$
+                , form = layui.form
+                , table = layui.table;
+
+            table.render({
+                elem: '#app-table',
+                //headers: { 'Authorization': 'Bearer ' + layui.data("access_token").token },
+                url: '@Url.Content("~")/Article/GetList',
+                where: { tagsId: 0 }, //如果无需传递额外参数，可不加该参数
+                //,method: 'post' //如果无需自定义HTTP类型，可不加该参数
+                response: {
+                    statusName: 'code' //规定数据状态的字段名称，默认：code
+                    , statusCode: '200 ' //规定成功的状态码，默认：0
+                    , msgName: 'message' //规定状态信息的字段名称，默认：msg
+                    , countName: 'count' //规定数据总数的字段名称，默认：count
+                    , dataName: 'data' //规定数据列表的字段名称，默认：data
+                },
+                cols: [[
+                    { type: 'checkbox' }
+                    , { field: 'id', width: 60, title: 'ID' }
+                    //, { field: 'title', title: '标题' }
+                    , {
+                        field: 'title', title: '标题', templet: function (d) {
+                            if (d.imageUrl != null) {
+                                return d.title + '  <img src="' + d.imageUrl + '?x-oss-process=image/resize,w_80/quality,q_80" class="viewimg"/>';
+                            } else {
+                                return d.title;
+                            }
+                        }
+                    }
+                    , { field: 'tagName', width: 100, title: '标签' }
+                    , { field: 'creationTime', width: 200, title: '创建时间', minWidth: 200 }
+                    , { field: 'viewCount', width: 80, title: '浏览量' }
+                    , { field: 'shareCount', width: 80, title: '分享量' }
+                    , { align: 'center', field: 'isActive', width: 100, title: '状态', minWidth: 200, templet: '#status' }
+                    , {
+                        align: 'center', field: 'isHot', width: 100, title: '是否热门', minWidth: 200, templet: function (d) {
+                            var str = '';
+                            if (d.isHot) {
+                                str = '@Html.Raw((bool)ViewData[PageCode.PAGE_Button_Edit]?"<input type=\"checkbox\" name=\"chkIsHot\" lay-skin=\"switch\" checked lay-text=\"是 | 否\" value=\"'+d.articleId+'\" lay-filter=\"chkIsHot\">":"是")';
+                            }
+                            else {
+                                 str = '@Html.Raw((bool)ViewData[PageCode.PAGE_Button_Edit]?"<input type=\"checkbox\" name=\"chkIsHot\" lay-skin=\"switch\" lay-text=\"是 | 否\" value=\"'+d.articleId+'\" lay-filter=\"chkIsHot\">":"否")';
+                            }
+                            return str;
+                        } }
+                    , { align: 'center', width: 240, toolbar: '#app-table-bar' }
+                ]],
+                request: {
+                    pageName: 'pageIndex' //页码的参数名称，默认：page
+                    , limitName: 'pageSize' //每页数据量的参数名，默认：limit
+                },
+                page: true
+            });
+
+            ////监听表格复选框选择
+            //table.on('checkbox(app-table)', function (obj) {
+            //    console.log(obj)
+            //});
+
+            form.on('switch(chkIsHot)', function (data) {
+                // 得到开关的value值，实际是需要修改的ID值。
+                var id = data.value;
+                $.ajax({
+                    type: 'post',
+                    url: '/Article/SetHotArticle',
+                    data: { 'id': id, 'isHot': this.checked },
+                    beforeSend: function () {
+                        index = layer.msg('正在设置中，请等待', { icon: 16, time: false, shade: 0.8 });
+                    },
+                    success: function (res) {
+                        if (res.code == 200) {
+                            setTimeout(function () {
+                                layer.close(index);
+                                layer.msg('操作成功！');
+                            }, 1000);
+                        } else {
+                            console.log(res);
+                            layer.msg(res.message);
+                        }
+                    },
+                    error: function (res) {
+                        console.log(res);
+                        layer.msg('数据异常，操作失败！');
+                    },
+                });
+            });
+
+
+            //批量删除
+            $("#batchdel").on('click', function () {
+                //获取选中状态            
+                var checkStatus = table.checkStatus('app-table');
+                //获取选中数量
+                var checkData = checkStatus.data;
+                if (checkData.length == 0) {
+                    layer.msg('批量删除至少选中一项数据', function () { });
+                    return false;
+                }
+                layer.confirm('你确定要删除这 ' + checkData.length + ' 条数据吗？', { icon: 3, title: '提示' }, function (index) {
+                    layer.msg('正在删除...', { icon: 16, shade: 0.3, time: 5000 });
+
+                    var ids = [];   //声明数组
+                    for (var i = 0; i < checkData.length; i++) {
+                        ids.push(checkData[i].id);
+                    }
+                    console.log(ids);
+
+                    $.ajax({
+                        type: 'post',
+                        data: { "ids": ids },
+                        url: '/article/delete?isAll=1',
+                        success: function (res) {
+                            console.log(res);
+                            if (res.code == 200) {
+                                layer.msg(res.message);
+                                table.reload('app-table');
+                            } else {
+                                layer.msg(res.message);
+                            }
+                        }, error: function (res) {
+                            layer.msg('操作失败!', { icon: 5, time: 1000 });
+                        }
+                    });
+                })
+            });
+
+            //监听工具条
+            table.on('tool(app-table)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'del') {
+                    layer.confirm("确认删除?", function (index) {
+                        layer.msg('正在删除...', { icon: 16, shade: 0.3, time: 5000 });
+                        $.ajax({
+                            url: "/article/delete",
+                            data: { 'id': data.articleId },
+                            type: "post",
+                            dataType: "json",
+                            success: function (res) {
+                                console.log(res);
+                                if (res.code == 200) {
+                                    layer.msg(res.message);
+                                    obj.del();
+                                    layer.close(index);
+                                }
+                                else {
+                                    layer.msg(res.message);
+                                }
+                            }
+                        });
+                    });
+                } else if (obj.event === 'edit') {
+                    console.log(data);
+                    window.location.href = '/article/edit/' + data.id;
+                }
+            });
+
+            //监听搜索
+            form.on('submit(app-search)', function (data) {
+                //执行重载
+                table.reload('app-table', {
+                    page: {
+                        curr: 1
+                    },
+                    where: data.field
+                });
+            });
+
+
+        });
+    </script>
+</body>
+</html>

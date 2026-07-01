@@ -1,0 +1,85 @@
+@{
+    Layout = null;
+}
+@model Tag
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>标签编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-card">
+            <div class="layui-card-header">@(Model.Id > 0 ? "修改标签" : "添加标签")</div>
+            <div class="layui-card-body" style="padding: 15px;">
+                <form class="layui-form">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标签名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="TagName" lay-verify="required" autocomplete="off" class="layui-input w500" value="@Html.Raw(Model.TagName)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标签名称(EN)</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="TagName_EN" autocomplete="off" class="layui-input w500" value="@Html.Raw(Model.TagName_EN)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标签类型</label>
+                        <div class="layui-input-inline">
+                            <select name="TagType">
+                                <option value="1" @(Model.TagType == 1 ? "selected" : "")>文章</option>
+                                <option value="2" @(Model.TagType == 2 ? "selected" : "")>图片</option>
+                                <option value="3" @(Model.TagType == 3 ? "selected" : "")>招聘</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">排序</label>
+                        <div class="layui-input-inline">
+                            <input type="number" name="Sort" autocomplete="off" class="layui-input" value="@Model.Sort">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">是否启用</label>
+                        <div class="layui-input-block">
+                            <input type="checkbox" name="IsActive" lay-skin="switch" lay-text="是|否" value="true" @(Model.IsActive ? "checked" : "")>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-layout-admin">
+                        <div class="layui-input-block">
+                            <div class="layui-footer" style="left: 0; z-index: 20000">
+                                <button class="layui-btn" lay-submit lay-filter="form-page">立即保存</button>
+                                <a href="/Tag/Index" class="layui-btn layui-btn-primary">返回列表</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['form'], function() {
+            var $ = layui.$, form = layui.form;
+            form.on('submit(form-page)', function(data) {
+                $.post('/Tag/Edit/@Model.Id', data.field, function(res) {
+                    if (res.code == 200) {
+                        layer.alert(res.message, function() { window.location.href = '/Tag/Index'; });
+                    } else {
+                        layer.msg(res.message, { icon: 5 });
+                    }
+                });
+                return false;
+            });
+        });
+    </script>
+</body>
+</html>

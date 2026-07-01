@@ -1,0 +1,54 @@
+@model PublicSiteListViewModel<Article>
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+@{
+    var currentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name;
+    var isEn = currentCulture.StartsWith("en");
+    ViewData["Title"] = Localizer["新闻资讯-标题"];
+}
+
+<section class="page-hero page-hero--slider" style="background-image:url('@Model.BannerImage')" data-page-hero>
+    @foreach (var image in Model.BannerImages)
+    {
+        <div class="page-hero__slide @(image == Model.BannerImages.FirstOrDefault() ? "is-active" : "")" style="background-image:url('@image')"></div>
+    }
+    <div class="container reveal">
+        <h1>@Model.Title</h1>
+        <p>@Model.SubTitle</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container news-list">
+        <div class="tabs reveal">
+            <a class="@(Model.CurrentTagId == 0 ? "is-active" : "")" href="@Url.Action("News", "Home")">@Localizer["全部资讯"]</a>
+            @foreach (var category in Model.Categories)
+            {
+                var route = category.Id == 2 ? "industry" : "company";
+                <a class="@(Model.CurrentTagId == category.Id ? "is-active" : "")" href="@Url.Action("News", "Home", new { category = route })">@(isEn && !string.IsNullOrWhiteSpace(category.TagName_EN) ? category.TagName_EN : category.TagName)</a>
+            }
+        </div>
+        @foreach (var item in Model.Items)
+        {
+            <article class="news-list-item reveal">
+                <a class="news-list-item__image" href="/news/info-@(item.Id).html">
+                    <img src="@item.ImageUrl" alt="@(isEn && !string.IsNullOrWhiteSpace(item.Title_EN) ? item.Title_EN : item.Title)" />
+                </a>
+                <div>
+                    <time>@item.CreationTime?.ToString("yyyy-MM-dd") · @(item.TagId == 2 ? Localizer["行业动态"] : Localizer["公司新闻"])</time>
+                    <h2><a href="/news/info-@(item.Id).html">@(isEn && !string.IsNullOrWhiteSpace(item.Title_EN) ? item.Title_EN : item.Title)</a></h2>
+                    <p>@(isEn && !string.IsNullOrWhiteSpace(item.Description_EN) ? item.Description_EN : item.Description)</p>
+                    <a class="text-link" href="/news/info-@(item.Id).html">@Localizer["查看详情"]</a>
+                </div>
+            </article>
+        }
+        @if (Model.TotalPages > 1)
+        {
+            <div class="pager reveal">
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <a class="@(i == Model.PageIndex ? "is-active" : "")" href="@Url.Action("News", "Home", new { category = Model.CurrentCategory, page = i })">@i</a>
+                }
+            </div>
+        }
+    </div>
+</section>

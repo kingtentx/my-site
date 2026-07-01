@@ -1,0 +1,457 @@
+@{
+    Layout = null;
+}
+@model ArticleModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>用户编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <style>
+        .upload-card {
+            width: 300px;
+            height: 180px;
+            border: 2px dashed #d2d2d2;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #f9f9f9;
+            transition: all .25s;
+            overflow: hidden;
+        }
+        .upload-card:hover {
+            border-color: #009688;
+            background: #f0faf8;
+        }
+        .upload-card i {
+            font-size: 40px;
+            color: #c2c2c2;
+            margin-bottom: 8px;
+            transition: color .25s;
+        }
+        .upload-card:hover i {
+            color: #009688;
+        }
+        .upload-card span {
+            font-size: 14px;
+            color: #999;
+        }
+        .upload-preview {
+            width: 300px;
+            height: 180px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,.12);
+            position: relative;
+        }
+        .upload-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .upload-preview .mask {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background .2s;
+            opacity: 0;
+        }
+        .upload-preview:hover .mask {
+            background: rgba(0,0,0,.45);
+            opacity: 1;
+        }
+        .mask .mask-btn {
+            width: 32px;
+            height: 32px;
+            line-height: 32px;
+            text-align: center;
+            background: rgba(255,255,255,.9);
+            border-radius: 50%;
+            cursor: pointer;
+            color: #666;
+            font-size: 16px;
+            transition: all .2s;
+            border: 0;
+        }
+        .mask .mask-btn:hover {
+            background: #fff;
+            color: #ff5722;
+        }
+        .img {
+            margin-bottom: 15px;
+        }
+        .img_br {
+            width: 100%;
+        }
+        .up_index {
+            z-index: 999999;
+        }
+        .image-url-preview {
+            margin-left: 0;
+            margin-top: 8px;
+            color: #666;
+            font-size: 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-card">
+            <div class="layui-card-header">@(Model.Id > 0 ? "修改文章" : "添加文章")</div>
+            <div class="layui-card-body" style="padding: 15px;">
+                <form class="layui-form" lay-filter="form-group">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">文章标题</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Title" lay-verify="required" autocomplete="off" placeholder="请输入文章标题" class="layui-input" value="@Html.Raw(Model.Title)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">文章标题(EN)</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Title_EN" autocomplete="off" placeholder="Please enter title" class="layui-input" value="@Html.Raw(Model.Title_EN)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标签</label>
+                        <div class="layui-input-inline up_index w300">
+                            <select name="TagId" lay-verify="required">
+                                <option value="">请选择</option>
+                                @foreach (var item in Model.TagsList.Where(p => p.TagType == (int)CIMC.Core.Enums.TagType.Article))
+                                {
+                                    <option value="@item.Id" @Html.Raw(Model.TagId == item.Id ? "selected=\"selected\"" : "")>@Html.Raw(item.TagName)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="img">
+                        <label class="layui-form-label">封面</label>
+                        <div class="layui-input-block">
+                            <div id="coverUploadWrap">
+                                @if (!string.IsNullOrWhiteSpace(Model.ImageUrl))
+                                {
+                                    <div class="upload-preview">
+                                        <img src="@Model.ImageUrl" alt="封面" />
+                                        <div class="mask">
+                                            <button type="button" class="mask-btn" data-action="remove" title="删除"><i class="layui-icon layui-icon-delete"></i></button>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="upload-card">
+                                        <i class="layui-icon layui-icon-upload-drag"></i>
+                                        <span>点击选择封面图</span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="image-url-preview" id="imageUrlPreview">@Html.Raw(Model.ImageUrl)</div>
+                            <input type="hidden" name="ImageUrl" id="txtImageUrl" value="@Html.Raw(Model.ImageUrl)">
+                            <div class="layui-form-mid layui-word-aux">请上传jpg、jpeg、gif、png格式文件小于3M的图片</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">作者</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Author" lay-verify="required" placeholder="请输入作者" autocomplete="off" class="layui-input w300" value="@Html.Raw(Model.Author)">
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item" lay-filter="component-form-element">
+                        <label class="layui-form-label">是否发布</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md12">
+                                <input type="radio" name="IsActive" value="true" title="是" @Html.Raw(Model.IsActive == true ? " checked=\"checked\"" : "")>
+                                <input type="radio" name="IsActive" value="false" title="否" @Html.Raw(Model.IsActive == false ? " checked=\"checked\"" : "")>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item layui-form-text">
+                        <label class="layui-form-label">内容</label>
+                        <div class="layui-input-block">
+                            <div id="txtDetail">@Html.Raw(Model.Detail)</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-form-text">
+                        <label class="layui-form-label">内容(EN)</label>
+                        <div class="layui-input-block">
+                            <div id="txtDetailEN">@Html.Raw(Model.Detail_EN)</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-layout-admin">
+                        <div class="layui-input-block">
+                            <div class="layui-footer" style="left: 0; z-index: 20000">
+                                <button class="layui-btn" lay-submit="" lay-filter="form-page">立即保存</button>
+                                <a href="@Url.Content("~")/article/index" class="layui-btn layui-btn-primary">返回列表</a>
+                                @if (Model.Id > 0)
+                                {
+                                    <a href="@Url.Content("~")/news/preview-@(Model.Id).html" target="_blank" class="layui-btn layui-btn-normal">预览页面</a>
+                                }
+                                else
+                                {
+                                    <button type="button" class="layui-btn layui-btn-disabled">保存后预览</button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script src="~/resource/js/jquery-1.12.4.min.js"></script>
+    <script src="~/resource/wangeditor-4.7.9/wangEditor.min.js"></script>
+    <script src="~/resource/js/spark-md5.min.js"></script>
+    @*<script src="~/aliyunoss/aliyun-oss-sdk.js"></script>*@
+    @*<script src="~/aliyunoss/upload.js"></script>*@
+    <script>
+         layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['form'], function () {
+                        var  layer = layui.layer
+                            , form = layui.form;
+
+        function openImageSelector(wrapId, inputId) {
+            window._imgSelectorWrap = wrapId;
+            window._imgSelectorInput = inputId;
+            layer.open({ type: 2, title: '选择图片', area: ['900px', '680px'], content: '/Admin/ImageSelector' });
+        }
+
+        $('#coverUploadWrap').on('click', '.upload-card, .upload-preview', function (e) {
+            if ($(e.target).closest('[data-action="remove"]').length) return;
+            openImageSelector('coverUploadWrap', 'txtImageUrl');
+        }).on('click', '[data-action="remove"]', function () {
+            layer.confirm("确认删除吗？", function (i) {
+                $('#coverUploadWrap').html('<div class="upload-card"><i class="layui-icon layui-icon-upload-drag"></i><span>点击选择封面图</span></div>');
+                $('#txtImageUrl').val('');
+                $('#imageUrlPreview').text('');
+                layer.close(i);
+            });
+        });
+
+        window.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'imageSelected') {
+                var url = e.data.url;
+                var name = e.data.name || '';
+                $('#' + window._imgSelectorWrap).html('<div class="upload-preview"><img src="' + url + '" alt="封面"><div class="mask"><button type="button" class="mask-btn" data-action="remove" title="删除"><i class="layui-icon layui-icon-delete"></i></button></div></div>');
+                $('#' + window._imgSelectorInput).val(url);
+                $('#imageUrlPreview').text(url);
+                if (name) { $('#txtTitle').val(name); }
+            }
+        });
+
+        const CHUNK_SIZE = 5 * 1024 * 1024; // 配置分块大小 (5MB)
+        //wangEdit
+        var E = window.wangEditor
+        var editor = new E('#txtDetail');
+
+        //editor.config.uploadImgShowBase64 = false;
+        editor.config.uploadFileName = 'file';
+        // 配置服务器端地址 upload:上传图片地址
+        editor.config.uploadImgServer = '/Upload/UploadImage';
+        //可使用监听函数在上传图片的不同阶段做相应处理
+            editor.config.uploadImgHooks = {
+            // 如果服务器端返回的不是 {errno:0, data: [...]} 这种格式，可使用该配置
+            // （但是，服务器端返回的必须是一个 JSON 格式字符串！！！否则会报错）
+            customInsert: function (insertImg, result, editor) {
+                // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+                // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+                // 举例：假如上传图片成功后，服务器端返回的是 {url:'....'} 这种格式，即可这样插入图片：
+                var imgurl = result.url
+                console.log(imgurl)
+                insertImg(imgurl)
+                // result 必须是一个 JSON 格式字符串！！！否则报错
+            }
+        };
+
+       // 配置视频上传
+        editor.config.uploadVideoServer = '/Upload/UploadVideoChunk';
+        editor.config.uploadVideoMaxSize = 1024 * 1024 * 1024; // 1GB
+        //editor.config.uploadVideoAccept = ['video/mp4', 'video/avi', 'video/mov', 'video/flv', 'video/wmv'];
+        // 自定义上传逻辑
+        editor.config.customUploadVideo = async function (files, insertVideo) {
+            const file = files[0];
+            if (!file) return;
+
+            // 分块大小 5MB
+            const chunkSize = 5 * 1024 * 1024;
+            // 总块数
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            // 文件唯一标识（使用文件名+大小+最后修改时间生成）
+            //const fileIdentifier = md5(file.name + file.size + file.lastModified) + '.' + file.name.split('.').pop();
+            const fileIdentifier =  file.lastModified + '.' + file.name.split('.').pop();
+
+            try {
+                // 1. 检查是否已上传过部分分块（断点续传）
+                const checkResponse = await fetch(`/Upload/CheckVideoUpload?fileId=${fileIdentifier}&fileName=${encodeURIComponent(file.name)}&totalSize=${file.size}&totalChunks=${totalChunks}`);
+                const checkResult = await checkResponse.json();
+
+                let uploadedChunks = [];
+                if (checkResult.code === 200 && checkResult.data && checkResult.data.uploadedChunks) {
+                    uploadedChunks = checkResult.data.uploadedChunks;
+                    console.log(`已上传 ${uploadedChunks.length}/${totalChunks} 块`);
+                }
+
+                // 2. 上传未完成的分块
+                for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                    // 如果该分块已上传，则跳过
+                    if (uploadedChunks.includes(chunkIndex)) continue;
+
+                    // 计算分块的起始和结束位置
+                    const start = chunkIndex * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+
+                    // 创建FormData
+                    const formData = new FormData();
+                    formData.append('file', chunk);
+                    formData.append('fileId', fileIdentifier);
+                    formData.append('chunkIndex', chunkIndex);
+                    formData.append('totalChunks', totalChunks);
+                    formData.append('fileName', file.name);
+
+                    // 上传分块
+                    const response = await fetch('/Upload/UploadVideoChunk', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    if (result.code !== 200) {
+                        throw new Error(`分块 ${chunkIndex} 上传失败: ${result.message}`);
+                    }
+
+                    console.log(`分块 ${chunkIndex + 1}/${totalChunks} 上传成功`);
+                }
+
+                // 3. 所有分块上传完成，请求合并
+                const mergeResponse = await fetch('/Upload/MergeVideoChunks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        fileId: fileIdentifier,
+                        fileName: file.name,
+                        totalChunks: totalChunks
+                    })
+                });
+
+                const mergeResult = await mergeResponse.json();
+                if (mergeResult.code === 200) {
+                    // 调用编辑器的插入视频方法
+                    insertVideo(mergeResult.data.url);
+                    layer.msg('视频上传成功');
+                } else {
+                    throw new Error('文件合并失败: ' + mergeResult.message);
+                }
+            } catch (error) {
+                console.error('上传失败:', error);
+                layer.msg('上传失败: ' + error.message);
+            }
+        };     
+
+        editor.create();
+
+        var editorEN = new E('#txtDetailEN');
+        editorEN.config.uploadFileName = 'file';
+        editorEN.config.uploadImgServer = '/Upload/UploadImage';
+        editorEN.config.uploadImgHooks = {
+            customInsert: function (insertImg, result, editor) {
+                var imgurl = result.url
+                insertImg(imgurl)
+            }
+        };
+        editorEN.config.uploadVideoServer = '/Upload/UploadVideoChunk';
+        editorEN.config.uploadVideoMaxSize = 1024 * 1024 * 1024;
+        editorEN.config.customUploadVideo = async function (files, insertVideo) {
+            const file = files[0];
+            if (!file) return;
+            const chunkSize = 5 * 1024 * 1024;
+            const totalChunks = Math.ceil(file.size / chunkSize);
+            const fileIdentifier = file.lastModified + '.' + file.name.split('.').pop();
+            try {
+                const checkResponse = await fetch(`/Upload/CheckVideoUpload?fileId=${fileIdentifier}&fileName=${encodeURIComponent(file.name)}&totalSize=${file.size}&totalChunks=${totalChunks}`);
+                const checkResult = await checkResponse.json();
+                let uploadedChunks = [];
+                if (checkResult.code === 200 && checkResult.data && checkResult.data.uploadedChunks) {
+                    uploadedChunks = checkResult.data.uploadedChunks;
+                }
+                for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                    if (uploadedChunks.includes(chunkIndex)) continue;
+                    const start = chunkIndex * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+                    const formData = new FormData();
+                    formData.append('file', chunk);
+                    formData.append('fileId', fileIdentifier);
+                    formData.append('chunkIndex', chunkIndex);
+                    formData.append('totalChunks', totalChunks);
+                    formData.append('fileName', file.name);
+                    const response = await fetch('/Upload/UploadVideoChunk', { method: 'POST', body: formData });
+                    const result = await response.json();
+                    if (result.code !== 200) throw new Error('分块上传失败: ' + result.message);
+                }
+                const mergeResponse = await fetch('/Upload/MergeVideoChunks', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileId: fileIdentifier, fileName: file.name, totalChunks: totalChunks })
+                });
+                const mergeResult = await mergeResponse.json();
+                if (mergeResult.code === 200) { insertVideo(mergeResult.data.url); layer.msg('视频上传成功'); }
+                else throw new Error('文件合并失败: ' + mergeResult.message);
+            } catch (error) { layer.msg('上传失败: ' + error.message); }
+        };
+        editorEN.create();
+
+            ///* 监听提交 */
+            form.on('submit(form-page)', function (data) {
+                var html = editor.txt.html();
+                data.field.Detail = html;
+                data.field.Detail_EN = editorEN.txt.html();
+                console.log(data.field);
+                $.ajax({
+                    type: "post",
+                    url: '/article/edit?id=@Model.Id',
+                    data: data.field,
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.code == 200) {
+                            layer.alert(res.message, function (index) {
+                                window.location.href = '/article/index';//do something
+                                layer.close(index);
+                            });
+                        }
+                        else {
+                            layer.msg(res.msg, { icon: 5 });
+                        }
+                    },
+                    error: function (res) {
+                        console.log(res.responseText);
+                        layer.msg(res.responseText, { offset: '15px', icon: 5, time: 1000 });
+                    }
+                });
+                //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                return false;
+            });        
+
+
+        });
+    </script>
+</body>
+</html>
+

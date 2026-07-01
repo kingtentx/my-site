@@ -1,0 +1,299 @@
+
+@{
+    Layout = null;
+}
+@model SiteInfoModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>站点信息</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/resource/css/site.css" media="all">
+    <style>
+        .upload-card {
+            width: 220px;
+            height: 80px;
+            border: 2px dashed #d2d2d2;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: #f9f9f9;
+            transition: all .25s;
+            overflow: hidden;
+        }
+        .upload-card:hover {
+            border-color: #009688;
+            background: #f0faf8;
+        }
+        .upload-card i {
+            font-size: 28px;
+            color: #c2c2c2;
+            margin-bottom: 4px;
+            transition: color .25s;
+        }
+        .upload-card:hover i {
+            color: #009688;
+        }
+        .upload-card span {
+            font-size: 13px;
+            color: #999;
+        }
+        .upload-preview {
+            width: 220px;
+            height: 80px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,.12);
+            position: relative;
+            background: #fff;
+        }
+        .upload-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+        .upload-preview .mask {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background .2s;
+            opacity: 0;
+        }
+        .upload-preview:hover .mask {
+            background: rgba(0,0,0,.45);
+            opacity: 1;
+        }
+        .mask .mask-btn {
+            width: 28px;
+            height: 28px;
+            line-height: 28px;
+            text-align: center;
+            background: rgba(255,255,255,.9);
+            border-radius: 50%;
+            cursor: pointer;
+            color: #666;
+            font-size: 14px;
+            transition: all .2s;
+            border: 0;
+        }
+        .mask .mask-btn:hover {
+            background: #fff;
+            color: #ff5722;
+        }
+        .img_info {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="layui-fluid">
+        <form class="layui-form" lay-filter="form-group">
+            <div class="layui-card">
+                <div class="layui-card-header">站点信息</div>
+                <div class="layui-card-body" style="padding: 15px;">
+                    <div class="layui-form-item">
+                        <div class="img_info">
+                            <label class="layui-form-label">网站Logo</label>
+                            <div class="layui-input-block">
+                                <div id="logoUploadWrap">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Logo))
+                                    {
+                                        <div class="upload-preview">
+                                            <img src="@Model.Logo" alt="Logo" />
+                                            <div class="mask">
+                                                <button type="button" class="mask-btn" data-action="remove" title="删除"><i class="layui-icon layui-icon-delete"></i></button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="upload-card">
+                                            <i class="layui-icon layui-icon-upload-drag"></i>
+                                            <span>点击选择Logo</span>
+                                        </div>
+                                    }
+                                </div>
+                                <input type="hidden" name="Logo" id="txtLogo" value="@Html.Raw(Model.Logo)">
+                                <div class="layui-form-mid layui-word-aux">请上传分辨率220*80的图片</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <div class="img_info">
+                            <label class="layui-form-label">H5-Logo</label>
+                            <div class="layui-input-block">
+                                <div id="logoH5UploadWrap">
+                                    @if (!string.IsNullOrWhiteSpace(Model.Logo_H5))
+                                    {
+                                        <div class="upload-preview">
+                                            <img src="@Model.Logo_H5" alt="H5 Logo" />
+                                            <div class="mask">
+                                                <button type="button" class="mask-btn" data-action="remove" title="删除"><i class="layui-icon layui-icon-delete"></i></button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="upload-card">
+                                            <i class="layui-icon layui-icon-upload-drag"></i>
+                                            <span>点击选择H5 Logo</span>
+                                        </div>
+                                    }
+                                </div>
+                                <input type="hidden" name="Logo_H5" id="txtLogoH5" value="@Html.Raw(Model.Logo_H5)">
+                                <div class="layui-form-mid layui-word-aux">请上传分辨率650*65的图片</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">网站名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="CompanyName" lay-verify="required" placeholder="请输入网站名称" autocomplete="off" class="layui-input w500" value="@Html.Raw(Model.CompanyName)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">公司名称(EN)</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="CompanyName_EN" placeholder="请输入公司英文名称" autocomplete="off" class="layui-input w500" value="@Html.Raw(Model.CompanyName_EN)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">网站关键词</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Keywords" placeholder="请输入网站关键词" autocomplete="off" class="layui-input" value="@Html.Raw(Model.Keywords)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">网站关键词(EN)</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="Keywords_EN" placeholder="Please enter keywords" autocomplete="off" class="layui-input" value="@Html.Raw(Model.Keywords_EN)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-form-text">
+                        <label class="layui-form-label">网站描述</label>
+                        <div class="layui-input-block">
+                            <textarea name="Description" placeholder="请输入内容" class="layui-textarea">@Html.Raw(Model.Description)</textarea>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-form-text">
+                        <label class="layui-form-label">网站描述(EN)</label>
+                        <div class="layui-input-block">
+                            <textarea name="Description_EN" placeholder="Please enter description" class="layui-textarea">@Html.Raw(Model.Description_EN)</textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="layui-form-item layui-layout-admin">
+                    <div class="layui-input-block">
+                        <div class="layui-footer" style="left: 0;">
+                            <button class="layui-btn" lay-submit="" lay-filter="form-page">立即保存</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['form'], function () {
+            var $ = layui.$
+                , layer = layui.layer
+                , form = layui.form;
+
+            form.render();
+
+            function openImageSelector(wrapId, inputId) {
+                window._imgSelectorWrap = wrapId;
+                window._imgSelectorInput = inputId;
+                layer.open({ type: 2, title: '选择图片', area: ['900px', '680px'], content: '/Admin/ImageSelector' });
+            }
+
+            function setImageFromSelector(wrapId, inputId, url) {
+                $('#' + wrapId).html('<div class="upload-preview"><img src="' + url + '" alt=""><div class="mask"><button type="button" class="mask-btn" data-action="remove" title="删除"><i class="layui-icon layui-icon-delete"></i></button></div></div>');
+                $('#' + inputId).val(url);
+            }
+
+            $('#logoUploadWrap').on('click', '.upload-card, .upload-preview', function (e) {
+                if ($(e.target).closest('[data-action="remove"]').length) return;
+                openImageSelector('logoUploadWrap', 'txtLogo');
+            }).on('click', '[data-action="remove"]', function () {
+                layer.confirm("确认删除吗？", function (i) {
+                    $('#logoUploadWrap').html('<div class="upload-card"><i class="layui-icon layui-icon-upload-drag"></i><span>点击选择Logo</span></div>');
+                    $('#txtLogo').val('');
+                    layer.close(i);
+                });
+            });
+
+            $('#logoH5UploadWrap').on('click', '.upload-card, .upload-preview', function (e) {
+                if ($(e.target).closest('[data-action="remove"]').length) return;
+                openImageSelector('logoH5UploadWrap', 'txtLogoH5');
+            }).on('click', '[data-action="remove"]', function () {
+                layer.confirm("确认删除吗？", function (i) {
+                    $('#logoH5UploadWrap').html('<div class="upload-card"><i class="layui-icon layui-icon-upload-drag"></i><span>点击选择H5 Logo</span></div>');
+                    $('#txtLogoH5').val('');
+                    layer.close(i);
+                });
+            });
+
+            window.addEventListener('message', function (e) {
+                if (e.data && e.data.type === 'imageSelected') {
+                    setImageFromSelector(window._imgSelectorWrap, window._imgSelectorInput, e.data.url);
+                }
+            });
+
+            form.verify({
+                imgurl: function (value) {
+                    if (value.length < 1) {
+                        return '请选择网站logo';
+                    }
+                },
+                required: function (value) {
+                    if (value.length < 1) {
+                        return '必填项不能为空';
+                    }
+                },
+            });
+
+            ///* 监听提交 */
+            form.on('submit(form-page)', function (data) {
+                console.log(data.field);
+                layer.confirm('确认保存信息吗？', function (index) {
+                    $.ajax({
+                        type: "post",
+                        url: '/Admin/SiteInfo',
+                        data: data.field,
+                        dataType: "json",
+                        success: function (res) {
+                            layer.close(index);
+                            if (res.code == 200) {
+                                layer.msg(res.message);
+                            }
+                            else {
+                                layer.msg(res.msg, { icon: 5 });
+                            }
+                        }
+                    });
+
+                });
+                //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                return false;
+            });
+
+        });
+    </script>
+</body>
+</html>
+

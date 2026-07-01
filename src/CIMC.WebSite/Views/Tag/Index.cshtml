@@ -1,0 +1,119 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>标签管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-card">
+            <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+                <div class="layui-inline">
+                    <label class="layui-form-label">标签类型</label>
+                    <div class="layui-input-block">
+                        <select name="tagType" lay-filter="tagType">
+                            <option value="">全部</option>
+                            <option value="1">文章</option>
+                            <option value="2">图片</option>
+                            <option value="3">招聘</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <label class="layui-form-label">关键词</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="keywords" placeholder="标签名称" autocomplete="off" class="layui-input">
+                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button class="layui-btn layuiadmin-btn-admin" lay-submit lay-filter="app-search">
+                        <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="layui-card-body">
+                <div style="padding-bottom: 10px;">
+                    @if ((bool)ViewData[PageCode.PAGE_Button_Add])
+                    {
+                        <a class="layui-btn layuiadmin-btn-admin" href="/Tag/Edit">添加标签</a>
+                    }
+                </div>
+                <table class="layui-hide" id="app-table" lay-filter="app-table"></table>
+                <script type="text/html" id="status">
+                    {{# if(d.isActive === true){ }}
+                    <span class="layui-btn layui-btn-primary layui-btn-xs">启用</span>
+                    {{# } else { }}
+                    <span class="layui-btn layui-btn-warm layui-btn-xs">停用</span>
+                    {{# } }}
+                </script>
+                <script type="text/html" id="tagType">
+                    {{# var types = {1:'文章', 2:'图片', 3:'招聘'}; }}
+                    {{ types[d.tagType] || '其他' }}
+                </script>
+                <script type="text/html" id="app-table-bar">
+                    @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
+                    {
+                        <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i>编辑</a>
+                    }
+                    @if ((bool)ViewData[PageCode.PAGE_Button_Delete])
+                    {
+                        <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-delete"></i>删除</a>
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['table', 'form'], function () {
+            var $ = layui.$, table = layui.table, form = layui.form;
+            var dataTable = table.render({
+                elem: '#app-table',
+                url: '/Tag/GetList',
+                response: { statusName: 'code', statusCode: '200', msgName: 'message', countName: 'count', dataName: 'data' },
+                cols: [[
+                    { field: 'id', width: 70, title: 'ID' },
+                    { field: 'tagName', title: '标签名称' },
+                    { field: 'tagType', width: 120, title: '标签类型', templet: '#tagType' },
+                    { field: 'sort', width: 80, title: '排序' },
+                    { field: 'isActive', width: 90, title: '状态', templet: '#status' },
+                    { field: 'updateTime', width: 170, title: '更新时间' },
+                    { align: 'center', width: 180, toolbar: '#app-table-bar' }
+                ]],
+                request: { pageName: 'pageIndex', limitName: 'pageSize' },
+                page: true
+            });
+
+            table.on('tool(app-table)', function(obj) {
+                if (obj.event === 'edit') {
+                    window.location.href = '/Tag/Edit/' + obj.data.id;
+                }
+                if (obj.event === 'del') {
+                    layer.confirm('确认删除?', function(index) {
+                        $.post('/Tag/Delete', { id: obj.data.id }, function(res) {
+                            if (res.code == 200) {
+                                obj.del();
+                                layer.close(index);
+                            }
+                            layer.msg(res.message);
+                        });
+                    });
+                }
+            });
+
+            form.on('submit(app-search)', function(data) {
+                dataTable.reload({ where: data.field, page: { curr: 1 } });
+                return false;
+            });
+        });
+    </script>
+</body>
+</html>

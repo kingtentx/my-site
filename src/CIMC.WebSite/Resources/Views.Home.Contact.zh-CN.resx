@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <data name="联系我们-标题" xml:space="preserve">
+    <value>联系我们-上海中集洋山物流装备有限公司</value>
+  </data>
+  <data name="联系我们" xml:space="preserve">
+    <value>联系我们</value>
+  </data>
+  <data name="联系我们默认副标题" xml:space="preserve">
+    <value>期待与客户、伙伴及优秀人才建立联系</value>
+  </data>
+  <data name="公司地址" xml:space="preserve">
+    <value>公司地址</value>
+  </data>
+  <data name="联系电话卡片" xml:space="preserve">
+    <value>联系电话</value>
+  </data>
+  <data name="电子邮箱卡片" xml:space="preserve">
+    <value>电子邮箱</value>
+  </data>
+  <data name="区位优势" xml:space="preserve">
+    <value>区位优势</value>
+  </data>
+  <data name="区位优势默认描述" xml:space="preserve">
+    <value>公司位于中国（上海）自贸实验区临港新片区先进智造片区，距离铁路芦潮港集装箱中心站 9KM，洋山深水港 55KM，外高桥港区 85KM，具备黄金港口等便利条件。</value>
+  </data>
+  <data name="Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="在线留言" xml:space="preserve">
+    <value>在线留言</value>
+  </data>
+  <data name="留言默认描述" xml:space="preserve">
+    <value>如需产品咨询、商务合作、招聘沟通或参观交流，请留下联系方式。后台会保存留言记录，便于工作人员跟进处理。</value>
+  </data>
+  <data name="姓名" xml:space="preserve">
+    <value>姓名</value>
+  </data>
+  <data name="联系电话" xml:space="preserve">
+    <value>联系电话</value>
+  </data>
+  <data name="电子邮箱_输入框" xml:space="preserve">
+    <value>电子邮箱</value>
+  </data>
+  <data name="留言内容" xml:space="preserve">
+    <value>留言内容</value>
+  </data>
+  <data name="验证码" xml:space="preserve">
+    <value>验证码</value>
+  </data>
+  <data name="提交留言" xml:space="preserve">
+    <value>提交留言</value>
+  </data>
+</root>

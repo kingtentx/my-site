@@ -1,0 +1,102 @@
+@model PublicContactViewModel
+@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
+@{
+    var currentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name;
+    var isEn = currentCulture.StartsWith("en");
+    ViewData["Title"] = Localizer["联系我们-标题"];
+    var contactModule = ViewData["ContactModule"] as SiteModule;
+    var contactSettingsJson = isEn && !string.IsNullOrWhiteSpace(contactModule?.SettingsJson_EN) ? contactModule.SettingsJson_EN : contactModule?.SettingsJson;
+    var contactSettings = contactSettingsJson != null ? Newtonsoft.Json.Linq.JObject.Parse(contactSettingsJson) : ViewData["ContactSettings"] as Newtonsoft.Json.Linq.JObject;
+    var messageModule = ViewData["MessageModule"] as SiteModule;
+    var messageSettingsJson = isEn && !string.IsNullOrWhiteSpace(messageModule?.SettingsJson_EN) ? messageModule.SettingsJson_EN : messageModule?.SettingsJson;
+    var messageSettings = messageSettingsJson != null ? Newtonsoft.Json.Linq.JObject.Parse(messageSettingsJson) : ViewData["MessageSettings"] as Newtonsoft.Json.Linq.JObject;
+}
+
+<section class="page-hero page-hero--slider" style="background-image:url('@Model.BannerImage')" data-page-hero>
+    @foreach (var image in Model.BannerImages)
+    {
+        <div class="page-hero__slide @(image == Model.BannerImages.FirstOrDefault() ? "is-active" : "")" style="background-image:url('@image')"></div>
+    }
+    <div class="container reveal">
+        <h1>@Model.BannerTitle</h1>
+        <p>@Model.BannerSubTitle</p>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container contact-grid">
+        @{
+            var cards = contactSettings?["cards"] as Newtonsoft.Json.Linq.JArray;
+            if (cards != null && cards.Count > 0)
+            {
+                foreach (var card in cards)
+                {
+                    <div class="contact-card reveal">
+                        <img src="@card["icon"]" alt="" />
+                        <h2>@card["title"]</h2>
+                        <p>@Html.Raw(card["content"])</p>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="contact-card reveal">
+                    <img src="~/syle/images/7811699.png" alt="" />
+                    <h2>@Localizer["公司地址"]</h2>
+                    <p>@Localizer["公司地址"]</p>
+                </div>
+                <div class="contact-card reveal">
+                    <img src="~/syle/images/7811698.png" alt="" />
+                    <h2>@Localizer["联系电话卡片"]</h2>
+                    <p>021-61186770<br />021-61186880</p>
+                </div>
+                <div class="contact-card reveal">
+                    <img src="~/syle/images/29595705.png" alt="" />
+                    <h2>@Localizer["电子邮箱卡片"]</h2>
+                    <p>changhao.shen@cimc.com<br />jing.chang_syle@cimc.com</p>
+                </div>
+            }
+        }
+    </div>
+    <div class="container contact-map reveal">
+        @{
+            var location = contactSettings?["location"] as Newtonsoft.Json.Linq.JObject;
+            var mapImage = location?["mapImage"]?.ToString() ?? "~/syle/images/44701954.png";
+            var locationTitle = location?["title"]?.ToString() ?? Localizer["区位优势"].Value;
+            var locationDesc = location?["description"]?.ToString() ?? Localizer["区位优势默认描述"].Value;
+        }
+        <img src="@mapImage" alt="@Localizer["区位优势"]" />
+        <div>
+            <h2>@locationTitle</h2>
+            <p>@locationDesc</p>
+        </div>
+    </div>
+</section>
+
+<section class="section message-section">
+    <div class="container message-grid">
+        <div class="message-copy reveal">
+            <span class="eyebrow">Message</span>
+            <h2>@Localizer["在线留言"]</h2>
+            @{
+                var messageDesc = messageSettings?["description"]?.ToString() ?? Localizer["留言默认描述"].Value;
+            }
+            <p>@messageDesc</p>
+        </div>
+        <form class="message-form reveal" data-message-form>
+            <div class="form-row">
+                <input type="text" name="UserName" placeholder="@Localizer["姓名"]" required maxlength="100" />
+                <input type="tel" name="Phone" placeholder="@Localizer["联系电话"]" required maxlength="50" />
+            </div>
+            <input type="email" name="Email" placeholder="@Localizer["电子邮箱_输入框"]" maxlength="250" />
+            <textarea name="Message" placeholder="@Localizer["留言内容"]" required maxlength="1000"></textarea>
+            <div class="form-row captcha-row">
+                <input type="text" name="ValidateCode" placeholder="@Localizer["验证码"]" required maxlength="4" />
+                <input type="hidden" name="ValidateKey" value="@DateTime.Now.Ticks" />
+                <img src="@Url.Action("GetImg", "Authorize")?key=@DateTime.Now.Ticks" alt="@Localizer["验证码"]" class="captcha-img" title="点击刷新" />
+            </div>
+            <button class="btn btn-primary" type="submit">@Localizer["提交留言"]</button>
+            <p class="form-tip" data-message-tip></p>
+        </form>
+    </div>
+</section>

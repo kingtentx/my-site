@@ -1,0 +1,209 @@
+
+@{
+    Layout = null;
+}
+@model JobModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>岗位编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/resource/css/site.css" media="all">
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-card">
+            <div class="layui-card-header">@(Model.Id>0?"修改岗位": "添加岗位")</div>
+            <div class="layui-card-body" style="padding: 15px;">
+                <form class="layui-form" lay-filter="form-group">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">岗位名称</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="JobName" lay-verify="required" autocomplete="off" placeholder="请输入岗位名称" class="layui-input w300" value="@Html.Raw(Model.JobName)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">岗位名称(EN)</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="JobName_EN" autocomplete="off" placeholder="Please enter job name" class="layui-input w300" value="@Html.Raw(Model.JobName_EN)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">标签</label>
+                        <div class="layui-input-block up_index w300">
+                            <select name="TagId" lay-verify="required">
+                                <option value="">请选择</option>
+                                @foreach (var item in Model.TagsList.Where(p => p.TagType == (int)CIMC.Core.Enums.TagType.Job))
+                                {
+                                    <option value="@item.Id" @Html.Raw(Model.TagId == item.Id ? "selected=\"selected\"" : "")>@Html.Raw(item.TagName)</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">发布日期</label>
+                        <div class="layui-input-block" style="width:120px">
+                            <input type="text" name="UpdateTime" id="publicDate" lay-verify="datetime" placeholder="请输入发布日期" autocomplete="off" class="layui-input w300" value="@Html.Raw(Model.UpdateTime)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item" lay-filter="form-element">
+                        <label class="layui-form-label">是否发布</label>
+                        <div class="layui-input-block">
+                            <div class="layui-col-md12">
+                                <input type="radio" name="IsActive" value="true" title="是" @Html.Raw(Model.IsActive == true ? " checked=\"checked\"" : "")>
+                                <input type="radio" name="IsActive" value="false" title="否" @Html.Raw(Model.IsActive == false ? " checked=\"checked\"" : "")>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="layui-form-item layui-form-text">
+                        <label class="layui-form-label">内容</label>
+                        <div class="layui-input-block">
+                            <div id="txtDetail">@Html.Raw(Model.Detail)</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-form-text">
+                        <label class="layui-form-label">内容(EN)</label>
+                        <div class="layui-input-block">
+                            <div id="txtDetailEN">@Html.Raw(Model.Detail_EN)</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-layout-admin">
+                        <div class="layui-input-block">
+                            <div class="layui-footer" style="left: 0; z-index: 20000">
+                                <button class="layui-btn" lay-submit="" lay-filter="form-page">立即保存</button>
+                                <a href="/Job/Index" class="layui-btn layui-btn-primary">返回列表</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script src="~/resource/wangeditor-4.7.9/wangEditor.min.js"></script>
+    <script>
+        layui.config({  base: '@Url.Content("~")/resource/layuiadmin/' }).extend({index: 'lib/index'}).use(['laydate', 'form'], function () {
+            var $ = layui.$
+                , layer = layui.layer
+                , laydate = layui.laydate
+                , form = layui.form;
+
+            //日期
+            laydate.render({
+                elem: '#publicDate',
+                type:'datetime'
+            });
+
+            //wangEdit
+            var E = window.wangEditor
+            var editor = new E('#txtDetail');
+            //editor.config.uploadImgShowBase64 = false;
+            editor.config.uploadFileName = 'file';
+            // 配置服务器端地址 upload:上传图片地址
+            editor.config.uploadImgServer = '/Upload/UploadImage';
+            // 将 timeout 时间改为 5s
+            editor.config.uploadImgTimeout = 10000
+            //可使用监听函数在上传图片的不同阶段做相应处理
+            editor.config.uploadImgHooks = {
+                before: function (xhr, editor, files) {
+                    // 图片上传之前触发
+                    // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象，files 是选择的图片文件
+                    // 如果返回的结果是 {prevent: true, msg: 'xxxx'} 则表示用户放弃上传
+                    // return {
+                    //     prevent: true,
+                    //     msg: '放弃上传'
+                    // }
+                },
+                success: function (xhr, editor, result) {
+                    // 图片上传并返回结果，图片插入成功之后触发
+                    // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象，result 是服务器端返回的结果
+                    //layer.msg('图片上传成功');
+                },
+                fail: function (xhr, editor, result) {
+                    // 图片上传并返回结果，但图片插入错误时触发
+                    // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象，result 是服务器端返回的结果
+                    layer.msg('图片上传失败');
+                },
+                error: function (xhr, editor) {
+                    // 图片上传出错时触发
+                    // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+                    layer.msg('图片上传失败');
+                },
+                timeout: function (xhr, editor) {
+                    // 图片上传超时时触发
+                    // xhr 是 XMLHttpRequst 对象，editor 是编辑器对象
+                    layer.msg('图片上传超时');
+                },
+                // 如果服务器端返回的不是 {errno:0, data: [...]} 这种格式，可使用该配置
+                // （但是，服务器端返回的必须是一个 JSON 格式字符串！！！否则会报错）
+                customInsert: function (insertImg, result, editor) {
+                    // 图片上传并返回结果，自定义插入图片的事件（而不是编辑器自动插入图片！！！）
+                    // insertImg 是插入图片的函数，editor 是编辑器对象，result 是服务器端返回的结果
+                    // 举例：假如上传图片成功后，服务器端返回的是 {url:'....'} 这种格式，即可这样插入图片：
+                    var imgurl = result.url
+                    console.log(imgurl)
+                    insertImg(imgurl)
+                    // result 必须是一个 JSON 格式字符串！！！否则报错
+                }
+            }
+            editor.create();
+
+            var editorEN = new E('#txtDetailEN');
+            editorEN.config.uploadFileName = 'file';
+            editorEN.config.uploadImgServer = '/Upload/UploadImage';
+            editorEN.config.uploadImgTimeout = 10000;
+            editorEN.config.uploadImgHooks = {
+                customInsert: function (insertImg, result) {
+                    var imgurl = result.url
+                    insertImg(imgurl)
+                }
+            }
+            editorEN.create();
+
+
+            ///* 监听提交 */
+            form.on('submit(form-page)', function (data) {
+                var html = editor.txt.html();
+                data.field.Detail = html;
+                data.field.Detail_EN = editorEN.txt.html();
+                console.log(data.field);
+
+                $.ajax({
+                    type: "post",
+                    //contentType: 'application/x-www-form-urlencoded',
+                    url: '/Job/Edit/@Model.Id',
+                    data: data.field,
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.code == 200) {
+                            layer.alert(res.message, function (index) {
+                                window.location.href = '/Job/Index';//do something
+                                layer.close(index);
+                            });
+                        }
+                        else {
+                            layer.msg(res.message, { icon: 5 });
+                        }
+                    },
+                    error: function (res) {
+                        console.log(res.responseText);
+                        layer.msg(res.responseText, { offset: '15px', icon: 5, time: 1000 });
+                    }
+                });
+                //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+                return false;
+            });
+
+
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,168 @@
+
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>用户管理</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">    
+</head>
+<body>
+    <div class="layui-card layadmin-header">
+        <div class="layui-breadcrumb" lay-filter="breadcrumb">
+            <a lay-href="">主页</a>
+            <a><cite>管理员</cite></a>
+            <a><cite>管理员列表</cite></a>           
+        </div>
+    </div>
+    <div class="layui-fluid">
+        <div class="layui-row layui-col-space15">
+            <div class="layui-col-md12">
+                <div class="layui-card">
+                    <!---搜索条件 begin--->
+                    <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+                        <div class="layui-form-item">
+                            <div class="layui-inline">
+                                <label class="layui-form-label">用户名</label>
+                                <div class="layui-input-block">
+                                    <input type="text" name="username" placeholder="请输入" autocomplete="off" class="layui-input">
+                                </div>
+                            </div>                                                   
+                           
+                            <div class="layui-inline">
+                                <button class="layui-btn layuiadmin-btn-admin" lay-submit="" lay-filter="app-search">
+                                    <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <!----搜索条件 end--->
+                    <div class="layui-card-body">
+                        <div style="padding-bottom: 10px;">
+                            @*<button class="layui-btn layuiadmin-btn-admin" data-type="batchdel">删除</button>*@
+                            @if ((bool)ViewData[PageCode.PAGE_Button_Add])
+                            {
+                                <a class="layui-btn layuiadmin-btn-admin" data-type="add" href="@Url.Content("~")/manager/edit">添加</a>
+                            }
+                        </div>
+                        <table class="layui-hide" id="app-table" lay-filter="app-table"></table>
+                        <script type="text/html" id="status">
+                            {{# if(d.isActive === true){ }}
+                            <span class="layui-btn layui-btn-primary layui-btn-xs">启用</span>
+                            {{# } }}
+                            {{# if(d.isActive === false ){ }}
+                            <span class="layui-btn layui-btn-danger layui-btn-xs">禁用</span>
+                            {{# } }}
+                        </script>
+                        <script type="text/html" id="app-table-bar">                          
+                            @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
+                            {
+                            <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i>编辑</a>
+                            }
+                            @if ((bool)ViewData[PageCode.PAGE_Button_Delete])
+                            {
+                            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-delete"></i>删除</a>
+                            }                          
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({
+            base: '@Url.Content("~")/resource/layuiadmin/' //静态资源所在路径
+        }).extend({
+            index: 'lib/index' //主入口模块
+        }).use(['index', 'table'], function () {
+            //var table = layui.table;
+            var $ = layui.$,
+                form = layui.form,
+                table = layui.table;
+
+            table.render({
+                elem: '#app-table',
+                //headers: { 'Authorization': 'Bearer ' + layui.data("access_token").token },
+                url: '@Url.Content("~")/Manager/GetList',
+                //,where: {token: 'sasasas', id: 123 } //如果无需传递额外参数，可不加该参数
+                //,method: 'post' //如果无需自定义HTTP类型，可不加该参数
+                response: {
+                    statusName: 'code' //规定数据状态的字段名称，默认：code
+                    , statusCode: '200' //规定成功的状态码，默认：0
+                    , msgName: 'message' //规定状态信息的字段名称，默认：msg
+                    , countName: 'count' //规定数据总数的字段名称，默认：count
+                    , dataName: 'data' //规定数据列表的字段名称，默认：data
+                },
+                cols: [[
+                    { type: 'checkbox' }
+                    , { field: 'adminId', width: 80, title: 'ID', sort: true }
+                    , { field: 'userName', width: 200, title: '用户名' }
+                    , { field: 'realName', width: '30%', title: '真实姓名' }
+                    , { field: 'CreationTime', width: 200, title: '创建时间', minWidth: 200 }
+                    , { align: 'center', field: 'isActive', width: 100, title: '状态', minWidth: 200, templet: '#status' }
+                    , { align: 'center', toolbar: '#app-table-bar' }
+                ]],
+                request: {
+                    pageName: 'pageIndex' //页码的参数名称，默认：page
+                    , limitName: 'pageSize' //每页数据量的参数名，默认：limit
+                },
+                page: true
+            });
+
+            //监听表格复选框选择
+            table.on('checkbox(app-table)', function (obj) {
+                console.log(obj)
+            });
+            //监听工具条
+            table.on('tool(app-table)', function (obj) {
+                var data = obj.data;
+                if (obj.event === 'del') {
+                    layer.confirm("确认删除?", function (index) {
+                        layer.msg('正在删除...', { icon: 16, shade: 0.3, time: 5000 });
+                        $.ajax({
+                            url: "@Url.Content("~")/Manager/Delete",
+                            data: { 'id': data.adminId },
+                            type: "post",
+                            dataType: "json",
+                            success: function (res) {
+                                console.log(res);
+                                if (res.code == 200) {
+                                    layer.msg(res.message);
+                                    obj.del();
+                                    layer.close(index);
+                                    //location.reload('#app-table'); //删除成功后再刷新
+                                }
+                                else {
+                                    layer.msg(res.message);
+                                }
+                            }
+                        });
+                    });
+                } else if (obj.event === 'edit') {
+                    console.log(data);
+                    window.location.href = '@Url.Content("~")/manager/edit/' + data.adminId;
+                }
+            });
+
+            //监听搜索
+            form.on('submit(app-search)', function (data) {
+                var field = data.field;
+
+                //执行重载
+                table.reload('app-table', {
+                    where: field
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
