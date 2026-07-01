@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - MySite</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
 </head>
 <body>
     <header class="site-header">
@@ -15,6 +16,9 @@
             <a href="/Admin">后台管理</a>
             @if (User.Identity?.IsAuthenticated == true)
             {
+                <a href="/Menu">菜单</a>
+                <a href="/Role">角色权限</a>
+                <a href="/AuditLog">审计日志</a>
                 <a href="/Account/Logout">退出</a>
             }
         </nav>
