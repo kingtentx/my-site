@@ -26,7 +26,8 @@ public class SiteBuilderService : ISiteBuilderService
 
     public async Task<List<SitePageDto>> GetPagesAsync()
     {
-        return await _dbContext.SitePages.Include(p => p.Sections).Where(p => !p.IsDeleted).OrderBy(p => p.PageKey).Select(p => ToDto(p)).ToListAsync();
+        var pages = await _dbContext.SitePages.Include(p => p.Sections).Where(p => !p.IsDeleted).OrderBy(p => p.PageKey).ToListAsync();
+        return pages.Select(ToDto).ToList();
     }
 
     public async Task<SitePageDto> GetPageAsync(string pageKey)
