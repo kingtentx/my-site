@@ -1,0 +1,37 @@
+@model List<AuditLog>
+@{
+    ViewData["Title"] = "审计日志";
+    var total = Convert.ToInt32(ViewBag.Total ?? 0);
+    var page = Convert.ToInt32(ViewBag.Page ?? 1);
+    var pageSize = Convert.ToInt32(ViewBag.PageSize ?? 50);
+}
+<section class="admin-shell">
+    <div class="admin-title">
+        <div>
+            <span class="eyebrow">Audit</span>
+            <h1>审计日志</h1>
+            <p>记录后台和页面设计 API 的访问、操作人、路径、状态码和耗时。</p>
+        </div>
+        <a class="btn ghost" href="/Admin">返回后台</a>
+    </div>
+    <div class="table-card">
+        <table>
+            <thead><tr><th>时间</th><th>用户</th><th>方法</th><th>路径</th><th>状态</th><th>耗时</th><th>IP</th></tr></thead>
+            <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.CreationTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>@item.UserName</td>
+                    <td>@item.Method</td>
+                    <td>@item.Path</td>
+                    <td>@item.StatusCode</td>
+                    <td>@item.ElapsedMilliseconds ms</td>
+                    <td>@item.Ip</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+        <p style="color:#667085">第 @page 页，每页 @pageSize 条，共 @total 条</p>
+    </div>
+</section>
