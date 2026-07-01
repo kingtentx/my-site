@@ -6,8 +6,33 @@
 
 - .NET 8
 - ASP.NET Core MVC / Razor
+- EF Core + SQLite 默认持久化
 - 原生 JavaScript 可视化设计器
-- JSON 文件持久化，不依赖数据库，后续可替换为 EF Core / MySQL / SQL Server
+- 保留 `CIMC.Core`、`CIMC.Data`、`CIMC.EntityFramework`、`CIMC.Helper` 分层
+
+## 分层说明
+
+```text
+src
+├── CIMC.Core             # 通用常量、枚举、返回模型
+├── CIMC.Data             # 通用实体：用户、角色、菜单、权限、审计、页面、区块
+├── CIMC.EntityFramework  # DbContext、Repository、初始化种子数据
+├── CIMC.Helper           # 密码、JSON 等工具
+└── MySite.Web            # MVC 后台、前台渲染、页面设计器、权限过滤、审计中间件
+```
+
+## 保留的后台基础功能
+
+- 菜单管理
+- 角色管理
+- 角色菜单权限：查看、新增、编辑、删除
+- 审计日志
+- 后台登录认证
+- 可视化页面设计器
+
+## 已删除的旧门户业务内容
+
+已移除与特定企业门户强绑定的文章、产品、招聘、相册、留言、附件、旧前台页面和旧静态资源。保留的是通用建站底座和后台基础权限体系。
 
 ## 运行
 
@@ -21,19 +46,4 @@ dotnet run --project src/MySite.Web/MySite.Web.csproj
 - 后台：`/Admin`
 - 登录：`/Account/Login`
 
-默认后台账号在 `src/MySite.Web/appsettings.json` 中配置，生产环境请立即修改。
-
-## 目录说明
-
-```text
-src/MySite.Web
-├── Controllers       # 前台、后台、设计器 API
-├── Models            # 通用页面、区块、模板模型
-├── Services          # 页面配置持久化服务
-├── Views             # Razor 页面
-└── wwwroot           # 静态资源
-```
-
-## 已删除的旧门户冗余内容
-
-本分支已移除原 PC 门户中与特定企业业务绑定的实体、控制器、视图和资源依赖，仅保留通用建站需要的页面、区块、组件、后台设计器和前台渲染能力。
+默认后台账号由 `src/MySite.Web/appsettings.json` 的 `Admin:Password` 初始化，生产环境请立即修改。默认数据库文件路径为 `src/MySite.Web/App_Data/mysite.db`。
