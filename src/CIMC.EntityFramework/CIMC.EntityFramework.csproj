@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.14" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.14" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\CIMC.Core\CIMC.Core.csproj" />
+    <ProjectReference Include="..\CIMC.Data\CIMC.Data.csproj" />
+    <ProjectReference Include="..\CIMC.Helper\CIMC.Helper.csproj" />
+  </ItemGroup>
+</Project>
