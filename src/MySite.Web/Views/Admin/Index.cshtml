@@ -1,0 +1,37 @@
+@model IReadOnlyList<SitePage>
+@{
+    ViewData["Title"] = "后台管理";
+}
+<section class="admin-shell">
+    <div class="admin-title">
+        <div>
+            <span class="eyebrow">Admin</span>
+            <h1>页面管理</h1>
+            <p>选择页面进入可视化设计器，拖拽组件并保存。</p>
+        </div>
+        <a class="btn" href="/Admin/Designer?pageKey=home">设计首页</a>
+    </div>
+    <div class="page-list">
+        @foreach (var page in Model)
+        {
+            <article class="page-card">
+                <h2>@page.Title</h2>
+                <p>页面标识：@page.PageKey</p>
+                <p>模块数量：@page.Sections.Count</p>
+                <p>更新时间：@page.UpdatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+                <div class="card-actions">
+                    <a class="btn small" href="/Admin/Designer?pageKey=@page.PageKey">可视化设计</a>
+                    <a class="btn ghost small" href="/@(page.PageKey == "home" ? "" : page.PageKey)" target="_blank">前台预览</a>
+                </div>
+            </article>
+        }
+        <article class="page-card new-page">
+            <h2>新增页面</h2>
+            <p>在地址中输入新的 pageKey 即可创建，例如 products、contact。</p>
+            <form method="get" action="/Admin/Designer">
+                <input name="pageKey" placeholder="例如：contact" />
+                <button class="btn small" type="submit">创建/编辑</button>
+            </form>
+        </article>
+    </div>
+</section>

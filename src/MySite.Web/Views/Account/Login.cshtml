@@ -1,0 +1,16 @@
+@model LoginInput
+@{
+    ViewData["Title"] = "后台登录";
+}
+<section class="login-page">
+    <form method="post" class="login-card">
+        <span class="eyebrow">Admin</span>
+        <h1>后台登录</h1>
+        <div asp-validation-summary="ModelOnly" class="validation"></div>
+        <label>账号</label>
+        <input asp-for="UserName" autocomplete="username" />
+        <label>密码</label>
+        <input asp-for="Password" type="password" autocomplete="current-password" />
+        <button class="btn" type="submit">登录</button>
+    </form>
+</section>

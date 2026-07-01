@@ -1,0 +1,39 @@
+@{
+    ViewData["Title"] = "可视化页面设计器";
+    var pageKey = (ViewBag.PageKey as string) ?? "home";
+}
+<section class="designer-page">
+    <aside class="designer-panel palette-panel">
+        <div class="panel-title">组件库</div>
+        <div id="componentPalette" class="component-palette"></div>
+    </aside>
+
+    <section class="designer-canvas-wrap">
+        <div class="designer-toolbar">
+            <div>
+                <span class="eyebrow">Visual Builder</span>
+                <h1>可视化页面设计器</h1>
+            </div>
+            <div class="toolbar-actions">
+                <input id="pageKey" value="@pageKey" />
+                <input id="pageTitle" placeholder="页面标题" />
+                <button id="btnReload" class="btn ghost" type="button">重新加载</button>
+                <button id="btnSave" class="btn" type="button">保存配置</button>
+                <a class="btn ghost" href="/Admin">返回</a>
+            </div>
+        </div>
+        <div id="canvas" class="designer-canvas"></div>
+    </section>
+
+    <aside class="designer-panel props-panel">
+        <div class="panel-title">属性配置</div>
+        <div id="props" class="props"></div>
+    </aside>
+</section>
+
+@section Scripts {
+    <script>
+        window.siteDesignerPageKey = '@pageKey';
+    </script>
+    <script src="~/js/designer.js" asp-append-version="true"></script>
+}

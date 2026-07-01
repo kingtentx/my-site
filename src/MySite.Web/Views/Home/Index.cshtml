@@ -1,0 +1,120 @@
+@model SitePage
+@{
+    ViewData["Title"] = Model.Title;
+    var sections = Model.Sections.Where(p => p.IsEnabled).OrderBy(p => p.Sort).ToList();
+}
+
+@if (!sections.Any())
+{
+    <section class="empty-page">
+        <h1>@Model.Title</h1>
+        <p>当前页面还没有配置模块，请进入后台设计器添加组件。</p>
+        <a class="btn" href="/Admin/Designer?pageKey=@Model.PageKey">进入后台配置</a>
+    </section>
+}
+
+@foreach (var section in sections)
+{
+    if (section.Component == "hero")
+    {
+        var image = section.Images.FirstOrDefault() ?? "/img/default-hero.svg";
+        var height = section.GetString("height", "640px");
+        <section class="hero" style="min-height:@height;background-image:linear-gradient(90deg,rgba(3,23,54,.82),rgba(3,23,54,.28)),url('@image')">
+            <div class="container hero-content">
+                <span class="eyebrow">@section.Name</span>
+                <h1>@section.Title</h1>
+                <p>@section.SubTitle</p>
+                @if (!string.IsNullOrWhiteSpace(section.LinkUrl))
+                {
+                    <a class="btn" href="@section.LinkUrl">@(string.IsNullOrWhiteSpace(section.LinkText) ? "了解更多" : section.LinkText)</a>
+                }
+            </div>
+        </section>
+    }
+    else if (section.Component == "rich-text")
+    {
+        <section class="section rich-text">
+            <div class="container">
+                <div class="section-title">
+                    <span>@section.SubTitle</span>
+                    <h2>@section.Title</h2>
+                </div>
+                <div class="content-body">@Html.Raw(section.GetString("html", "<p>请在后台填写内容。</p>"))</div>
+            </div>
+        </section>
+    }
+    else if (section.Component == "feature-grid")
+    {
+        var columns = section.GetString("columns", "3");
+        <section class="section alt">
+            <div class="container">
+                <div class="section-title">
+                    <span>@section.SubTitle</span>
+                    <h2>@section.Title</h2>
+                </div>
+                <div class="feature-grid" style="grid-template-columns:repeat(@columns,minmax(0,1fr))">
+                    @foreach (var item in section.GetArray("items"))
+                    {
+                        <article class="feature-card">
+                            <strong>@(item?["icon"]?.ToString() ?? "•")</strong>
+                            <h3>@item?["title"]</h3>
+                            <p>@item?["description"]</p>
+                        </article>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (section.Component == "image-text")
+    {
+        var image = section.Images.FirstOrDefault() ?? section.GetString("image", "/img/default-image.svg");
+        var reverse = string.Equals(section.GetString("reverse", "false"), "true", StringComparison.OrdinalIgnoreCase);
+        <section class="section">
+            <div class="container image-text @(reverse ? "reverse" : "")">
+                <div class="image-box"><img src="@image" alt="@section.Title" /></div>
+                <div class="copy-box">
+                    <span class="eyebrow">@section.SubTitle</span>
+                    <h2>@section.Title</h2>
+                    <p>@section.GetString("description", section.SubTitle)</p>
+                    @if (!string.IsNullOrWhiteSpace(section.LinkUrl))
+                    {
+                        <a class="text-link" href="@section.LinkUrl">@(string.IsNullOrWhiteSpace(section.LinkText) ? "查看详情" : section.LinkText)</a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (section.Component == "stats")
+    {
+        <section class="section alt">
+            <div class="container">
+                <div class="section-title"><h2>@section.Title</h2></div>
+                <div class="stats-grid">
+                    @foreach (var item in section.GetArray("items"))
+                    {
+                        <div class="stat-card">
+                            <strong>@item?["value"]</strong>
+                            <span>@item?["label"]</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+    else if (section.Component == "cta")
+    {
+        var background = section.GetString("background", "#0b2b5c");
+        <section class="section">
+            <div class="container">
+                <div class="cta" style="background:@background">
+                    <h2>@section.Title</h2>
+                    <p>@section.SubTitle</p>
+                    @if (!string.IsNullOrWhiteSpace(section.LinkUrl))
+                    {
+                        <a class="btn light" href="@section.LinkUrl">@(string.IsNullOrWhiteSpace(section.LinkText) ? "立即开始" : section.LinkText)</a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+}
