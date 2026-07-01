@@ -1,9 +1,26 @@
+using CIMC.EntityFramework;
+using CIMC.EntityFramework.Repositories;
+using CIMC.WebSite.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using MySite.Web.Services;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+
+var connectionString = builder.Configuration.GetConnectionString("Default");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
+    connectionString = "Data Source=App_Data/mysite.db";
+}
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
+builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<ISiteBuilderService, SiteBuilderService>();
+builder.Services.AddScoped<IConfigurationLike, ConfigurationAdapter>();
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -13,11 +30,14 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "MySite.Admin";
     });
 builder.Services.AddAuthorization();
-builder.Services.AddSingleton<ISitePageStore, JsonSitePageStore>();
 
 var app = builder.Build();
 
-await app.Services.GetRequiredService<ISitePageStore>().EnsureSeedDataAsync();
+using (var scope = app.Services.CreateScope())
+{
+    var seeder = new DataSeeder(scope.ServiceProvider.GetRequiredService<AppDbContext>(), scope.ServiceProvider.GetRequiredService<IConfigurationLike>());
+    await seeder.SeedAsync();
+}
 
 if (!app.Environment.IsDevelopment())
 {
@@ -29,6 +49,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<AuditLogMiddleware>();
 
 app.MapControllerRoute(
     name: "default",
