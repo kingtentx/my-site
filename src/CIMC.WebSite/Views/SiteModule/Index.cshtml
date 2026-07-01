@@ -48,6 +48,11 @@
                     {
                         <a class="layui-btn layui-btn-sm layuiadmin-btn-admin" href="/SiteModule/Edit@(Context.Request.Query["navigationId"].ToString().Length > 0 ? "?navigationId=" + Context.Request.Query["navigationId"] : "")">添加模块</a>
                     }
+                    @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
+                    {
+                        <a class="layui-btn layui-btn-sm layui-btn-normal" href="/SiteModule/Designer@(Context.Request.Query["navigationId"].ToString().Length > 0 ? "?navigationId=" + Context.Request.Query["navigationId"] : "")"><i class="layui-icon layui-icon-template-1"></i>可视化设计</a>
+                    }
+                    <a class="layui-btn layui-btn-sm layui-btn-primary" href="/SiteModule/Designer?pageKey=home"><i class="layui-icon layui-icon-home"></i>设计首页</a>
                     <a class="layui-btn layui-btn-sm layui-btn-normal" href="/Navigation/Index"><i class="layui-icon layui-icon-return"></i>返回导航</a>
                 </div>
                 <table class="layui-hide" id="app-table" lay-filter="app-table"></table>
@@ -59,7 +64,7 @@
                     {{# } }}
                 </script>
                 <script type="text/html" id="module-position">
-                    {{# var names = { hero: '首页Banner', products: '首页-产品服务', about: '首页-企业介绍', partners: '首页-合作客户', news: '首页-新闻资讯', careers: '首页-人才招聘', banner: '内页Banner', certificates: '资质证书', message: '在线留言' }; }}
+                    {{# var names = { hero: '首页Banner', products: '首页-产品服务', about: '首页-企业介绍', partners: '首页-合作客户', news: '首页-新闻资讯', careers: '首页-人才招聘', banner: '内页Banner', certificates: '资质证书', message: '在线留言', 'rich-text': '富文本内容', 'feature-grid': '能力宫格', 'image-text': '图文介绍', stats: '数据指标', cta: '行动号召' }; }}
                     {{ names[d.moduleKey] || d.moduleKey }}
                 </script>
                 <script type="text/html" id="app-table-bar">
