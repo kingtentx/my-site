@@ -1,19 +1,22 @@
 using System.Security.Claims;
+using CIMC.EntityFramework;
+using CIMC.Helper;
+using CIMC.WebSite.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using MySite.Web.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace MySite.Web.Controllers;
 
 public class AccountController : Controller
 {
-    private readonly IConfiguration _configuration;
+    private readonly AppDbContext _dbContext;
 
-    public AccountController(IConfiguration configuration)
+    public AccountController(AppDbContext dbContext)
     {
-        _configuration = configuration;
+        _dbContext = dbContext;
     }
 
     [AllowAnonymous]
@@ -27,10 +30,10 @@ public class AccountController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Login(LoginInput input, string? returnUrl = null)
     {
-        var userName = _configuration["Admin:UserName"] ?? "admin";
-        var password = _configuration["Admin:Password"] ?? "admin123";
+        var user = await _dbContext.AdminUsers.Include(p => p.Role)
+            .FirstOrDefaultAsync(p => p.UserName == input.UserName && p.IsActive && !p.IsDeleted);
 
-        if (!string.Equals(input.UserName, userName, StringComparison.Ordinal) || input.Password != password)
+        if (user == null || !PasswordHelper.Verify(input.Password, user.PasswordHash))
         {
             ModelState.AddModelError(string.Empty, "账号或密码错误");
             ViewBag.ReturnUrl = returnUrl;
@@ -39,8 +42,9 @@ public class AccountController : Controller
 
         var claims = new List<Claim>
         {
-            new(ClaimTypes.Name, input.UserName),
-            new(ClaimTypes.Role, "Administrator")
+            new(ClaimTypes.Name, user.UserName),
+            new(ClaimTypes.Role, user.Role?.Code ?? string.Empty),
+            new("DisplayName", user.DisplayName)
         };
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
