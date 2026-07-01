@@ -1,0 +1,42 @@
+@model List<Menu>
+@{
+    ViewData["Title"] = "菜单管理";
+}
+<section class="admin-shell">
+    <div class="admin-title">
+        <div>
+            <span class="eyebrow">Permission</span>
+            <h1>菜单管理</h1>
+            <p>维护后台菜单编码、名称、路径和排序。角色权限会基于菜单编码控制。</p>
+        </div>
+        <a class="btn ghost" href="/Admin">返回后台</a>
+    </div>
+    <form class="page-card" method="post" action="/Menu/Save">
+        <h2>新增/编辑菜单</h2>
+        <input name="Id" placeholder="ID，新增可留空" />
+        <input name="Code" placeholder="菜单编码，例如 SiteBuilder" />
+        <input name="Name" placeholder="菜单名称" />
+        <input name="Path" placeholder="访问路径，例如 /Admin/Designer?pageKey=home" />
+        <input name="Sort" type="number" value="100" />
+        <label><input name="IsEnabled" type="checkbox" value="true" checked /> 启用</label>
+        <button class="btn small" type="submit">保存菜单</button>
+    </form>
+    <div class="table-card">
+        <table>
+            <thead><tr><th>ID</th><th>编码</th><th>名称</th><th>路径</th><th>排序</th><th>启用</th></tr></thead>
+            <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Code</td>
+                    <td>@item.Name</td>
+                    <td>@item.Path</td>
+                    <td>@item.Sort</td>
+                    <td>@(item.IsEnabled ? "是" : "否")</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>
