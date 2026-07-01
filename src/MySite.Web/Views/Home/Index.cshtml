@@ -1,4 +1,4 @@
-@model SitePage
+@model SitePageDto
 @{
     ViewData["Title"] = Model.Title;
     var sections = Model.Sections.Where(p => p.IsEnabled).OrderBy(p => p.Sort).ToList();
@@ -75,7 +75,7 @@
                 <div class="copy-box">
                     <span class="eyebrow">@section.SubTitle</span>
                     <h2>@section.Title</h2>
-                    <p>@section.GetString("description", section.SubTitle)</p>
+                    <p>@section.GetString("description", section.SubTitle ?? string.Empty)</p>
                     @if (!string.IsNullOrWhiteSpace(section.LinkUrl))
                     {
                         <a class="text-link" href="@section.LinkUrl">@(string.IsNullOrWhiteSpace(section.LinkText) ? "查看详情" : section.LinkText)</a>
