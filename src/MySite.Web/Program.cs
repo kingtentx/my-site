@@ -8,18 +8,50 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("Default");
-if (string.IsNullOrWhiteSpace(connectionString))
-{
-    Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
-    connectionString = "Data Source=App_Data/mysite.db";
-}
+var connectionString = builder.Configuration.GetConnectionString("Default")
+                       ?? Environment.GetEnvironmentVariable("MYSQL_CONNECTION")
+                       ?? string.Empty;
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
+builder.Services.AddDbContext<AppDbContext>(options =>
+{
+    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0)));
+});
+
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<ISiteBuilderService, SiteBuilderService>();
 builder.Services.AddScoped<IConfigurationLike, ConfigurationAdapter>();
+
+var corsOrigins = (builder.Configuration["App:CorsOrigins"] ?? string.Empty)
+    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        if (corsOrigins.Length > 0)
+        {
+            policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+        }
+        else
+        {
+            policy.AllowAnyHeader().AllowAnyMethod();
+        }
+    });
+});
+
+if (builder.Configuration.GetValue<bool>("Redis:IsEnabled"))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = builder.Configuration["Redis:Configuration"];
+        options.InstanceName = builder.Configuration["Redis:InstanceName"] ?? "WebSite";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -32,6 +64,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("ConnectionStrings:Default or MYSQL_CONNECTION is required.");
+}
 
 using (var scope = app.Services.CreateScope())
 {
@@ -47,6 +84,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<AuditLogMiddleware>();
