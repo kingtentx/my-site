@@ -36,11 +36,11 @@ public class DataSeeder
 
         var menus = new[]
         {
-            new Menu { Code = "Dashboard", Name = "控制台", Path = "/Admin", Sort = 10, IsSystem = true },
-            new Menu { Code = "SiteBuilder", Name = "页面设计", Path = "/Admin/Designer?pageKey=home", Sort = 20, IsSystem = true },
-            new Menu { Code = "Menu", Name = "菜单管理", Path = "/Menu", Sort = 30, IsSystem = true },
-            new Menu { Code = "Role", Name = "角色权限", Path = "/Role", Sort = 40, IsSystem = true },
-            new Menu { Code = "AuditLog", Name = "审计日志", Path = "/AuditLog", Sort = 50, IsSystem = true }
+            new Menu { Code = "Dashboard", Name = "控制台", Path = "/Admin/Main", Icon = "layui-icon-home", Sort = 10, IsSystem = true },
+            new Menu { Code = "SiteBuilder", Name = "页面管理", Path = "/Admin/Pages", Icon = "layui-icon-template-1", Sort = 20, IsSystem = true },
+            new Menu { Code = "Menu", Name = "菜单管理", Path = "/Menu", Icon = "layui-icon-menu-fill", Sort = 30, IsSystem = true },
+            new Menu { Code = "Role", Name = "角色权限", Path = "/Role", Icon = "layui-icon-user", Sort = 40, IsSystem = true },
+            new Menu { Code = "AuditLog", Name = "审计日志", Path = "/AuditLog", Icon = "layui-icon-log", Sort = 50, IsSystem = true }
         };
 
         foreach (var seed in menus)
@@ -54,6 +54,7 @@ public class DataSeeder
             {
                 menu.Name = seed.Name;
                 menu.Path = seed.Path;
+                menu.Icon = seed.Icon;
                 menu.Sort = seed.Sort;
                 menu.IsSystem = true;
                 menu.IsEnabled = true;
