@@ -2,7 +2,7 @@
 @{
     ViewData["Title"] = "审计日志";
     var total = Convert.ToInt32(ViewBag.Total ?? 0);
-    var page = Convert.ToInt32(ViewBag.Page ?? 1);
+    var pageindex = Convert.ToInt32(ViewBag.Page ?? 1);
     var pageSize = Convert.ToInt32(ViewBag.PageSize ?? 50);
 }
 <section class="admin-shell">
@@ -32,6 +32,6 @@
             }
             </tbody>
         </table>
-        <p style="color:#667085">第 @page 页，每页 @pageSize 条，共 @total 条</p>
+        <p style="color:#667085">第 @pageindex 页，每页 @pageSize 条，共 @total 条</p>
     </div>
 </section>
