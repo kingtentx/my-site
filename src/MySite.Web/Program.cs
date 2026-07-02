@@ -18,7 +18,37 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<ISiteBuilderService, SiteBuilderService>();
 builder.Services.AddScoped<IConfigurationLike, ConfigurationAdapter>();
-builder.Services.AddDistributedMemoryCache();
+
+var corsOrigins = (builder.Configuration["App:CorsOrigins"] ?? string.Empty)
+    .Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        if (corsOrigins.Length > 0)
+        {
+            policy.WithOrigins(corsOrigins).AllowAnyHeader().AllowAnyMethod().AllowCredentials();
+        }
+        else
+        {
+            policy.AllowAnyHeader().AllowAnyMethod();
+        }
+    });
+});
+
+if (builder.Configuration.GetValue<bool>("Redis:IsEnabled"))
+{
+    builder.Services.AddStackExchangeRedisCache(options =>
+    {
+        options.Configuration = builder.Configuration["Redis:Configuration"];
+        options.InstanceName = builder.Configuration["Redis:InstanceName"] ?? "WebSite";
+    });
+}
+else
+{
+    builder.Services.AddDistributedMemoryCache();
+}
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -46,6 +76,7 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<AuditLogMiddleware>();
