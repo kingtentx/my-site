@@ -1,7 +1,16 @@
 @{
-    ViewData["Title"] = "网页装修器";
+    Layout = null;
     var pageKey = (ViewBag.PageKey as string) ?? "home";
 }
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>网页装修器 - MySite</title>
+    <link rel="stylesheet" href="~/css/designer.css" asp-append-version="true" />
+</head>
+<body>
 <div class="decorator-shell">
     <header class="decorator-topbar">
         <div class="decorator-left-actions">
@@ -50,11 +59,9 @@
         </aside>
     </main>
 </div>
-
-@section Scripts {
-    <link rel="stylesheet" href="~/css/designer.css" asp-append-version="true" />
-    <script>
-        window.siteDesignerPageKey = '@pageKey';
-    </script>
-    <script src="~/js/designer.js" asp-append-version="true"></script>
-}
+<script>
+    window.siteDesignerPageKey = '@pageKey';
+</script>
+<script src="~/js/designer.js" asp-append-version="true"></script>
+</body>
+</html>
