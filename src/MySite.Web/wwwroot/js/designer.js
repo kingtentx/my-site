@@ -1,263 +1,32 @@
-const state = {
-  pageKey: window.siteDesignerPageKey || 'home',
-  page: null,
-  templates: [],
-  selectedIndex: -1,
-  dragIndex: null
-};
-
-const $ = (selector) => document.querySelector(selector);
-const clone = (value) => JSON.parse(JSON.stringify(value || {}));
-const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(16).slice(2));
-
-function toast(message) {
-  const old = document.querySelector('.toast');
-  if (old) old.remove();
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = message;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 2200);
-}
-
-async function requestJson(url, options) {
-  const response = await fetch(url, options);
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(text || response.statusText);
-  }
-  return response.json();
-}
-
-async function loadDesigner() {
-  state.pageKey = ($('#pageKey').value || 'home').trim().replace(/^\/+|\/+$/g, '') || 'home';
-  state.templates = await requestJson('/api/site-builder/templates');
-  state.page = await requestJson(`/api/site-builder/page/${encodeURIComponent(state.pageKey)}`);
-  state.page.sections = state.page.sections || [];
-  $('#pageTitle').value = state.page.title || '';
-  state.selectedIndex = state.page.sections.length ? 0 : -1;
-  renderAll();
-}
-
-function newSection(template) {
-  const section = clone(template.defaultSection);
-  section.id = uid();
-  section.component = template.key;
-  section.name = section.name || template.name;
-  section.title = section.title || template.name;
-  section.isEnabled = true;
-  section.images = section.images || [];
-  section.settings = section.settings || {};
-  return section;
-}
-
-function renderPalette() {
-  $('#componentPalette').innerHTML = state.templates.map(t => `
-    <div class="component-item" draggable="true" data-component="${t.key}">
-      <b>${escapeHtml(t.name)}</b>
-      <p>${escapeHtml(t.description || '')}</p>
-    </div>`).join('');
-
-  document.querySelectorAll('.component-item').forEach(item => {
-    item.addEventListener('dragstart', e => {
-      e.dataTransfer.setData('component', item.dataset.component);
-    });
-    item.addEventListener('dblclick', () => addComponent(item.dataset.component));
-  });
-}
-
-function renderCanvas() {
-  const canvas = $('#canvas');
-  const sections = state.page.sections || [];
-  if (!sections.length) {
-    canvas.innerHTML = '<div class="canvas-empty">从左侧拖入组件，或双击组件添加到页面</div>';
-  } else {
-    canvas.innerHTML = sections.map((s, i) => `
-      <div class="section-node ${i === state.selectedIndex ? 'selected' : ''} ${s.isEnabled ? '' : 'disabled'}" draggable="true" data-index="${i}">
-        <h3>${escapeHtml(s.title || s.name || s.component)}</h3>
-        <p>组件：${escapeHtml(s.component)} ｜ 名称：${escapeHtml(s.name || '')}</p>
-        <div class="node-actions">
-          <button class="icon-btn" data-action="up">上移</button>
-          <button class="icon-btn" data-action="down">下移</button>
-          <button class="icon-btn" data-action="copy">复制</button>
-          <button class="icon-btn" data-action="toggle">${s.isEnabled ? '停用' : '启用'}</button>
-          <button class="icon-btn" data-action="remove">删除</button>
-        </div>
-      </div>`).join('');
-  }
-
-  canvas.ondragover = e => e.preventDefault();
-  canvas.ondrop = e => {
-    e.preventDefault();
-    const component = e.dataTransfer.getData('component');
-    if (component) {
-      addComponent(component);
-    }
-  };
-
-  document.querySelectorAll('.section-node').forEach(node => {
-    node.addEventListener('click', e => {
-      const index = Number(node.dataset.index);
-      const action = e.target.dataset.action;
-      if (action) {
-        handleAction(action, index);
-        e.stopPropagation();
-        return;
-      }
-      state.selectedIndex = index;
-      renderAll();
-    });
-    node.addEventListener('dragstart', () => { state.dragIndex = Number(node.dataset.index); });
-    node.addEventListener('dragover', e => e.preventDefault());
-    node.addEventListener('drop', e => {
-      e.preventDefault();
-      const targetIndex = Number(node.dataset.index);
-      moveSection(state.dragIndex, targetIndex);
-    });
-  });
-}
-
-function renderProps() {
-  const props = $('#props');
-  const section = state.page.sections[state.selectedIndex];
-  if (!section) {
-    props.innerHTML = '<p style="color:#667085;line-height:1.8">请选择画布中的模块进行配置。</p>';
-    return;
-  }
-
-  props.innerHTML = `
-    <label>组件类型</label>
-    <input value="${escapeAttr(section.component)}" disabled />
-    <label>后台名称</label>
-    <input data-field="name" value="${escapeAttr(section.name)}" />
-    <label>标题</label>
-    <input data-field="title" value="${escapeAttr(section.title)}" />
-    <label>副标题</label>
-    <textarea data-field="subTitle">${escapeHtml(section.subTitle || '')}</textarea>
-    <label>按钮文字</label>
-    <input data-field="linkText" value="${escapeAttr(section.linkText)}" />
-    <label>按钮链接</label>
-    <input data-field="linkUrl" value="${escapeAttr(section.linkUrl)}" placeholder="/about 或 https://..." />
-    <label>图片地址（一行一个）</label>
-    <textarea id="imagesInput">${escapeHtml((section.images || []).join('\n'))}</textarea>
-    <label>扩展配置 JSON</label>
-    <textarea id="settingsInput" class="code">${escapeHtml(JSON.stringify(section.settings || {}, null, 2))}</textarea>
-    <div style="display:flex;gap:10px;margin-top:12px">
-      <button class="btn small" id="applySettings" type="button">应用 JSON</button>
-      <button class="btn ghost small" id="formatSettings" type="button">格式化</button>
-    </div>`;
-
-  props.querySelectorAll('[data-field]').forEach(input => {
-    input.addEventListener('input', () => {
-      section[input.dataset.field] = input.value;
-      renderCanvas();
-      renderProps();
-    });
-  });
-
-  $('#imagesInput').addEventListener('input', e => {
-    section.images = e.target.value.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
-  });
-
-  $('#applySettings').addEventListener('click', () => {
-    const parsed = parseSettings();
-    if (parsed) {
-      section.settings = parsed;
-      toast('JSON 已应用');
-    }
-  });
-
-  $('#formatSettings').addEventListener('click', () => {
-    const parsed = parseSettings();
-    if (parsed) $('#settingsInput').value = JSON.stringify(parsed, null, 2);
-  });
-}
-
-function renderAll() {
-  renderPalette();
-  renderCanvas();
-  renderProps();
-}
-
-function addComponent(component) {
-  const template = state.templates.find(x => x.key === component);
-  if (!template) return;
-  state.page.sections.push(newSection(template));
-  state.selectedIndex = state.page.sections.length - 1;
-  renderAll();
-}
-
-function handleAction(action, index) {
-  if (action === 'up') moveSection(index, Math.max(0, index - 1));
-  if (action === 'down') moveSection(index, Math.min(state.page.sections.length - 1, index + 1));
-  if (action === 'copy') {
-    const copied = clone(state.page.sections[index]);
-    copied.id = uid();
-    copied.name = `${copied.name || copied.component} - 复制`;
-    state.page.sections.splice(index + 1, 0, copied);
-    state.selectedIndex = index + 1;
-    renderAll();
-  }
-  if (action === 'toggle') {
-    state.page.sections[index].isEnabled = !state.page.sections[index].isEnabled;
-    renderAll();
-  }
-  if (action === 'remove' && confirm('确认删除这个模块？')) {
-    state.page.sections.splice(index, 1);
-    state.selectedIndex = state.page.sections.length ? Math.min(index, state.page.sections.length - 1) : -1;
-    renderAll();
-  }
-}
-
-function moveSection(from, to) {
-  if (from === null || from === undefined || from === to) return;
-  const list = state.page.sections;
-  const item = list.splice(from, 1)[0];
-  list.splice(to, 0, item);
-  state.selectedIndex = to;
-  renderAll();
-}
-
-function parseSettings() {
-  try {
-    return JSON.parse($('#settingsInput').value || '{}');
-  } catch (e) {
-    toast(`JSON 格式错误：${e.message}`);
-    return null;
-  }
-}
-
-async function savePage() {
-  const selected = state.page.sections[state.selectedIndex];
-  if (selected && $('#settingsInput')) {
-    const parsed = parseSettings();
-    if (!parsed) return;
-    selected.settings = parsed;
-  }
-
-  state.page.pageKey = ($('#pageKey').value || 'home').trim().replace(/^\/+|\/+$/g, '') || 'home';
-  state.page.title = $('#pageTitle').value || state.page.title || state.page.pageKey;
-  state.page.sections.forEach((s, i) => s.sort = (i + 1) * 10);
-
-  await requestJson('/api/site-builder/page', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(state.page)
-  });
-
-  toast('保存成功');
-  setTimeout(() => location.href = `/Admin/Designer?pageKey=${encodeURIComponent(state.page.pageKey)}`, 500);
-}
-
-function escapeHtml(value) {
-  return String(value ?? '').replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value).replace(/`/g, '&#96;');
-}
-
-$('#btnReload').addEventListener('click', loadDesigner);
-$('#btnSave').addEventListener('click', savePage);
-$('#pageKey').addEventListener('change', loadDesigner);
-loadDesigner().catch(err => toast(err.message || '加载失败'));
+const state={pageKey:window.siteDesignerPageKey||'home',page:null,templates:[],selectedIndex:-1,dragIndex:null,tab:'content',device:'pc'};
+const $=s=>document.querySelector(s);const $$=s=>Array.from(document.querySelectorAll(s));const copy=v=>JSON.parse(JSON.stringify(v||{}));const uid=()=>Math.random().toString(16).slice(2)+Date.now().toString(16);
+const extras=[
+  tpl('image-banner','轮播图','基础组件','图片轮播展示',{images:['/img/default-hero.svg'],settings:{height:'260px',style:{marginBottom:20,borderRadius:16}}}),
+  tpl('search-box','搜索框','基础组件','搜索入口',{settings:{placeholder:'请输入搜索关键词',style:{backgroundColor:'#f5f9ff',paddingTop:18,paddingBottom:18,paddingX:18}}}),
+  tpl('nav-grid','导航组','基础组件','图标导航入口',{settings:{columns:4,items:[{title:'产品分类',icon:'▦'},{title:'新闻资讯',icon:'▤'},{title:'解决方案',icon:'◆'},{title:'联系我们',icon:'☎'}],style:{paddingTop:24,paddingBottom:24}}}),
+  tpl('notice','新闻公告','基础组件','公告通知',{settings:{text:'这里是一条新闻公告，可在右侧修改。',style:{marginTop:12,marginBottom:12}}}),
+  tpl('card-list','文章列表','基础组件','新闻文章列表',{settings:{items:[{title:'文章标题文章标题文章标题',description:'这里是文章摘要内容',date:'2026-07-01'}],style:{paddingTop:28,paddingBottom:28}}}),
+  tpl('tabs','选项卡','工具组件','分类切换',{settings:{tabs:['推荐','产品','案例','新闻'],style:{paddingTop:18,paddingBottom:18}}}),
+  tpl('divider','分割线','工具组件','内容分隔',{settings:{style:{marginTop:20,marginBottom:20}}}),
+  tpl('blank-space','辅助留白','工具组件','调整间距',{settings:{height:48}})
+];
+function tpl(key,name,category,description,d){return{key,name,category,description,defaultSection:{id:uid(),component:key,name,title:name,subTitle:'',linkText:'',linkUrl:'',images:d.images||[],isEnabled:true,settings:d.settings||{}}};}
+function toast(m){const o=$('.toast');if(o)o.remove();const e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(()=>e.remove(),2200)}
+async function json(url,opt){const r=await fetch(url,opt);if(!r.ok)throw new Error(await r.text()||r.statusText);return r.json()}
+async function loadDesigner(){state.pageKey=($('#pageKey').value||'home').trim().replace(/^\/+|\/+$/g,'')||'home';const remote=await json('/api/site-builder/templates');state.templates=merge(remote,extras);state.page=await json(`/api/site-builder/page/${encodeURIComponent(state.pageKey)}`);state.page.sections=state.page.sections||[];state.page.sections.forEach(normalize);$('#pageTitle').value=state.page.title||'';state.selectedIndex=state.page.sections.length?0:-1;renderAll()}
+function merge(a,b){const m=new Map();[...(a||[]),...b].forEach(x=>m.set(x.key,x));return Array.from(m.values())}
+function normalize(s){s.id=s.id||uid();s.name=s.name||s.component||'组件';s.title=s.title||s.name;s.images=s.images||[];s.settings=s.settings||{};s.settings.style=s.settings.style||{};if(s.isEnabled===undefined)s.isEnabled=true;return s}
+function renderPalette(){const g={};state.templates.forEach(x=>{const k=x.category||'基础组件';(g[k]=g[k]||[]).push(x)});$('#componentPalette').innerHTML=Object.keys(g).map(k=>`<div class="palette-group"><div class="palette-group-title"><span>${esc(k)}</span><span>⌄</span></div><div class="palette-grid">${g[k].map(x=>`<div class="palette-card" draggable="true" data-component="${attr(x.key)}"><div class="palette-icon">${icon(x.key)}</div><div class="palette-name">${esc(x.name)}</div></div>`).join('')}</div></div>`).join('');$$('.palette-card').forEach(x=>{x.addEventListener('dragstart',e=>e.dataTransfer.setData('component',x.dataset.component));x.addEventListener('dblclick',()=>addComponent(x.dataset.component))})}
+function renderCanvas(){const c=$('#canvas');c.className=`decorator-canvas device-${state.device}`;const list=state.page.sections||[];c.innerHTML=list.length?list.map((s,i)=>node(s,i)).join(''):'<div class="canvas-empty">从左侧拖入组件，或双击组件添加到页面</div>';c.ondragover=e=>e.preventDefault();c.ondrop=e=>{e.preventDefault();const key=e.dataTransfer.getData('component');if(key)addComponent(key)};$$('.decorator-node').forEach(n=>{n.addEventListener('click',e=>{const i=Number(n.dataset.index);const a=e.target.dataset.action;if(a){act(a,i);e.stopPropagation();return}state.selectedIndex=i;renderAll()});n.addEventListener('dragstart',()=>state.dragIndex=Number(n.dataset.index));n.addEventListener('dragover',e=>e.preventDefault());n.addEventListener('drop',e=>{e.preventDefault();move(state.dragIndex,Number(n.dataset.index))})})}
+function node(s,i){const sel=i===state.selectedIndex?'selected':'';const dis=s.isEnabled?'':'disabled';return`<section class="decorator-node ${sel} ${dis}" draggable="true" data-index="${i}">${sel?`<div class="node-label">${esc(s.name)}</div><div class="node-tools"><button class="node-tool" data-action="toggle">◉</button><button class="node-tool" data-action="copy">⧉</button><button class="node-tool" data-action="up">⌃</button><button class="node-tool" data-action="down">⌄</button><button class="node-tool" data-action="remove">×</button></div>`:''}${preview(s)}</section>`}
+function preview(s){const set=s.settings||{},st=style(s),title=esc(s.title||''),sub=esc(s.subTitle||''),img=(s.images&&s.images[0])||'/img/default-hero.svg';if(s.component==='hero')return`<div class="preview-hero" style="${st};min-height:${attr(set.height||'420px')};background-image:linear-gradient(90deg,rgba(3,23,54,.82),rgba(3,23,54,.28)),url('${attr(img)}')"><div class="preview-container"><h1>${title}</h1><p>${sub}</p>${btn(s)}</div></div>`;if(s.component==='image-banner')return`<div class="preview-banner" style="${st};height:${attr(set.height||'260px')};background-image:url('${attr(img)}')"></div>`;if(s.component==='search-box')return`<div class="preview-search" style="${st}"><div class="preview-search-box">🔍 ${esc(set.placeholder||'请输入搜索关键词')}</div></div>`;if(s.component==='nav-grid')return`<div class="preview-nav-grid" style="${st};grid-template-columns:repeat(${Number(set.columns||4)},1fr)">${arr(set.items).map(x=>`<div class="preview-nav-item"><div class="preview-nav-icon">${esc(x.icon||'•')}</div><span>${esc(x.title||'导航')}</span></div>`).join('')}</div>`;if(s.component==='notice')return`<div class="preview-notice" style="${st}"><span>📣</span><span>${esc(set.text||s.title||'公告')}</span></div>`;if(s.component==='feature-grid')return section(title,sub,`<div class="preview-grid" style="grid-template-columns:repeat(${Number(set.columns||3)},1fr)">${arr(set.items).map(x=>card(x.title,x.description,x.icon)).join('')}</div>`,st);if(s.component==='card-list')return section(title,sub,`<div class="preview-grid">${arr(set.items).map(x=>`<article class="preview-card"><h3>${esc(x.title||'标题')}</h3><p>${esc(x.description||'')}</p><small>${esc(x.date||'')}</small></article>`).join('')}</div>`,st);if(s.component==='image-text')return`<div class="preview-section" style="${st}"><div class="preview-container preview-img-text"><div class="preview-img" style="background-image:url('${attr(img)}')"></div><div><h2>${title}</h2><p>${esc(set.description||s.subTitle||'')}</p>${btn(s)}</div></div></div>`;if(s.component==='stats')return section(title,sub,`<div class="preview-stats">${arr(set.items).map(x=>`<div class="preview-stat"><strong>${esc(x.value||'0')}</strong><p>${esc(x.label||'')}</p></div>`).join('')}</div>`,st);if(s.component==='tabs')return`<div class="preview-tabs" style="${st}"><div class="preview-tab-list">${arr(set.tabs).map(x=>`<span>${esc(x)}</span>`).join('')}</div><div class="preview-card">选项卡内容区域</div></div>`;if(s.component==='cta')return`<div class="preview-container"><div class="preview-cta" style="${st};background:${attr(set.background||'#0b2b5c')}"><h2>${title}</h2><p>${sub}</p>${btn(s)}</div></div>`;if(s.component==='divider')return`<div class="preview-divider" style="${st}"></div>`;if(s.component==='blank-space')return`<div class="preview-space" style="height:${Number(set.height||48)}px;${st}"></div>`;return section(title,sub,`<div>${esc(set.text||'组件内容')}</div>`,st)}
+function section(t,s,b,st){return`<div class="preview-section" style="${st}"><div class="preview-container"><div class="preview-title"><h2>${t}</h2><p>${s}</p></div>${b}</div></div>`}function card(t,d,i){return`<article class="preview-card"><strong>${esc(i||'•')}</strong><h3>${esc(t||'标题')}</h3><p>${esc(d||'')}</p></article>`}function btn(s){return s.linkUrl?`<a class="preview-btn" href="${attr(s.linkUrl)}">${esc(s.linkText||'查看详情')}</a>`:''}
+function renderProps(){const s=state.page.sections[state.selectedIndex];$('#selectedComponentName').textContent=s?(s.name||s.component):'页面设置';const p=$('#props');if(!s){p.innerHTML=`<div class="prop-section"><h3>页面设置</h3><div class="prop-row"><label>页面标题</label><input id="pageTitleProp" value="${attr(state.page.title||'')}"></div><div class="prop-row"><label>页面描述</label><textarea id="pageDescProp">${esc(state.page.description||'')}</textarea></div></div>`;$('#pageTitleProp').oninput=e=>{$('#pageTitle').value=e.target.value;state.page.title=e.target.value};$('#pageDescProp').oninput=e=>state.page.description=e.target.value;return}p.innerHTML=state.tab==='content'?contentProps(s):styleProps(s);bindProps(s)}
+function contentProps(s){const set=s.settings||{};return`<div class="prop-section"><h3>内容配置</h3><div class="switch-row"><input id="enabledInput" type="checkbox" ${s.isEnabled?'checked':''}><label>显示组件</label></div><div class="prop-row"><label>组件名称</label><input data-field="name" value="${attr(s.name)}"></div><div class="prop-row"><label>标题</label><input data-field="title" value="${attr(s.title)}"></div><div class="prop-row"><label>副标题</label><textarea data-field="subTitle">${esc(s.subTitle||'')}</textarea></div><div class="prop-grid"><div class="prop-row"><label>按钮文字</label><input data-field="linkText" value="${attr(s.linkText)}"></div><div class="prop-row"><label>按钮链接</label><input data-field="linkUrl" value="${attr(s.linkUrl)}"></div></div><div class="prop-row"><label>图片地址（一行一个）</label><textarea id="imagesInput">${esc((s.images||[]).join('\n'))}</textarea></div>${extraProps(s,set)}<div class="prop-row"><label>扩展配置 JSON</label><textarea id="settingsInput" class="code">${esc(JSON.stringify(s.settings||{},null,2))}</textarea></div><button id="applySettings" class="decorator-btn" type="button">应用 JSON</button></div>`}
+function extraProps(s,set){if(s.component==='search-box')return`<div class="prop-row"><label>提示文字</label><input data-setting="placeholder" value="${attr(set.placeholder||'')}"></div>`;if(s.component==='notice')return`<div class="prop-row"><label>公告内容</label><textarea data-setting="text">${esc(set.text||'')}</textarea></div>`;if(s.component==='blank-space')return`<div class="prop-row"><label>留白高度</label><input type="number" data-setting="height" value="${attr(set.height||48)}"></div>`;if(['nav-grid','feature-grid','card-list','stats','tabs'].includes(s.component))return`<div class="prop-row"><label>数据 JSON</label><textarea data-data-json class="code">${esc(JSON.stringify(set.items||set.tabs||[],null,2))}</textarea></div>`;if(s.component==='image-text')return`<div class="prop-row"><label>正文</label><textarea data-setting="description">${esc(set.description||'')}</textarea></div>`;return''}
+function styleProps(s){const st=s.settings.style||{};return`<div class="prop-section"><h3>样式配置</h3><div class="prop-row"><label>背景颜色</label><input data-style="backgroundColor" value="${attr(st.backgroundColor||'')}"></div><div class="prop-row"><label>文字颜色</label><input data-style="color" value="${attr(st.color||'')}"></div><div class="prop-grid"><div class="prop-row"><label>上边距</label><input type="number" data-style="marginTop" value="${attr(st.marginTop||0)}"></div><div class="prop-row"><label>下边距</label><input type="number" data-style="marginBottom" value="${attr(st.marginBottom||0)}"></div><div class="prop-row"><label>上内距</label><input type="number" data-style="paddingTop" value="${attr(st.paddingTop||0)}"></div><div class="prop-row"><label>下内距</label><input type="number" data-style="paddingBottom" value="${attr(st.paddingBottom||0)}"></div><div class="prop-row"><label>左右内距</label><input type="number" data-style="paddingX" value="${attr(st.paddingX||0)}"></div><div class="prop-row"><label>圆角</label><input type="number" data-style="borderRadius" value="${attr(st.borderRadius||0)}"></div></div></div>`}
+function bindProps(s){$('#enabledInput')?.addEventListener('change',e=>{s.isEnabled=e.target.checked;renderCanvas()});$$('[data-field]').forEach(x=>x.oninput=()=>{s[x.dataset.field]=x.value;renderCanvas()});$$('[data-setting]').forEach(x=>x.oninput=()=>{s.settings[x.dataset.setting]=x.type==='number'?Number(x.value):x.value;sync(s);renderCanvas()});$$('[data-style]').forEach(x=>x.oninput=()=>{s.settings.style=s.settings.style||{};s.settings.style[x.dataset.style]=x.type==='number'?Number(x.value):x.value;sync(s);renderCanvas()});$('#imagesInput')?.addEventListener('input',e=>{s.images=e.target.value.split(/[\n,;]+/).map(v=>v.trim()).filter(Boolean);renderCanvas()});$('[data-data-json]')?.addEventListener('input',e=>{try{const v=JSON.parse(e.target.value||'[]');if(s.component==='tabs')s.settings.tabs=v;else s.settings.items=v;sync(s);renderCanvas()}catch{}});$('#applySettings')?.addEventListener('click',()=>{try{s.settings=JSON.parse($('#settingsInput').value||'{}');normalize(s);renderAll()}catch(e){toast('JSON 格式错误')}})}
+function sync(s){const e=$('#settingsInput');if(e)e.value=JSON.stringify(s.settings||{},null,2)}function renderAll(){renderPalette();renderCanvas();renderProps()}function addComponent(k){const t=state.templates.find(x=>x.key===k);if(!t)return;const s=normalize(copy(t.defaultSection));s.id=uid();s.component=t.key;state.page.sections.push(s);state.selectedIndex=state.page.sections.length-1;renderAll()}function act(a,i){if(a==='up')move(i,Math.max(0,i-1));if(a==='down')move(i,Math.min(state.page.sections.length-1,i+1));if(a==='copy'){const c=copy(state.page.sections[i]);c.id=uid();c.name=(c.name||c.component)+' - 复制';state.page.sections.splice(i+1,0,c);state.selectedIndex=i+1;renderAll()}if(a==='toggle'){state.page.sections[i].isEnabled=!state.page.sections[i].isEnabled;renderAll()}if(a==='remove'&&confirm('确认移除这个组件？')){state.page.sections.splice(i,1);state.selectedIndex=state.page.sections.length?Math.min(i,state.page.sections.length-1):-1;renderAll()}}
+function move(f,t){if(f==null||f===t)return;const list=state.page.sections;const it=list.splice(f,1)[0];list.splice(t,0,it);state.selectedIndex=t;renderAll()}async function save(close){state.page.pageKey=($('#pageKey').value||'home').trim().replace(/^\/+|\/+$/g,'')||'home';state.page.title=$('#pageTitle').value||state.page.title||state.page.pageKey;state.page.sections.forEach((s,i)=>{normalize(s);s.sort=(i+1)*10});await json('/api/site-builder/page',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(state.page)});toast('保存成功');if(close)setTimeout(()=>location.href='/Admin',500)}
+function style(s){const st=s.settings?.style||{},r=[];rule(r,'background',st.backgroundColor);rule(r,'color',st.color);px(r,'margin-top',st.marginTop);px(r,'margin-bottom',st.marginBottom);px(r,'padding-top',st.paddingTop);px(r,'padding-bottom',st.paddingBottom);px(r,'padding-left',st.paddingX);px(r,'padding-right',st.paddingX);px(r,'border-radius',st.borderRadius);return r.join(';')}function rule(r,n,v){if(v!==undefined&&v!==null&&v!=='')r.push(`${n}:${v}`)}function px(r,n,v){if(v!==undefined&&v!==null&&v!==''&&Number(v)!==0)r.push(`${n}:${Number(v)}px`)}function arr(v){return Array.isArray(v)?v:[]}function icon(k){return({hero:'▣','image-banner':'▧','search-box':'⌕','nav-grid':'▦',notice:'!','card-list':'☰','feature-grid':'▥','rich-text':'T','image-text':'◩',stats:'#',tabs:'▤',cta:'➜',divider:'—','blank-space':'□'}[k]||'◆')}function esc(v){return String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]))}function attr(v){return esc(v).replace(/`/g,'&#96;')}
+$('#btnReload').onclick=loadDesigner;$('#btnSave').onclick=()=>save(false);$('#btnSaveClose').onclick=()=>save(true);$('#btnPreview').onclick=()=>{const k=($('#pageKey').value||'home');location.href=k==='home'?'/':'/'+k};$('#pageKey').onchange=loadDesigner;$$('.props-tab').forEach(x=>x.onclick=()=>{state.tab=x.dataset.tab;$$('.props-tab').forEach(t=>t.classList.toggle('active',t===x));renderProps()});$$('.device-tab').forEach(x=>x.onclick=()=>{state.device=x.dataset.device;$$('.device-tab').forEach(t=>t.classList.toggle('active',t===x));renderCanvas()});loadDesigner().catch(e=>toast(e.message||'加载失败'));
