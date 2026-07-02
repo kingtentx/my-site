@@ -8,18 +8,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("Default");
-if (string.IsNullOrWhiteSpace(connectionString))
+var connectionString = builder.Configuration.GetConnectionString("Default") ?? string.Empty;
+builder.Services.AddDbContext<AppDbContext>(options =>
 {
-    Directory.CreateDirectory(Path.Combine(builder.Environment.ContentRootPath, "App_Data"));
-    connectionString = "Data Source=App_Data/mysite.db";
-}
+    options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0)));
+});
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseSqlite(connectionString));
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IPermissionService, PermissionService>();
 builder.Services.AddScoped<ISiteBuilderService, SiteBuilderService>();
 builder.Services.AddScoped<IConfigurationLike, ConfigurationAdapter>();
+builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
