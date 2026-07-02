@@ -20,7 +20,21 @@ public class AdminController : Controller
 
     public async Task<IActionResult> Index()
     {
-        ViewBag.Menus = await _permissionService.GetUserMenusAsync(User);
+        ViewBag.UserName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "管理员";
+        var menus = await _permissionService.GetUserMenusAsync(User);
+        return View(menus);
+    }
+
+    public IActionResult Main()
+    {
+        ViewBag.UserName = User.FindFirst("DisplayName")?.Value ?? User.Identity?.Name ?? "管理员";
+        ViewBag.ServerInfo = $".NET {Environment.Version} / {Environment.MachineName}";
+        return View();
+    }
+
+    [PermissionFilter("SiteBuilder", PermissionType.View)]
+    public async Task<IActionResult> Pages()
+    {
         var pages = await _siteBuilderService.GetPagesAsync();
         return View(pages);
     }
