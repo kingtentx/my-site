@@ -1,37 +1,58 @@
 @{
-    ViewData["Title"] = "可视化页面设计器";
+    ViewData["Title"] = "网页装修器";
     var pageKey = (ViewBag.PageKey as string) ?? "home";
 }
-<section class="designer-page">
-    <aside class="designer-panel palette-panel">
-        <div class="panel-title">组件库</div>
-        <div id="componentPalette" class="component-palette"></div>
-    </aside>
-
-    <section class="designer-canvas-wrap">
-        <div class="designer-toolbar">
-            <div>
-                <span class="eyebrow">Visual Builder</span>
-                <h1>可视化页面设计器</h1>
-            </div>
-            <div class="toolbar-actions">
-                <input id="pageKey" value="@pageKey" />
-                <input id="pageTitle" placeholder="页面标题" />
-                <button id="btnReload" class="btn ghost" type="button">重新加载</button>
-                <button id="btnSave" class="btn" type="button">保存配置</button>
-                <a class="btn ghost" href="/Admin">返回</a>
-            </div>
+<div class="decorator-shell">
+    <header class="decorator-topbar">
+        <div class="decorator-left-actions">
+            <a class="decorator-back" href="/Admin">‹ 返回</a>
+            <span class="decorator-divider"></span>
+            <label>当前页面：</label>
+            <input id="pageKey" class="decorator-page-key" value="@pageKey" />
+            <input id="pageTitle" class="decorator-page-title" placeholder="页面标题" />
         </div>
-        <div id="canvas" class="designer-canvas"></div>
-    </section>
+        <div class="decorator-actions">
+            <button id="btnPreview" class="decorator-btn ghost" type="button">预览</button>
+            <button id="btnReload" class="decorator-btn ghost" type="button">重置</button>
+            <button id="btnSave" class="decorator-btn" type="button">保存</button>
+            <button id="btnSaveClose" class="decorator-btn light" type="button">保存并关闭</button>
+        </div>
+    </header>
 
-    <aside class="designer-panel props-panel">
-        <div class="panel-title">属性配置</div>
-        <div id="props" class="props"></div>
-    </aside>
-</section>
+    <main class="decorator-main">
+        <aside class="decorator-sidebar">
+            <div class="decorator-sidebar-title">组件库</div>
+            <div id="componentPalette" class="decorator-palette"></div>
+        </aside>
+
+        <section class="decorator-stage-wrap">
+            <div class="decorator-stage-toolbar">
+                <div class="device-tabs">
+                    <button class="device-tab active" data-device="pc" type="button">PC</button>
+                    <button class="device-tab" data-device="mobile" type="button">手机</button>
+                </div>
+                <div class="canvas-hint">从左侧拖入组件，点击画布组件后在右侧配置内容和样式</div>
+            </div>
+            <div class="decorator-stage">
+                <div id="canvas" class="decorator-canvas device-pc"></div>
+            </div>
+        </section>
+
+        <aside class="decorator-props">
+            <div class="decorator-props-header">
+                <div id="selectedComponentName" class="props-title">页面设置</div>
+                <div class="props-tabs">
+                    <button class="props-tab active" data-tab="content" type="button">内容</button>
+                    <button class="props-tab" data-tab="style" type="button">样式</button>
+                </div>
+            </div>
+            <div id="props" class="decorator-props-body"></div>
+        </aside>
+    </main>
+</div>
 
 @section Scripts {
+    <link rel="stylesheet" href="~/css/designer.css" asp-append-version="true" />
     <script>
         window.siteDesignerPageKey = '@pageKey';
     </script>
