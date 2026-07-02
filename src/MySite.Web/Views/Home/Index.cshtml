@@ -15,106 +15,140 @@
 
 @foreach (var sect in sections)
 {
+    var style = BuildStyle(sect);
     if (sect.Component == "hero")
     {
         var image = sect.Images.FirstOrDefault() ?? "/img/default-hero.svg";
         var height = sect.GetString("height", "640px");
-        <section class="hero" style="min-height:@height;background-image:linear-gradient(90deg,rgba(3,23,54,.82),rgba(3,23,54,.28)),url('@image')">
+        <section class="hero" style="@style;min-height:@height;background-image:linear-gradient(90deg,rgba(3,23,54,.82),rgba(3,23,54,.28)),url('@image')">
             <div class="container hero-content">
                 <span class="eyebrow">@sect.Name</span>
                 <h1>@sect.Title</h1>
                 <p>@sect.SubTitle</p>
-                @if (!string.IsNullOrWhiteSpace(sect.LinkUrl))
-                {
-                    <a class="btn" href="@sect.LinkUrl">@(string.IsNullOrWhiteSpace(sect.LinkText) ? "了解更多" : sect.LinkText)</a>
-                }
+                @RenderButton(sect)
             </div>
         </section>
     }
+    else if (sect.Component == "image-banner")
+    {
+        var image = sect.Images.FirstOrDefault() ?? "/img/default-hero.svg";
+        var height = sect.GetString("height", "260px");
+        <section class="decor-section" style="@style">
+            <div class="container"><div class="decor-banner" style="height:@height;background-image:url('@image')"></div></div>
+        </section>
+    }
+    else if (sect.Component == "search-box")
+    {
+        <section class="decor-search" style="@style"><div class="container"><div class="decor-search-box">🔍 @sect.GetString("placeholder", "请输入搜索关键词")</div></div></section>
+    }
+    else if (sect.Component == "nav-grid")
+    {
+        var columns = sect.GetString("columns", "4");
+        <section class="decor-section" style="@style"><div class="container"><div class="decor-nav-grid" style="grid-template-columns:repeat(@columns,1fr)">
+            @foreach (var item in sect.GetArray("items"))
+            {
+                var url = item?["url"]?.ToString() ?? "#";
+                <a class="decor-nav-item" href="@url"><span>@(item?["icon"]?.ToString() ?? "•")</span><strong>@item?["title"]</strong></a>
+            }
+        </div></div></section>
+    }
+    else if (sect.Component == "notice")
+    {
+        <section class="decor-section" style="@style"><div class="container"><div class="decor-notice"><span>📣</span><span>@sect.GetString("text", sect.Title ?? "公告")</span></div></div></section>
+    }
     else if (sect.Component == "rich-text")
     {
-        <section class="section rich-text">
-            <div class="container">
-                <div class="section-title">
-                    <span>@sect.SubTitle</span>
-                    <h2>@sect.Title</h2>
-                </div>
-                <div class="content-body">@Html.Raw(sect.GetString("html", "<p>请在后台填写内容。</p>"))</div>
-            </div>
+        <section class="section rich-text" style="@style">
+            <div class="container"><div class="section-title"><span>@sect.SubTitle</span><h2>@sect.Title</h2></div><div class="content-body">@Html.Raw(sect.GetString("html", "<p>请在后台填写内容。</p>"))</div></div>
         </section>
     }
     else if (sect.Component == "feature-grid")
     {
         var columns = sect.GetString("columns", "3");
-        <section class="section alt">
-            <div class="container">
-                <div class="section-title">
-                    <span>@sect.SubTitle</span>
-                    <h2>@sect.Title</h2>
-                </div>
-                <div class="feature-grid" style="grid-template-columns:repeat(@columns,minmax(0,1fr))">
-                    @foreach (var item in sect.GetArray("items"))
-                    {
-                        <article class="feature-card">
-                            <strong>@(item?["icon"]?.ToString() ?? "•")</strong>
-                            <h3>@item?["title"]</h3>
-                            <p>@item?["description"]</p>
-                        </article>
-                    }
-                </div>
-            </div>
-        </section>
+        <section class="section alt" style="@style"><div class="container"><div class="section-title"><span>@sect.SubTitle</span><h2>@sect.Title</h2></div><div class="feature-grid" style="grid-template-columns:repeat(@columns,minmax(0,1fr))">
+            @foreach (var item in sect.GetArray("items"))
+            {
+                <article class="feature-card"><strong>@(item?["icon"]?.ToString() ?? "•")</strong><h3>@item?["title"]</h3><p>@item?["description"]</p></article>
+            }
+        </div></div></section>
+    }
+    else if (sect.Component == "card-list")
+    {
+        <section class="decor-section" style="@style"><div class="container"><div class="section-title"><h2>@sect.Title</h2><span>@sect.SubTitle</span></div><div class="decor-card-list">
+            @foreach (var item in sect.GetArray("items"))
+            {
+                <article class="decor-card"><h3>@item?["title"]</h3><p>@item?["description"]</p><small>@item?["date"]</small></article>
+            }
+        </div></div></section>
     }
     else if (sect.Component == "image-text")
     {
         var image = sect.Images.FirstOrDefault() ?? sect.GetString("image", "/img/default-image.svg");
         var reverse = string.Equals(sect.GetString("reverse", "false"), "true", StringComparison.OrdinalIgnoreCase);
-        <section class="section">
-            <div class="container image-text @(reverse ? "reverse" : "")">
-                <div class="image-box"><img src="@image" alt="@sect.Title" /></div>
-                <div class="copy-box">
-                    <span class="eyebrow">@sect.SubTitle</span>
-                    <h2>@sect.Title</h2>
-                    <p>@sect.GetString("description", sect.SubTitle ?? string.Empty)</p>
-                    @if (!string.IsNullOrWhiteSpace(sect.LinkUrl))
-                    {
-                        <a class="text-link" href="@sect.LinkUrl">@(string.IsNullOrWhiteSpace(sect.LinkText) ? "查看详情" : sect.LinkText)</a>
-                    }
-                </div>
-            </div>
-        </section>
+        <section class="section" style="@style"><div class="container image-text @(reverse ? "reverse" : "")"><div class="image-box"><img src="@image" alt="@sect.Title" /></div><div class="copy-box"><span class="eyebrow">@sect.SubTitle</span><h2>@sect.Title</h2><p>@sect.GetString("description", sect.SubTitle ?? string.Empty)</p>@RenderTextLink(sect)</div></div></section>
     }
     else if (sect.Component == "stats")
     {
-        <section class="section alt">
-            <div class="container">
-                <div class="section-title"><h2>@sect.Title</h2></div>
-                <div class="stats-grid">
-                    @foreach (var item in sect.GetArray("items"))
-                    {
-                        <div class="stat-card">
-                            <strong>@item?["value"]</strong>
-                            <span>@item?["label"]</span>
-                        </div>
-                    }
-                </div>
-            </div>
-        </section>
+        <section class="section alt" style="@style"><div class="container"><div class="section-title"><h2>@sect.Title</h2></div><div class="stats-grid">
+            @foreach (var item in sect.GetArray("items"))
+            {
+                <div class="stat-card"><strong>@item?["value"]</strong><span>@item?["label"]</span></div>
+            }
+        </div></div></section>
+    }
+    else if (sect.Component == "tabs")
+    {
+        <section class="decor-section" style="@style"><div class="container"><div class="decor-tabs">
+            @foreach (var tab in sect.GetArray("tabs"))
+            {
+                <span>@tab?.ToString()</span>
+            }
+        </div><div class="decor-card">选项卡内容区域，可继续扩展为数据源组件。</div></div></section>
     }
     else if (sect.Component == "cta")
     {
         var background = sect.GetString("background", "#0b2b5c");
-        <section class="section">
-            <div class="container">
-                <div class="cta" style="background:@background">
-                    <h2>@sect.Title</h2>
-                    <p>@sect.SubTitle</p>
-                    @if (!string.IsNullOrWhiteSpace(sect.LinkUrl))
-                    {
-                        <a class="btn light" href="@sect.LinkUrl">@(string.IsNullOrWhiteSpace(sect.LinkText) ? "立即开始" : sect.LinkText)</a>
-                    }
-                </div>
-            </div>
-        </section>
+        <section class="section" style="@style"><div class="container"><div class="cta" style="background:@background"><h2>@sect.Title</h2><p>@sect.SubTitle</p>@RenderButton(sect, true)</div></div></section>
+    }
+    else if (sect.Component == "divider")
+    {
+        <section class="decor-section" style="@style"><div class="container"><div class="decor-divider"></div></div></section>
+    }
+    else if (sect.Component == "blank-space")
+    {
+        var height = sect.GetString("height", "48");
+        <div style="height:@(height)px;@style"></div>
+    }
+}
+
+@functions {
+    private string BuildStyle(SiteSectionDto sect)
+    {
+        if (!sect.Settings.TryGetPropertyValue("style", out var node) || node is not System.Text.Json.Nodes.JsonObject style) return string.Empty;
+        var css = new List<string>();
+        void Add(string name, string key) { var value = style[key]?.ToString(); if (!string.IsNullOrWhiteSpace(value)) css.Add($"{name}:{value}"); }
+        void AddPx(string name, string key) { var value = style[key]?.ToString(); if (decimal.TryParse(value, out var number) && number != 0) css.Add($"{name}:{number}px"); }
+        Add("background", "backgroundColor");
+        Add("color", "color");
+        AddPx("margin-top", "marginTop");
+        AddPx("margin-bottom", "marginBottom");
+        AddPx("padding-top", "paddingTop");
+        AddPx("padding-bottom", "paddingBottom");
+        AddPx("padding-left", "paddingX");
+        AddPx("padding-right", "paddingX");
+        AddPx("border-radius", "borderRadius");
+        return string.Join(';', css);
+    }
+
+    private IHtmlContent RenderButton(SiteSectionDto sect, bool light = false)
+    {
+        if (string.IsNullOrWhiteSpace(sect.LinkUrl)) return HtmlString.Empty;
+        return new HtmlString($"<a class=\"btn {(light ? "light" : string.Empty)}\" href=\"{sect.LinkUrl}\">{(string.IsNullOrWhiteSpace(sect.LinkText) ? "了解更多" : sect.LinkText)}</a>");
+    }
+
+    private IHtmlContent RenderTextLink(SiteSectionDto sect)
+    {
+        if (string.IsNullOrWhiteSpace(sect.LinkUrl)) return HtmlString.Empty;
+        return new HtmlString($"<a class=\"text-link\" href=\"{sect.LinkUrl}\">{(string.IsNullOrWhiteSpace(sect.LinkText) ? "查看详情" : sect.LinkText)}</a>");
     }
 }
