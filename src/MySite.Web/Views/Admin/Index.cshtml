@@ -1,48 +1,102 @@
-@model IReadOnlyList<SitePageDto>
+@model List<Menu>
 @{
-    ViewData["Title"] = "后台管理";
-    var menus = ViewBag.Menus as List<Menu> ?? new List<Menu>();
+    Layout = null;
+    var userName = ViewBag.UserName as string ?? "管理员";
+    var menus = Model.OrderBy(p => p.Sort).ToList();
 }
-<section class="admin-shell">
-    <div class="admin-title">
-        <div>
-            <span class="eyebrow">Admin</span>
-            <h1>后台管理</h1>
-            <p>保留菜单、角色权限、审计日志基础能力，同时提供页面可视化设计。</p>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>管理后台-首页</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="https://unpkg.com/layui@2.9.21/dist/css/layui.css">
+    <link rel="stylesheet" href="~/css/layuiadmin-admin.css" asp-append-version="true" />
+</head>
+<body class="layui-layout-body">
+<div id="LAY_app">
+    <div class="layui-layout layui-layout-admin">
+        <div class="layui-header">
+            <ul class="layui-nav layui-layout-left">
+                <li class="layui-nav-item layadmin-flexible" lay-unselect>
+                    <a href="javascript:;" id="btnFlexible" title="侧边伸缩"><i class="layui-icon layui-icon-shrink-right" id="LAY_app_flexible"></i></a>
+                </li>
+                <li class="layui-nav-item layui-hide-xs" lay-unselect>
+                    <a href="/" target="_blank" title="前台"><i class="layui-icon layui-icon-website"></i></a>
+                </li>
+                <li class="layui-nav-item" lay-unselect>
+                    <a href="javascript:;" id="btnRefresh" title="刷新"><i class="layui-icon layui-icon-refresh-3"></i></a>
+                </li>
+            </ul>
+            <ul class="layui-nav layui-layout-right" lay-filter="layadmin-layout-right">
+                <li class="layui-nav-item layui-hide-xs" lay-unselect><a href="javascript:;" id="btnTheme"><i class="layui-icon layui-icon-theme"></i></a></li>
+                <li class="layui-nav-item layui-hide-xs" lay-unselect><a href="javascript:;" id="btnFullscreen"><i class="layui-icon layui-icon-screen-full"></i></a></li>
+                <li class="layui-nav-item" lay-unselect>
+                    <a href="javascript:;"><cite>@userName</cite></a>
+                    <dl class="layui-nav-child">
+                        <dd><a lay-href="/Admin/Main" lay-text="个人信息">个人信息</a></dd>
+                        <hr>
+                        <dd><a href="/Account/Logout" class="tx_cen">退出</a></dd>
+                    </dl>
+                </li>
+            </ul>
         </div>
-        <a class="btn" href="/Admin/Designer?pageKey=home">设计首页</a>
+
+        <div class="layui-side layui-side-menu">
+            <div class="layui-side-scroll">
+                <div class="layui-logo"><span>通用建站后台</span></div>
+                <ul class="layui-nav layui-nav-tree" lay-shrink="all" id="LAY-system-side-menu" lay-filter="layadmin-system-side-menu">
+                    <li class="layui-nav-item layui-nav-itemed">
+                        <a lay-href="/Admin/Main" lay-text="控制台" href="javascript:;">
+                            <i class="layui-icon layui-icon-home"></i><cite>控制台</cite>
+                        </a>
+                    </li>
+                    @foreach (var menu in menus.Where(p => p.Code != "Dashboard"))
+                    {
+                        var icon = string.IsNullOrWhiteSpace(menu.Icon) ? "layui-icon-template" : menu.Icon;
+                        <li class="layui-nav-item">
+                            <a lay-href="@menu.Path" lay-text="@menu.Name" href="javascript:;">
+                                <i class="layui-icon @icon"></i><cite>@menu.Name</cite>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+
+        <div class="layadmin-pagetabs" id="LAY_app_tabs">
+            <div class="layui-icon layadmin-tabs-control layui-icon-prev" data-tabs="prev"></div>
+            <div class="layui-icon layadmin-tabs-control layui-icon-next" data-tabs="next"></div>
+            <div class="layui-icon layadmin-tabs-control layui-icon-down">
+                <ul class="layui-nav layadmin-tabs-select" lay-filter="layadmin-pagetabs-nav">
+                    <li class="layui-nav-item" lay-unselect>
+                        <a href="javascript:;"></a>
+                        <dl class="layui-nav-child layui-anim-fadein">
+                            <dd><a href="javascript:;" data-close="current">关闭当前标签页</a></dd>
+                            <dd><a href="javascript:;" data-close="other">关闭其它标签页</a></dd>
+                            <dd><a href="javascript:;" data-close="all">关闭全部标签页</a></dd>
+                        </dl>
+                    </li>
+                </ul>
+            </div>
+            <div class="layui-tab" lay-unauto lay-allowClose="true" lay-filter="layadmin-layout-tabs">
+                <ul class="layui-tab-title" id="LAY_app_tabsheader">
+                    <li lay-id="/Admin/Main" class="layui-this"><i class="layui-icon layui-icon-home"></i></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="layui-body" id="LAY_app_body">
+            <div class="layadmin-tabsbody-item layui-show" data-id="/Admin/Main">
+                <iframe src="/Admin/Main" frameborder="0" class="layadmin-iframe"></iframe>
+            </div>
+        </div>
+        <div class="layadmin-body-shade" id="LAY_app_body_shade"></div>
     </div>
-    <div class="admin-menu-grid">
-        @foreach (var menu in menus)
-        {
-            <a class="page-card" href="@menu.Path">
-                <h2>@menu.Name</h2>
-                <p>菜单编码：@menu.Code</p>
-                <p>路径：@menu.Path</p>
-            </a>
-        }
-    </div>
-    <h2 class="block-title">页面管理</h2>
-    <div class="page-list">
-        @foreach (var pagemodel in Model)
-        {
-            <article class="page-card">
-                <h2>@pagemodel.Title</h2>
-                <p>页面标识：@pagemodel.PageKey</p>
-                <p>模块数量：@pagemodel.Sections.Count</p>
-                <div class="card-actions">
-                    <a class="btn small" href="/Admin/Designer?pageKey=@pagemodel.PageKey">可视化设计</a>
-                    <a class="btn ghost small" href="/@(pagemodel.PageKey == "home" ? "" : pagemodel.PageKey)" target="_blank">前台预览</a>
-                </div>
-            </article>
-        }
-        <article class="page-card new-page">
-            <h2>新增页面</h2>
-            <p>在地址中输入新的 pageKey 即可创建，例如 products、contact。</p>
-            <form method="get" action="/Admin/Designer">
-                <input name="pageKey" placeholder="例如：contact" />
-                <button class="btn small" type="submit">创建/编辑</button>
-            </form>
-        </article>
-    </div>
-</section>
+</div>
+<script src="https://unpkg.com/layui@2.9.21/dist/layui.js"></script>
+<script src="~/js/layuiadmin-admin.js" asp-append-version="true"></script>
+</body>
+</html>
