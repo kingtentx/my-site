@@ -8,7 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
 
-var connectionString = builder.Configuration.GetConnectionString("Default") ?? string.Empty;
+var connectionString = builder.Configuration.GetConnectionString("Default")
+                       ?? Environment.GetEnvironmentVariable("MYSQL_CONNECTION")
+                       ?? string.Empty;
+
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
     options.UseMySql(connectionString, new MySqlServerVersion(new Version(8, 0, 0)));
@@ -61,6 +64,11 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException("ConnectionStrings:Default or MYSQL_CONNECTION is required.");
+}
 
 using (var scope = app.Services.CreateScope())
 {
