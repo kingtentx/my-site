@@ -17,9 +17,7 @@ namespace CIMC.Data
         public void Create(AppDbContext context)
         {
             InitUser(context);
-            InitMenu(context);
-            InitArticles(context);
-            RepairSiteAssetPaths(context);
+            InitMenu(context);             
         }
 
         private void InitUser(AppDbContext context)
@@ -106,154 +104,6 @@ namespace CIMC.Data
             return menu;
         }
 
-        private void InitArticles(AppDbContext context)
-        {
-            var jsonPath = GetSeedDataPath("news-data.json");
-            if (!File.Exists(jsonPath))
-            {
-                return;
-            }
-
-            var json = File.ReadAllText(jsonPath);
-            var items = JsonSerializer.Deserialize<List<NewsSeedItem>>(json, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            if (items == null || items.Count == 0)
-            {
-                return;
-            }
-
-            foreach (var item in items)
-            {
-                if (string.IsNullOrWhiteSpace(item.Title))
-                {
-                    continue;
-                }
-
-                var sourceUrl = $"/newsinfo/{item.Id}.html";
-                var exists = context.Article.FirstOrDefault(p => p.SourceUrl == sourceUrl || p.Title == item.Title);
-                if (exists != null)
-                {
-                    continue;
-                }
-
-                context.Article.Add(new Article
-                {
-                    Title = item.Title,
-                    Description = TrimText(item.Desc, 240),
-                    Detail = NormalizeSiteHtml(string.IsNullOrWhiteSpace(item.Content) ? HtmlParagraphs(item.ContentText) : item.Content),
-                    Author = "中集洋山",
-                    Source = "中集洋山官网",
-                    SourceUrl = sourceUrl,
-                    ImageUrl = NormalizeSitePath(item.Img),
-                    TagType = 1,
-                    TagId = 0,
-                    Sort = 0,
-                    ViewCount = item.Hits,
-                    IsHot = false,
-                    IsActive = true,
-                    IsDelete = false,
-                    CreationBy = "system",
-                    CreationTime = ParseDate(item.Date)
-                });
-            }
-
-            context.SaveChanges();
-        }
-
-        private string NormalizeSiteHtml(string html)
-        {
-            if (string.IsNullOrWhiteSpace(html))
-            {
-                return string.Empty;
-            }
-
-            var value = html.Replace("\\", "/");
-            value = Regex.Replace(value, @"(?:/syle/)+images/", "/syle/images/", RegexOptions.IgnoreCase);
-            value = Regex.Replace(value, @"(?<!/syle/)(?:\.\./)*images/news/", "/syle/images/news/", RegexOptions.IgnoreCase);
-            value = Regex.Replace(value, @"(?<!/syle/)(?:\.\./)*images/", "/syle/images/", RegexOptions.IgnoreCase);
-            value = Regex.Replace(value, @"(?:/syle/)+images/", "/syle/images/", RegexOptions.IgnoreCase);
-
-            value = Regex.Replace(value, "<script[\\s\\S]*?</script>", string.Empty, RegexOptions.IgnoreCase);
-            return value;
-        }
-
-        private string NormalizeSitePath(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return "/syle/images/174376305.png";
-            }
-
-            var value = path.Trim().Replace("\\", "/");
-            value = Regex.Replace(value, @"(?:/syle/)+images/", "/syle/images/", RegexOptions.IgnoreCase);
-            value = Regex.Replace(value, @"^/?(?:\.\./)*images/news/", "/syle/images/news/", RegexOptions.IgnoreCase);
-            value = Regex.Replace(value, @"^/?(?:\.\./)*images/", "/syle/images/", RegexOptions.IgnoreCase);
-
-            if (value.StartsWith("syle/images/", StringComparison.OrdinalIgnoreCase))
-            {
-                value = "/" + value;
-            }
-
-            return Regex.Replace(value, @"(?:/syle/)+images/", "/syle/images/", RegexOptions.IgnoreCase);
-        }
-
-        private void RepairSiteAssetPaths(AppDbContext context)
-        {
-            var hasChanges = false;
-
-            foreach (var article in context.Article.Where(p => !p.IsDelete && (p.ImageUrl.Contains("//syle") || p.ImageUrl.Contains("../images") || p.ImageUrl.Contains("images/") || p.Detail.Contains("//syle") || p.Detail.Contains("../images"))))
-            {
-                var imageUrl = NormalizeSitePath(article.ImageUrl);
-                var detail = NormalizeSiteHtml(article.Detail);
-
-                if (article.ImageUrl != imageUrl)
-                {
-                    article.ImageUrl = imageUrl;
-                    hasChanges = true;
-                }
-
-                if (article.Detail != detail)
-                {
-                    article.Detail = detail;
-                    hasChanges = true;
-                }
-            }
-
-            if (hasChanges)
-            {
-                context.SaveChanges();
-            }
-        }
-
-        private string HtmlParagraphs(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return string.Empty;
-            }
-
-            var paragraphs = text.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(p => $"<p>{System.Net.WebUtility.HtmlEncode(p.Trim())}</p>");
-            return string.Join(Environment.NewLine, paragraphs);
-        }
-
-        private DateTime? ParseDate(string value)
-        {
-            return DateTime.TryParse(value, out var result) ? result : DateTime.Now;
-        }
-
-        private string TrimText(string value, int maxLength)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return string.Empty;
-            }
-
-            return value.Length <= maxLength ? value : value.Substring(0, maxLength);
-        }
 
         private string ToMD5(string str)
         {
@@ -263,29 +113,6 @@ namespace CIMC.Data
             return result;
         }
 
-        private string GetSeedDataPath(string fileName)
-        {
-            var current = Directory.GetCurrentDirectory();
-            var candidates = new[]
-            {
-                Path.Combine(current, "wwwroot", "syle", "data", fileName),
-                Path.Combine(AppContext.BaseDirectory, "wwwroot", "syle", "data", fileName)
-            };
 
-            return candidates.FirstOrDefault(File.Exists) ?? candidates[0];
-        }
-
-        private class NewsSeedItem
-        {
-            public string Id { get; set; }
-            public string Title { get; set; }
-            public string Desc { get; set; }
-            public string Img { get; set; }
-            public string Date { get; set; }
-            public int Hits { get; set; }
-            public string Category { get; set; }
-            public string Content { get; set; }
-            public string ContentText { get; set; }
-        }
     }
 }
