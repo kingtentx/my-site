@@ -14,16 +14,6 @@ namespace CimcSite.Web.Models.MapperConfig
             CreateMap<Menu, MenuModel>().ReverseMap();
 
             CreateMap<Article, ArticleModel>().ReverseMap();
-            CreateMap<Album, AlbumModel>().ReverseMap();
-         
-            CreateMap<Attachments, AttachmentsModel>().ReverseMap();
-           
-            CreateMap<Job, JobModel>().ReverseMap();
-            CreateMap<MessageBoard, MessageBoardModel>().ReverseMap();
-            CreateMap<VideoMedia, VideoMediaModel>().ReverseMap();
-
-            CreateMap<SiteInfo, SiteInfoModel>().ReverseMap();
-            CreateMap<FooterInfo, FooterModel>().ReverseMap();
             #endregion
 
          

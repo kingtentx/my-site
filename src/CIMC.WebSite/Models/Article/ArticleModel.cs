@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace CimcSite.Web.Models
 {
@@ -97,27 +95,7 @@ namespace CimcSite.Web.Models
         public string CreationBy { get; set; }
         /// <summary>
         /// 更新人
-        /// </summary>       
+        /// </summary>
         public string UpdateBy { get; set; }
-        /// <summary>
-        /// 标签名称
-        /// </summary>
-        public virtual string TagName
-        {
-            get
-            {
-                var name = string.Empty;
-                if (TagsList.Count() > 0)
-                {
-                    var query = TagsList.Where(p => p.Id == TagId);
-                    name = query != null ? query.FirstOrDefault().TagName : "";
-                }
-                return name;
-            }
-        }
-        /// <summary>
-        /// 分类列表
-        /// </summary>
-        public virtual List<TagModel> TagsList { get; set; } = new List<TagModel>();
     }
 }

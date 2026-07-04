@@ -21,18 +21,6 @@
         /// </summary>
         public const string ValidateCode = "ValidateCode:";
         /// <summary>
-        /// 导航缓存键
-        /// </summary>
-        public const string Navigation = "Navigation";
-        /// <summary>
-        /// 网站信息
-        /// </summary>
-        public const string SiteInfo = "SiteInfo";
-        /// <summary>
-        /// 网站底部信息
-        /// </summary>
-        public const string FooterInfo = "FooterInfo";
-        /// <summary>
         /// 当前页面布局配置
         /// </summary>
         public const string PageLayout = "PageLayout:";

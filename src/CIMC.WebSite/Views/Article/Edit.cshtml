@@ -129,14 +129,8 @@
                     </div>
                     <div class="layui-form-item">
                         <label class="layui-form-label">标签</label>
-                        <div class="layui-input-inline up_index w300">
-                            <select name="TagId" lay-verify="required">
-                                <option value="">请选择</option>
-                                @foreach (var item in Model.TagsList.Where(p => p.TagType == (int)CIMC.Core.Enums.TagType.Article))
-                                {
-                                    <option value="@item.Id" @Html.Raw(Model.TagId == item.Id ? "selected=\"selected\"" : "")>@Html.Raw(item.TagName)</option>
-                                }
-                            </select>
+                        <div class="layui-form-inline up_index w300">
+                            <input type="text" name="TagId" autocomplete="off" placeholder="标签ID" class="layui-input" value="@Model.TagId">
                         </div>
                     </div>
                     <div class="img">

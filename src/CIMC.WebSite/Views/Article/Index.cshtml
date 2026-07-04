@@ -1,8 +1,8 @@
 
+
 @{
     Layout = null;
 }
-@model List<TagModel>
 <!DOCTYPE html>
 <html>
 <head>
@@ -35,18 +35,6 @@
                                 <label class="layui-form-label">标题</label>
                                 <div class="layui-input-block">
                                     <input type="text" name="keywords" placeholder="请输入" autocomplete="off" class="layui-input">
-                                </div>
-                            </div>
-                            <div class="layui-inline">
-                                <label class="layui-form-label">分类标签</label>
-                                <div class="layui-input-block" style="width:200px">
-                                    <select name="tagsId" id="tagsId" lay-verify="">
-                                        <option value="0">全部</option>
-                                        @foreach (var item in Model)
-                                        {
-                                            <option value="@item.Id">@item.TagName</option>
-                                        }
-                                    </select>
                                 </div>
                             </div>
                             <div class="layui-inline">
@@ -124,7 +112,6 @@
                             }
                         }
                     }
-                    , { field: 'tagName', width: 100, title: '标签' }
                     , { field: 'creationTime', width: 200, title: '创建时间', minWidth: 200 }
                     , { field: 'viewCount', width: 80, title: '浏览量' }
                     , { field: 'shareCount', width: 80, title: '分享量' }

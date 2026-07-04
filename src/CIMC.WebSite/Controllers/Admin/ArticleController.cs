@@ -12,13 +12,12 @@ using System.Linq;
 namespace CimcSite.Web.Controllers
 {
     [Authorize]
-    public class ArticleController : ContentControllerBase
+    public class ArticleController : AdminBaseController
     {
         private readonly IRepository<Article> _articleRepository;
         private readonly IPermissionService _permission;
 
-        public ArticleController(IRepository<Article> articleRepository, IRepository<Tag> tagRepository, IPermissionService permission)
-            : base(tagRepository)
+        public ArticleController(IRepository<Article> articleRepository, IPermissionService permission)
         {
             _articleRepository = articleRepository;
             _permission = permission;
@@ -30,13 +29,13 @@ namespace CimcSite.Web.Controllers
             ViewData[PageCode.PAGE_Button_Add] = _permission.CheckPermission(LoginUser, MenuCode.Content_Article, PermissionType.Add);
             ViewData[PageCode.PAGE_Button_Edit] = _permission.CheckPermission(LoginUser, MenuCode.Content_Article, PermissionType.Edit);
             ViewData[PageCode.PAGE_Button_Delete] = _permission.CheckPermission(LoginUser, MenuCode.Content_Article, PermissionType.Delete);
-            return View(GetTags((int)TagType.Article));
+            return View();
         }
 
         [PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult Edit(int id = 0)
         {
-            var model = new ArticleModel { IsActive = true, Author = "中集洋山", TagId = 0, TagsList = GetTags((int)TagType.Article) };
+            var model = new ArticleModel { IsActive = true, Author = "中集洋山", TagId = 0 };
             if (id > 0)
             {
                 var article = _articleRepository.GetOne(id);
@@ -46,7 +45,6 @@ namespace CimcSite.Web.Controllers
                 }
 
                 model = ToModel(article);
-                model.TagsList = GetTags((int)TagType.Article);
             }
 
             return View(model);
@@ -127,7 +125,7 @@ namespace CimcSite.Web.Controllers
                 ArticleId = p.Id,
                 p.Title,
                 p.ImageUrl,
-                TagName = GetTagName(p.TagId),
+                TagName = "",
                 p.CreationTime,
                 p.ViewCount,
                 p.ShareCount,

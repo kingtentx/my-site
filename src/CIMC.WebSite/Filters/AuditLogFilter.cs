@@ -229,14 +229,7 @@ namespace CimcSite.Web.Filters
                 "Role" => typeof(Role),
                 "Menu" => typeof(Menu),
                 "Article" => typeof(Article),
-                "Album" => typeof(Album),
-                "Job" => typeof(Job),
-                "Tag" => typeof(Tag),
-                "Navigation" => typeof(Navigation),
-                "SiteModule" => typeof(SiteModule),
                 "Images" => typeof(Images),
-                "Attachments" => typeof(Attachments),
-                "Message" => typeof(MessageBoard),
                 _ => null
             };
         }
@@ -249,14 +242,7 @@ namespace CimcSite.Web.Filters
                 "Role" => "Role",
                 "Menu" => "Menu",
                 "Article" => "Article",
-                "Album" => "Album",
-                "Job" => "Job",
-                "Tag" => "Tag",
-                "Navigation" => "Navigation",
-                "SiteModule" => "SiteModule",
                 "Images" => "Images",
-                "Attachments" => "Attachments",
-                "Message" => "MessageBoard",
                 _ => controllerName
             };
         }
@@ -275,14 +261,7 @@ namespace CimcSite.Web.Filters
                 "Role" => "角色",
                 "Menu" => "菜单",
                 "Article" => "文章",
-                "Album" => "产品",
-                "Job" => "招聘",
-                "Tag" => "标签",
-                "Navigation" => "导航",
-                "SiteModule" => "页面模块",
                 "Images" => "素材",
-                "Attachments" => "附件",
-                "Message" => "留言",
                 "Admin" => "系统设置",
                 "Authorize" => "认证",
                 "Upload" => "文件上传",

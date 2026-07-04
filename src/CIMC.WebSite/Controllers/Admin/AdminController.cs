@@ -27,8 +27,6 @@ namespace CimcSite.Web.Controllers
         private IMapper _mapper;
         private IPermissionService _permission;
         private IRepository<Admin> _adminRepository;
-        private IRepository<SiteInfo> _siteInfoRepository;
-        private IRepository<FooterInfo> _footerInfoRepository;
 
 
         public AdminController(
@@ -36,9 +34,7 @@ namespace CimcSite.Web.Controllers
             ICacheService cache,
              IMapper mapper,
              IPermissionService permission,
-             IRepository<Admin> adminRepository,
-             IRepository<SiteInfo> siteInfoRepository,
-             IRepository<FooterInfo> footerInfoRepository
+             IRepository<Admin> adminRepository
 
             )
         {
@@ -47,8 +43,6 @@ namespace CimcSite.Web.Controllers
             _mapper = mapper;
             _adminRepository = adminRepository;
             _permission = permission;
-            _siteInfoRepository = siteInfoRepository;
-            _footerInfoRepository = footerInfoRepository;
 
         }
 
@@ -90,85 +84,6 @@ namespace CimcSite.Web.Controllers
 
             return View();
         }
-
-        [PermissionFilter(MenuCode.Site_Info, PermissionType.View)]
-        public IActionResult SiteInfo()
-        {
-            var entity = _siteInfoRepository.GetList().FirstOrDefault();
-            if (entity != null)
-            {
-                return View(_mapper.Map<SiteInfoModel>(entity));
-            }
-
-            var legacy = ReadJson("site-info.json", new SiteInfoModel
-            {
-                CompanyName = "上海中集洋山物流装备有限公司",
-                CompanyName_EN = "Shanghai CIMC Yangshan Logistics Equipment CO., LTD.",
-                Keywords = "中集洋山,集装箱制造,物流装备",
-                Description = "上海中集洋山物流装备有限公司，专业从事集装箱及物流装备制造。",
-                Logo = "/syle/images/logo-h5.png",
-                Logo_H5 = "/syle/images/logo-h5.png"
-            });
-            return View(legacy);
-        }
-
-        [HttpPost]
-        [PermissionFilter(MenuCode.Site_Info, PermissionType.Edit)]
-        public IActionResult SiteInfo(SiteInfoModel input)
-        {
-            var entity = _siteInfoRepository.GetList().FirstOrDefault();
-            if (entity != null)
-            {
-                _mapper.Map(input, entity);
-                _siteInfoRepository.Update(entity);
-            }
-            else
-            {
-                entity = _mapper.Map<SiteInfo>(input);
-                _siteInfoRepository.Add(entity);
-            }
-            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "保存成功" });
-        }
-
-        [PermissionFilter(MenuCode.Site_Footer, PermissionType.View)]
-        public IActionResult FooterInfo()
-        {
-            var entity = _footerInfoRepository.GetList().FirstOrDefault();
-            if (entity != null)
-            {
-                return View(_mapper.Map<FooterModel>(entity));
-            }
-
-            var legacy = ReadJson("footer-info.json", new FooterModel
-            {
-                CompanyInfo = "秉承中集\"众星驱动\"发展战略，高品质、低成本、快交付，志在成为客户首选、员工依赖的物流装备制造商。",
-                Address = "上海市浦东新区临港新片区层林路77号",
-                Phone = "021-61186770",
-                Email = "changhao.shen@cimc.com",
-                Copyright = "Copyright © 上海中集洋山物流装备有限公司",
-                RecordNo = "沪ICP备案号"
-            });
-            return View(legacy);
-        }
-
-        [HttpPost]
-        [PermissionFilter(MenuCode.Site_Footer, PermissionType.Edit)]
-        public IActionResult FooterInfo(FooterModel input)
-        {
-            var entity = _footerInfoRepository.GetList().FirstOrDefault();
-            if (entity != null)
-            {
-                _mapper.Map(input, entity);
-                _footerInfoRepository.Update(entity);
-            }
-            else
-            {
-                entity = _mapper.Map<FooterInfo>(input);
-                _footerInfoRepository.Add(entity);
-            }
-            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "保存成功" });
-        }
-
 
         ///// <summary>
         ///// 获取内存容量

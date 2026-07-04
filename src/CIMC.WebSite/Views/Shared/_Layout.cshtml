@@ -1,184 +1,20 @@
-@inject Microsoft.AspNetCore.Mvc.Localization.IViewLocalizer Localizer
 @{
-    var siteInfo = ViewData["SiteInfo"] as CIMC.Data.SiteInfo;
-    var footerInfo = ViewData["FooterInfo"] as CIMC.Data.FooterInfo;
-    var navigations = ViewData["Navigations"] as List<CIMC.Data.Navigation>;
     var currentCulture = System.Threading.Thread.CurrentThread.CurrentUICulture.Name;
     var isEn = currentCulture.StartsWith("en");
-
-    var companyName = isEn ? (siteInfo?.CompanyName_EN ?? "Shanghai CIMC Yangshan Logistics Equipment CO., LTD.") : (siteInfo?.CompanyName ?? "上海中集洋山物流装备有限公司");
-    var companyNameEn = siteInfo?.CompanyName_EN ?? "Shanghai CIMC Yangshan Logistics Equipment CO., LTD.";
-    var keywords = isEn ? (siteInfo?.Keywords_EN ?? siteInfo?.Keywords ?? "") : (siteInfo?.Keywords ?? "");
-    var description = isEn ? (siteInfo?.Description_EN ?? siteInfo?.Description ?? "") : (siteInfo?.Description ?? "");
-    var logoUrl = siteInfo?.Logo ?? "~/syle/images/logo-h5.png";
-    var logoH5Url = siteInfo?.Logo_H5 ?? "~/syle/images/logo-h5.png";
-
-    var title = ViewData["Title"] as string ?? companyName;
-    var path = Context.Request.Path.ToString().ToLowerInvariant();
+    var title = ViewData["Title"] as string ?? "CIMC";
 }
 <!DOCTYPE html>
 <html lang="@(isEn ? "en" : "zh-CN")">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="@description" />
-    <meta name="keywords" content="@keywords" />
     <title>@title</title>
-    <link rel="icon" href="@Url.Content(logoH5Url)" />
     <link rel="stylesheet" href="~/syle/site.css" />
 </head>
 <body>
-    <header class="site-header" data-header>
-        <div class="site-header__inner">
-            <a class="brand" href="@Url.Action("Index", "Home")" aria-label="@companyName">
-                <img class="brand__logo" src="@Url.Content(logoUrl)" alt="" />
-                <img class="brand__logo-h5" src="@Url.Content(logoH5Url)" alt="" />
-                <span class="brand__text">
-                    <strong>@(siteInfo?.CompanyName ?? "上海中集洋山物流装备有限公司")</strong>
-                    <em>@companyNameEn</em>
-                </span>
-            </a>
-            <button class="nav-toggle" type="button" data-nav-toggle aria-label="@Localizer["打开导航"]">
-                <span></span><span></span><span></span>
-            </button>
-            <nav class="main-nav" data-nav>
-                @if (navigations != null && navigations.Any())
-                {
-                    foreach (var nav in navigations.Where(n => n.Pid == 0))
-                    {
-                        var children = navigations.Where(n => n.Pid == nav.Id).ToList();
-                        var isActive = (nav.IsHomePage && (path == "/" || path.Contains("/home/index")))
-                            || (!nav.IsHomePage && !string.IsNullOrEmpty(nav.RewriteName) && path.Contains(nav.RewriteName.ToLowerInvariant()));
-                        var navUrl = nav.IsEnableLink ? nav.LinkUrl
-                            : string.IsNullOrEmpty(nav.RewriteName) ? "#" : "/" + nav.RewriteName;
-
-                        if (children.Any())
-                        {
-                            <div class="nav-group @(isActive ? "is-active" : "")">
-                                <a href="@navUrl">@(isEn && !string.IsNullOrWhiteSpace(nav.NavigationName_EN) ? nav.NavigationName_EN : nav.NavigationName)</a>
-                                <div class="sub-nav">
-                                    @foreach (var child in children)
-                                    {
-                                        var childUrl = child.IsEnableLink ? child.LinkUrl
-                                            : string.IsNullOrEmpty(child.RewriteName) ? "#" : "/" + child.RewriteName;
-                                        <a href="@childUrl">@(isEn && !string.IsNullOrWhiteSpace(child.NavigationName_EN) ? child.NavigationName_EN : child.NavigationName)</a>
-                                    }
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <a class="@(isActive ? "is-active" : "")" href="@navUrl">@(isEn && !string.IsNullOrWhiteSpace(nav.NavigationName_EN) ? nav.NavigationName_EN : nav.NavigationName)</a>
-                        }
-                    }
-                }
-                else
-                {
-                    <a class="@(path == "/" || path.Contains("/home/index") ? "is-active" : "")" href="@Url.Action("Index", "Home")">@Localizer["首页"]</a>
-                    <a class="@(path.Contains("/about") || path.Contains("/guanyu") ? "is-active" : "")" href="@Url.Action("About", "Home")">@Localizer["关于我们"]</a>
-                    <div class="nav-group @(path.Contains("/products") || path.Contains("/cpxz") ? "is-active" : "")">
-                        <a href="/products/traditional">@Localizer["产品中心"]</a>
-                        <div class="sub-nav">
-                            <a href="/products/traditional">@Localizer["传统业务线"]</a>
-                            <a href="/products/special">@Localizer["特种业务线"]</a>
-                            <a href="/products/new">@Localizer["新业务线"]</a>
-                        </div>
-                    </div>
-                    <a class="@(path.Contains("/news") || path.Contains("/xwzx") || path.Contains("/newsinfo/") ? "is-active" : "")" href="@Url.Action("News", "Home")">@Localizer["新闻资讯"]</a>
-                    <a class="@(path.Contains("/jobs") || path.Contains("/rczp") ? "is-active" : "")" href="@Url.Action("Jobs", "Home")">@Localizer["人才招聘"]</a>
-                    <a class="@(path.Contains("/contact") || path.Contains("/lianxi") ? "is-active" : "")" href="@Url.Action("Contact", "Home")">@Localizer["联系我们"]</a>
-                }
-                <div class="lang-switcher">
-                    <a class="@(isEn ? "" : "is-active")" href="javascript:;" onclick="switchLang('zh-CN')">CN</a>
-                    <a class="@(isEn ? "is-active" : "")" href="javascript:;" onclick="switchLang('en-US')">EN</a>
-                </div>
-            </nav>
-        </div>
-    </header>
-
     <main>
         @RenderBody()
     </main>
-
-    <footer class="site-footer">
-        <div class="container footer-grid">
-            <div>
-                <h3>@companyName</h3>
-                <p>@(isEn && !string.IsNullOrWhiteSpace(footerInfo?.CompanyInfo_EN) ? footerInfo.CompanyInfo_EN : (footerInfo?.CompanyInfo ?? Localizer["公司信息默认"].Value))</p>
-            </div>
-            <div>
-                <h4>@Localizer["产品中心_Footer"]</h4>
-                @if (navigations != null)
-                {
-                    var productNav = navigations.FirstOrDefault(n => n.NavigationName.Contains("产品") && n.Pid == 0);
-                    if (productNav != null)
-                    {
-                        var productChildren = navigations.Where(n => n.Pid == productNav.Id).ToList();
-                        foreach (var child in productChildren)
-                        {
-                            var childUrl = child.IsEnableLink ? child.LinkUrl
-                                : string.IsNullOrEmpty(child.RewriteName) ? "#" : "/" + child.RewriteName;
-                            <a href="@childUrl">@(isEn && !string.IsNullOrWhiteSpace(child.NavigationName_EN) ? child.NavigationName_EN : child.NavigationName)</a>
-                        }
-                    }
-                    else
-                    {
-                        <a href="/products/traditional">@Localizer["传统业务线"]</a>
-                        <a href="/products/special">@Localizer["特种业务线"]</a>
-                        <a href="/products/new">@Localizer["新业务线"]</a>
-                    }
-                }
-                else
-                {
-                    <a href="/products/traditional">@Localizer["传统业务线"]</a>
-                    <a href="/products/special">@Localizer["特种业务线"]</a>
-                    <a href="/products/new">@Localizer["新业务线"]</a>
-                }
-            </div>
-            <div>
-                <h4>@Localizer["联系方式"]</h4>
-                @if (footerInfo != null)
-                {
-                    if (!string.IsNullOrEmpty(footerInfo.Address)) { <p>@(isEn && !string.IsNullOrWhiteSpace(footerInfo.Address_EN) ? footerInfo.Address_EN : footerInfo.Address)</p> }
-                    if (!string.IsNullOrEmpty(footerInfo.Phone)) { <p>@Localizer["电话"]@footerInfo.Phone</p> }
-                    if (!string.IsNullOrEmpty(footerInfo.Email)) { <p>@Localizer["邮箱"]@footerInfo.Email</p> }
-                }
-                else
-                {
-                    <p>@Localizer["公司地址"]</p>
-                    <p>@Localizer["电话默认"]</p>
-                    <p>@Localizer["邮箱默认"]</p>
-                }
-            </div>
-            <div class="qr-section">
-                @if (footerInfo != null)
-                {
-                    @if (!string.IsNullOrEmpty(footerInfo.ImageA))
-                    {
-                        <div class="qr-item">
-                            <img src="@footerInfo.ImageA" alt="QR Code" style="width:100px;height:100px;object-fit:contain;" />
-                            <p>@Localizer["关注我们"]</p>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(footerInfo.ImageB))
-                    {
-                        <div class="qr-item">
-                            <img src="@footerInfo.ImageB" alt="QR Code" style="width:100px;height:100px;object-fit:contain;" />
-                            <p>@Localizer["关注我们"]</p>
-                        </div>
-                    }
-                }
-            </div>
-        </div>
-        <div class="copyright">
-            @(isEn && !string.IsNullOrWhiteSpace(footerInfo?.Copyright_EN) ? footerInfo.Copyright_EN : (footerInfo?.Copyright ?? Localizer["版权默认"].Value))
-            @if (footerInfo != null && !string.IsNullOrEmpty(footerInfo.RecordNo))
-            {
-                <span> <a href="https://beian.miit.gov.cn/" target="_blank" rel="nofollow noopener">@footerInfo.RecordNo</a></span>
-            }
-        </div>
-    </footer>
-
     <script src="~/syle/site.js"></script>
     <script>
         function switchLang(culture) {
