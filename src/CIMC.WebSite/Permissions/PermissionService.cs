@@ -1,7 +1,7 @@
 using CIMC.Data;
 using CIMC.Helper;
 using CIMC.EntityFramework;
-using CimcSite.Web.Models;
+using MySite.Web.Models;
 using Microsoft.AspNetCore.Hosting;
 using Serilog;
 using System;
@@ -10,7 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public class PermissionService : IPermissionService
     {

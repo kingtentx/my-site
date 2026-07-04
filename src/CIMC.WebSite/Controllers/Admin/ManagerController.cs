@@ -1,7 +1,7 @@
 using CIMC.Data;
 using CIMC.Helper;
 using CIMC.EntityFramework;
-using CimcSite.Web.Models;
+using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -10,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Controllers
+namespace MySite.Web.Controllers
 {
     [Authorize]
     public class ManagerController : AdminBaseController

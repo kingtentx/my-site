@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "CimcSite.Web": {
+    "MySite.Web": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

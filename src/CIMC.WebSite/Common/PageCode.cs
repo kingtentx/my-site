@@ -1,4 +1,4 @@
-﻿namespace CimcSite.Web
+﻿namespace MySite.Web
 {
     public class PageCode
     {

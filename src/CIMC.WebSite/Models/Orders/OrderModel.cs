@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CimcSite.Web.Models
+namespace MySite.Web.Models
 {
     public class OrderModel
     {

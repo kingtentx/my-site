@@ -1,9 +1,9 @@
-﻿using CimcSite.Web.Models;
+﻿using MySite.Web.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public interface IPermissionService
     {

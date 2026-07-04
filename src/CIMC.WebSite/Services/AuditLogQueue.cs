@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Services
+namespace MySite.Web.Services
 {
     public interface IAuditLogQueue
     {

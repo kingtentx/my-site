@@ -2,10 +2,10 @@ using CIMC.Data;
 using CIMC.EntityFrameworkCore;
 using CIMC.Helper;
 using CIMC.EntityFramework;
-using CimcSite.Web.Config;
-using CimcSite.Web.Filters;
-using CimcSite.Web.Models.MapperConfig;
-using CimcSite.Web.Services;
+using MySite.Web.Config;
+using MySite.Web.Filters;
+using MySite.Web.Models.MapperConfig;
+using MySite.Web.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -30,7 +30,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public class Startup
     {
@@ -171,7 +171,7 @@ namespace CimcSite.Web
                 });
 
                 ////项目属性生成配置的xml文件名
-                //var xmlPath = Path.Combine(basePath, "CimcSite.Web.xml");
+                //var xmlPath = Path.Combine(basePath, "MySite.Web.xml");
                 //options.IncludeXmlComments(xmlPath, true); //启用控制器注释
             });
 

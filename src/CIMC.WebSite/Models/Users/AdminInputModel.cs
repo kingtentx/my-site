@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CimcSite.Web.Models
+namespace MySite.Web.Models
 {
     public class AdminInputModel
     {

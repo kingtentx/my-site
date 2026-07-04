@@ -1,8 +1,8 @@
 using CIMC.Data;
 using CIMC.EntityFramework;
 using CIMC.Helper;
-using CimcSite.Web.Config;
-using CimcSite.Web.Models;
+using MySite.Web.Config;
+using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -15,7 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Controllers
+namespace MySite.Web.Controllers
 {
     [Authorize]
     public class UploadController : Controller

@@ -3,7 +3,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionAuthorizationRequirement>
     {

@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Services
+namespace MySite.Web.Services
 {
     public interface IAuditLogService
     {

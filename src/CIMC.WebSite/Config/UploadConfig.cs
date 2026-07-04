@@ -1,4 +1,4 @@
-namespace CimcSite.Web.Config
+namespace MySite.Web.Config
 {
     public class UploadSetting
     {

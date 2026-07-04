@@ -1,7 +1,7 @@
 ﻿
 using System.Collections.Generic;
 
-namespace CimcSite.Web.Models
+namespace MySite.Web.Models
 {
     public class RoleModel
     {

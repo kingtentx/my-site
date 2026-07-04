@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     /// <summary>
     /// 模块

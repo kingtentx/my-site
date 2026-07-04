@@ -9,7 +9,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Services
+namespace MySite.Web.Services
 {
     /// <summary>
     /// 

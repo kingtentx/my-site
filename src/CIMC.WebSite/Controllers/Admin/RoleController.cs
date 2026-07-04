@@ -1,14 +1,14 @@
 ﻿using CIMC.Data;
 using CIMC.Helper;
 using CIMC.EntityFramework;
-using CimcSite.Web.Models;
+using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CimcSite.Web.Controllers
+namespace MySite.Web.Controllers
 {
     [Authorize]
     public class RoleController : AdminBaseController

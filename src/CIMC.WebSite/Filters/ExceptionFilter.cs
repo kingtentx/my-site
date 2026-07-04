@@ -2,7 +2,7 @@
 using Serilog;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Filters
+namespace MySite.Web.Filters
 {
     public class ExceptionFilter : IAsyncExceptionFilter
     {

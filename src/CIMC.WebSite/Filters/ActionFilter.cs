@@ -3,7 +3,7 @@ using Serilog;
 using System.Diagnostics;
 using System.Security.Claims;
 
-namespace CimcSite.Web.Filters
+namespace MySite.Web.Filters
 {
     public class ActionFilter : IActionFilter
     {

@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public static class AppSettingsReader
     {

@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     /// <summary>
     /// 菜单类型

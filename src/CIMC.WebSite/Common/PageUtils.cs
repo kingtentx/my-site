@@ -1,5 +1,5 @@
 ﻿using CIMC.Data;
-using CimcSite.Web.Models;
+using MySite.Web.Models;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public class PageUtils
     {

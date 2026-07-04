@@ -1,7 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 
-namespace CimcSite.Web.Models
+namespace MySite.Web.Models
 {
     public class WxUserModel
     {

@@ -1,11 +1,11 @@
-﻿using CimcSite.Web.Models;
+﻿using MySite.Web.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Linq;
 using System.Security.Claims;
 
-namespace CimcSite.Web.Controllers
+namespace MySite.Web.Controllers
 {
 
     public class AdminBaseController : Controller

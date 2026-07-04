@@ -1,7 +1,7 @@
 using CIMC.Data;
 using CIMC.EntityFramework;
-using CimcSite.Web.Models;
-using CimcSite.Web.Services;
+using MySite.Web.Models;
+using MySite.Web.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
@@ -11,7 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CimcSite.Web.Controllers
+namespace MySite.Web.Controllers
 {
     [Authorize]
     public class AuditLogController : AdminBaseController

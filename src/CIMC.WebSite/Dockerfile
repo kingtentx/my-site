@@ -13,4 +13,4 @@ RUN apt-get clean
 RUN apt-get update && apt-get install -y fontconfig
 
 EXPOSE 80
-ENTRYPOINT ["dotnet", "CimcSite.Web.dll"]
+ENTRYPOINT ["dotnet", "MySite.Web.dll"]

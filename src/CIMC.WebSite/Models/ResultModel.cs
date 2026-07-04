@@ -1,4 +1,4 @@
-﻿namespace CimcSite.Web.Models
+﻿namespace MySite.Web.Models
 {
     /// <summary>
     /// 后台返回结果集

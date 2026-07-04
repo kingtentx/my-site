@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.6.11822.322 stable
+VisualStudioVersion = 18.6.11822.322
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CIMC.Data", "src\CIMC.Data\CIMC.Data.csproj", "{5CE3A6F8-63EF-478F-895D-6FEDB94B5258}"
 EndProject
@@ -11,7 +11,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CIMC.Helper", "src\CIMC.Hel
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CIMC.Core", "src\CIMC.Core\CIMC.Core.csproj", "{B11DD2CA-4F3B-40D5-9D0C-FCF1EE530C73}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CimcSite.Web", "src\CIMC.WebSite\CimcSite.Web.csproj", "{E1590300-DDFF-4AA9-B7E1-799FDC785E49}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MySite.Web", "src\CIMC.WebSite\MySite.Web.csproj", "{E1590300-DDFF-4AA9-B7E1-799FDC785E49}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -8,7 +8,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Services
+namespace MySite.Web.Services
 {
     public class AuditLogService : IAuditLogService
     {

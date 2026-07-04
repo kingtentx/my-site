@@ -5,7 +5,7 @@ using Serilog.Events;
 using System;
 using System.Globalization;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public class Program
     {
@@ -33,7 +33,7 @@ namespace CimcSite.Web
             try
             {
                 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-                Log.Information($"CimcSite.Web Starting...   [Environment: {environment}]");
+                Log.Information($"MySite.Web Starting...   [Environment: {environment}]");
                 CreateHostBuilder(args).UseConsoleLifetime().Build().Run();
                 return 0;
             }

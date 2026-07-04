@@ -1,7 +1,7 @@
 using AutoMapper;
 using CIMC.Data;
 
-namespace CimcSite.Web.Models.MapperConfig
+namespace MySite.Web.Models.MapperConfig
 {
     public class AutoMapperConfig : Profile
     {

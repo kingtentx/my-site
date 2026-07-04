@@ -1,4 +1,4 @@
-﻿namespace CimcSite.Web
+﻿namespace MySite.Web
 {
     /// <summary>
     /// 通用常量

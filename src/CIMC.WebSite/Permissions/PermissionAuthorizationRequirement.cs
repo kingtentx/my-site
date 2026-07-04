@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 
-namespace CimcSite.Web
+namespace MySite.Web
 {
     public class PermissionAuthorizationRequirement : IAuthorizationRequirement
     {

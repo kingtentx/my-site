@@ -1,7 +1,7 @@
 using CIMC.Data;
 using CIMC.EntityFramework;
-using CimcSite.Web.Config;
-using CimcSite.Web.Services;
+using MySite.Web.Config;
+using MySite.Web.Services;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -11,7 +11,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Filters
+namespace MySite.Web.Filters
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
     public class AuditLogFilter : Attribute, IAsyncActionFilter

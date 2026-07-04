@@ -2,7 +2,7 @@ using CIMC.Core;
 using CIMC.Data;
 using CIMC.Helper;
 using CIMC.EntityFramework;
-using CimcSite.Web.Models;
+using MySite.Web.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +13,7 @@ using System.IO;
 using System.Security.Claims;
 using System.Threading.Tasks;
 
-namespace CimcSite.Web.Controllers
+namespace MySite.Web.Controllers
 {
     public class AuthorizeController : Controller
     {
