@@ -12,6 +12,9 @@ namespace MySite.Web.WebsiteBuilder.Data
         public DbSet<WebsiteSiteConfig> SiteConfigs { get; set; }
         public DbSet<WebsitePage> Pages { get; set; }
         public DbSet<WebsitePageVersion> PageVersions { get; set; }
+        public DbSet<WebsiteNavigation> Navigations { get; set; }
+        public DbSet<WebsiteBanner> Banners { get; set; }
+        public DbSet<WebsiteFooter> Footers { get; set; }
         public DbSet<ContentNewsCategory> NewsCategories { get; set; }
         public DbSet<ContentNews> News { get; set; }
         public DbSet<ContentProductCategory> ProductCategories { get; set; }
@@ -31,6 +34,7 @@ namespace MySite.Web.WebsiteBuilder.Data
             modelBuilder.Entity<WebsitePage>().Property(x => x.PublishJson).HasColumnType("longtext");
             modelBuilder.Entity<WebsitePageVersion>().Property(x => x.DraftJson).HasColumnType("longtext");
             modelBuilder.Entity<WebsitePageVersion>().Property(x => x.PublishJson).HasColumnType("longtext");
+            modelBuilder.Entity<WebsiteFooter>().Property(x => x.FriendLinksJson).HasColumnType("longtext");
             modelBuilder.Entity<ContentNews>().Property(x => x.Content).HasColumnType("longtext");
             modelBuilder.Entity<ContentProduct>().Property(x => x.ImageList).HasColumnType("longtext");
             modelBuilder.Entity<ContentProduct>().Property(x => x.Description).HasColumnType("longtext");
