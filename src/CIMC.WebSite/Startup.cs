@@ -259,8 +259,8 @@ namespace MySite.Web
                 endpoints.MapControllerRoute(name: "About", pattern: "about", defaults: new { controller = "Home", action = "About" });
                 endpoints.MapControllerRoute(name: "ProductDetail", pattern: "products/detail-{id}.html", defaults: new { controller = "Home", action = "ProductDetail" });
                 endpoints.MapControllerRoute(name: "Products", pattern: "products/{category?}", defaults: new { controller = "Home", action = "Products" });
-                endpoints.MapControllerRoute(name: "ArticlePreview", pattern: "news/preview-{id}.html", new { controller = "Home", action = "ArticlePreview" });
-                endpoints.MapControllerRoute(name: "Article", pattern: "news/info-{id}.html", new { controller = "Home", action = "Article" });
+                endpoints.MapControllerRoute(name: "ArticlePreview", pattern: "news/preview-{id}.html", defaults: new { controller = "Home", action = "ArticlePreview" });
+                endpoints.MapControllerRoute(name: "Article", pattern: "news/info-{id}.html", defaults: new { controller = "Home", action = "Article" });
                 endpoints.MapControllerRoute(name: "News", pattern: "news/{category?}", defaults: new { controller = "Home", action = "News" });
                 endpoints.MapControllerRoute(name: "Jobs", pattern: "jobs", defaults: new { controller = "Home", action = "Jobs" });
                 endpoints.MapControllerRoute(name: "Contact", pattern: "contact", defaults: new { controller = "Home", action = "Contact" });
@@ -282,6 +282,7 @@ namespace MySite.Web
                 if (websiteDbContext != null)
                 {
                     new WebsiteBuilderInitializer().Create(websiteDbContext);
+                    new WebsiteBuilderUpgradeInitializer().Create(websiteDbContext);
                 }
             }
             #endregion
