@@ -1,11 +1,7 @@
 using CIMC.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text.Json;
-using System.Text.RegularExpressions;
 
 namespace CIMC.Data
 {
@@ -17,7 +13,7 @@ namespace CIMC.Data
         public void Create(AppDbContext context)
         {
             InitUser(context);
-            InitMenu(context);             
+            InitMenu(context);
         }
 
         private void InitUser(AppDbContext context)
@@ -58,6 +54,7 @@ namespace CIMC.Data
             }
 
             InitSiteMenus(context);
+            InitWebsiteBuilderMenus(context);
         }
 
         private void InitSiteMenus(AppDbContext context)
@@ -65,6 +62,22 @@ namespace CIMC.Data
             var content = EnsureMenu(context, "内容管理", "Content", 0, "", "layui-icon-read", 1, 30);
             EnsureMenu(context, "新闻管理", "Content_Article", content.Id, "/article/index", "layui-icon-list", 2, 31, "Add,Edit,Delete");
             EnsureMenu(context, "素材管理", "Content_Images", content.Id, "/images/index", "layui-icon-picture", 2, 35, "Add,Edit,Delete");
+        }
+
+        private void InitWebsiteBuilderMenus(AppDbContext context)
+        {
+            var website = EnsureMenu(context, "企业建站", "WebsiteBuilder", 0, "", "layui-icon-website", 1, 40);
+
+            EnsureMenu(context, "页面管理", "WebsiteBuilder_Pages", website.Id, "/WebsiteBuilder/Pages", "layui-icon-template-1", 2, 41, "Add,Edit,Delete,Copy,Design,Publish,Preview");
+            EnsureMenu(context, "页面装修", "WebsiteBuilder_Designer", website.Id, "/WebsiteBuilder/Pages", "layui-icon-layouts", 2, 42, "Design,Save,Publish,Preview");
+            EnsureMenu(context, "站点设置", "WebsiteBuilder_Site", website.Id, "/WebsiteBuilder/Site", "layui-icon-set", 2, 43, "Edit,Save");
+            EnsureMenu(context, "内容管理", "WebsiteBuilder_Contents", website.Id, "/WebsiteBuilder/Contents", "layui-icon-read", 2, 44, "Add,Edit,Delete,Publish,Offline");
+            EnsureMenu(context, "分类管理", "WebsiteBuilder_Categories", website.Id, "/WebsiteBuilder/Categories", "layui-icon-tabs", 2, 45, "Add,Edit,Delete");
+            EnsureMenu(context, "导航管理", "WebsiteBuilder_Navigation", website.Id, "/WebsiteBuilder/Navigation", "layui-icon-link", 2, 46, "Add,Edit,Delete,Sort");
+            EnsureMenu(context, "Banner管理", "WebsiteBuilder_Banners", website.Id, "/WebsiteBuilder/Banners", "layui-icon-carousel", 2, 47, "Add,Edit,Delete,Enable,Disable");
+            EnsureMenu(context, "页脚设置", "WebsiteBuilder_Footer", website.Id, "/WebsiteBuilder/Footer", "layui-icon-about", 2, 48, "Edit,Save");
+            EnsureMenu(context, "素材管理", "WebsiteBuilder_Materials", website.Id, "/WebsiteBuilder/Materials", "layui-icon-picture", 2, 49, "Upload,Delete");
+            EnsureMenu(context, "简历投递", "WebsiteBuilder_Applications", website.Id, "/WebsiteBuilder/Applications", "layui-icon-list", 2, 50, "View,Handle");
         }
 
         private Menu EnsureMenu(AppDbContext context, string title, string permissionKey, int pid, string path, string icon, int menuType, int sort, string buttons = null)
@@ -104,7 +117,6 @@ namespace CIMC.Data
             return menu;
         }
 
-
         private string ToMD5(string str)
         {
             MD5 md5 = MD5.Create();
@@ -112,7 +124,5 @@ namespace CIMC.Data
             string result = BitConverter.ToString(bytes_out).Replace("-", "");
             return result;
         }
-
-
     }
 }
