@@ -1,5 +1,5 @@
+using CIMC.Data.Entities.WebsiteBuilder;
 using Microsoft.EntityFrameworkCore;
-using MySite.Web.WebsiteBuilder.Models;
 
 namespace MySite.Web.WebsiteBuilder.Data
 {
