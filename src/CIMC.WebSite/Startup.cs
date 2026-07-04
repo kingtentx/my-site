@@ -2,11 +2,11 @@ using CIMC.Data;
 using CIMC.EntityFrameworkCore;
 using CIMC.Helper;
 using CIMC.EntityFramework;
+using CIMC.EntityFramework.WebsiteBuilder;
 using MySite.Web.Config;
 using MySite.Web.Filters;
 using MySite.Web.Models.MapperConfig;
 using MySite.Web.Services;
-using MySite.Web.WebsiteBuilder.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
@@ -282,7 +282,6 @@ namespace MySite.Web
                 if (websiteDbContext != null)
                 {
                     new WebsiteBuilderInitializer().Create(websiteDbContext);
-                    new WebsiteBuilderUpgradeInitializer().Create(websiteDbContext);
                 }
             }
             #endregion
