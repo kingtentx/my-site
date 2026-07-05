@@ -37,7 +37,7 @@ namespace MySite.Web.Controllers
             if (id > 0)
             {
                 var entity = _repository.GetOne(id);
-                if (entity == null)
+                if (entity == null || entity.IsDelete)
                 {
                     return NotFound();
                 }
@@ -57,17 +57,17 @@ namespace MySite.Web.Controllers
             }
 
             var entity = id > 0 ? _repository.GetOne(id) : new ContentJob { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (entity == null)
+            if (entity == null || entity.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
             }
 
-            entity.JobTitle = input.JobTitle;
+            entity.JobTitle = input.JobTitle.Trim();
             entity.Department = input.Department;
             entity.WorkLocation = input.WorkLocation;
             entity.SalaryRange = input.SalaryRange;
-            entity.RecruitCount = input.RecruitCount;
-            entity.JobType = input.JobType;
+            entity.RecruitCount = input.RecruitCount <= 0 ? 1 : input.RecruitCount;
+            entity.JobType = string.IsNullOrWhiteSpace(input.JobType) ? "全职" : input.JobType;
             entity.Responsibilities = input.Responsibilities;
             entity.Requirements = input.Requirements;
             entity.ContactName = input.ContactName;
@@ -114,6 +114,8 @@ namespace MySite.Web.Controllers
                 where = where.And(p => p.JobTitle.Contains(keywords) || p.Department.Contains(keywords));
             }
 
+            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            pageSize = pageSize <= 0 ? 10 : pageSize;
             var query = _repository.GetList(where, p => p.Sort, pageIndex, pageSize, true);
             var data = query.List.Select(p => new
             {
@@ -135,13 +137,21 @@ namespace MySite.Web.Controllers
 
         [HttpPost]
         [PermissionFilter(MenuCode.Content_Job, PermissionType.Delete)]
-        public IActionResult Delete(int id, int[] ids, int isAll = 0)
+        public IActionResult Delete(int id, int[] ids = null, int isAll = 0)
         {
-            var deleteIds = isAll == 1 ? ids : new[] { id };
-            foreach (var deleteId in deleteIds.Where(p => p > 0))
+            var deleteIds = (isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id })
+                .Where(p => p > 0)
+                .Distinct()
+                .ToList();
+            if (!deleteIds.Any())
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择要删除的数据" });
+            }
+
+            foreach (var deleteId in deleteIds)
             {
                 var entity = _repository.GetOne(deleteId);
-                if (entity != null)
+                if (entity != null && !entity.IsDelete)
                 {
                     entity.IsDelete = true;
                     entity.UpdateTime = DateTime.Now;
