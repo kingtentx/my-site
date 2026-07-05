@@ -43,42 +43,6 @@ namespace CIMC.Data
         public string Description { get; set; }
 
         /// <summary>
-        /// ICP 备案号
-        /// </summary>
-        [StringLength(ModelUnits.Len_100)]
-        public string IcpNo { get; set; }
-
-        /// <summary>
-        /// 公安备案号
-        /// </summary>
-        [StringLength(ModelUnits.Len_100)]
-        public string PoliceNo { get; set; }
-
-        /// <summary>
-        /// 联系电话
-        /// </summary>
-        [StringLength(ModelUnits.Len_50)]
-        public string Phone { get; set; }
-
-        /// <summary>
-        /// 联系邮箱
-        /// </summary>
-        [StringLength(ModelUnits.Len_100)]
-        public string Email { get; set; }
-
-        /// <summary>
-        /// 公司地址
-        /// </summary>
-        [StringLength(ModelUnits.Len_250)]
-        public string Address { get; set; }
-
-        /// <summary>
-        /// 版权信息
-        /// </summary>
-        [StringLength(ModelUnits.Len_250)]
-        public string Copyright { get; set; }
-
-        /// <summary>
         /// 默认主题
         /// </summary>
         [StringLength(ModelUnits.Len_50)]

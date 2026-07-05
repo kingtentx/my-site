@@ -46,12 +46,6 @@ namespace MySite.Web.Controllers
             entity.BrowserTitle = input.BrowserTitle;
             entity.Keywords = input.Keywords;
             entity.Description = input.Description;
-            entity.IcpNo = input.IcpNo;
-            entity.PoliceNo = input.PoliceNo;
-            entity.Phone = input.Phone;
-            entity.Email = input.Email;
-            entity.Address = input.Address;
-            entity.Copyright = input.Copyright;
             entity.Theme = string.IsNullOrWhiteSpace(input.Theme) ? "default" : input.Theme;
             entity.Language = string.IsNullOrWhiteSpace(input.Language) ? "zh-CN" : input.Language;
             entity.HeaderBgColor = string.IsNullOrWhiteSpace(input.HeaderBgColor) ? "#ffffff" : input.HeaderBgColor;
@@ -87,12 +81,6 @@ namespace MySite.Web.Controllers
                 BrowserTitle = entity.BrowserTitle,
                 Keywords = entity.Keywords,
                 Description = entity.Description,
-                IcpNo = entity.IcpNo,
-                PoliceNo = entity.PoliceNo,
-                Phone = entity.Phone,
-                Email = entity.Email,
-                Address = entity.Address,
-                Copyright = entity.Copyright,
                 Theme = entity.Theme,
                 Language = entity.Language,
                 HeaderBgColor = string.IsNullOrWhiteSpace(entity.HeaderBgColor) ? "#ffffff" : entity.HeaderBgColor,

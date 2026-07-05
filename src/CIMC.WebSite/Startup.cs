@@ -124,7 +124,7 @@ namespace MySite.Web
                         ValidateAudience = true,
                         ValidateIssuerSigningKey = true,
                         //是否验证Token有效期，使用当前时间与Token的Claims中的NotBefore和Expires对比
-                        ValidateLifetime = true,
+                        ValidateLifetime = true,                           
                         //允许的服务器时间偏移量
                         ClockSkew = TimeSpan.Zero,
 

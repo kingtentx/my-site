@@ -22,24 +22,6 @@ namespace MySite.Web.Models
         [Display(Name = "网站描述")]
         public string Description { get; set; }
 
-        [Display(Name = "ICP备案号")]
-        public string IcpNo { get; set; }
-
-        [Display(Name = "公安备案号")]
-        public string PoliceNo { get; set; }
-
-        [Display(Name = "联系电话")]
-        public string Phone { get; set; }
-
-        [Display(Name = "联系邮箱")]
-        public string Email { get; set; }
-
-        [Display(Name = "公司地址")]
-        public string Address { get; set; }
-
-        [Display(Name = "版权信息")]
-        public string Copyright { get; set; }
-
         [Display(Name = "默认主题")]
         public string Theme { get; set; }
 
