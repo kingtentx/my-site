@@ -42,13 +42,13 @@ namespace MySite.Web.Controllers
             if (id > 0)
             {
                 var entity = _repository.GetOne(id);
-                if (entity == null)
+                if (entity == null || entity.IsDelete)
                 {
                     return NotFound();
                 }
                 model = ToModel(entity);
             }
-            ViewBag.Categories = _categoryRepository.GetList(p => !p.IsDelete, p => p.Sort, true);
+            ViewBag.Categories = _categoryRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true);
             return View(model);
         }
 
@@ -63,12 +63,12 @@ namespace MySite.Web.Controllers
             }
 
             var entity = id > 0 ? _repository.GetOne(id) : new ContentProduct { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (entity == null)
+            if (entity == null || entity.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
             }
 
-            entity.ProductName = input.ProductName;
+            entity.ProductName = input.ProductName.Trim();
             entity.CategoryId = input.CategoryId;
             entity.CoverImage = input.CoverImage;
             entity.ImageList = input.ImageList;
@@ -114,6 +114,8 @@ namespace MySite.Web.Controllers
                 where = where.And(p => p.CategoryId == categoryId);
             }
 
+            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            pageSize = pageSize <= 0 ? 10 : pageSize;
             var query = _repository.GetList(where, p => p.Sort, pageIndex, pageSize, true);
             var data = query.List.Select(p => new
             {
@@ -137,7 +139,7 @@ namespace MySite.Web.Controllers
         public IActionResult SetRecommend(int id, bool isRecommend)
         {
             var entity = _repository.GetOne(id);
-            if (entity == null)
+            if (entity == null || entity.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
             }
@@ -151,13 +153,21 @@ namespace MySite.Web.Controllers
 
         [HttpPost]
         [PermissionFilter(MenuCode.Content_Product, PermissionType.Delete)]
-        public IActionResult Delete(int id, int[] ids, int isAll = 0)
+        public IActionResult Delete(int id, int[] ids = null, int isAll = 0)
         {
-            var deleteIds = isAll == 1 ? ids : new[] { id };
-            foreach (var deleteId in deleteIds.Where(p => p > 0))
+            var deleteIds = (isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id })
+                .Where(p => p > 0)
+                .Distinct()
+                .ToList();
+            if (!deleteIds.Any())
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择要删除的数据" });
+            }
+
+            foreach (var deleteId in deleteIds)
             {
                 var entity = _repository.GetOne(deleteId);
-                if (entity != null)
+                if (entity != null && !entity.IsDelete)
                 {
                     entity.IsDelete = true;
                     entity.UpdateTime = DateTime.Now;
