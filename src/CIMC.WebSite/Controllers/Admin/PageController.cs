@@ -417,7 +417,22 @@ namespace MySite.Web.Controllers
                     error = "组件配置格式错误，必须是数组 JSON";
                     return null;
                 }
-                return token.ToString(Formatting.None);
+
+                var components = (JArray)token;
+                var pageComponents = new JArray(components.Where(item =>
+                {
+                    var type = item?["type"]?.ToString();
+                    return !string.Equals(type, "navigation", StringComparison.OrdinalIgnoreCase)
+                        && !string.Equals(type, "footer", StringComparison.OrdinalIgnoreCase);
+                }));
+                for (var i = 0; i < pageComponents.Count; i++)
+                {
+                    if (pageComponents[i] is JObject obj)
+                    {
+                        obj["sort"] = i + 1;
+                    }
+                }
+                return pageComponents.ToString(Formatting.None);
             }
             catch
             {
