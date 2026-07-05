@@ -21,6 +21,10 @@
         .upload-preview .mask { position: absolute; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; }
         .upload-preview:hover .mask { opacity: 1; }
         .mask .mask-btn { width: 28px; height: 28px; line-height: 28px; text-align: center; background: rgba(255,255,255,.9); border-radius: 50%; cursor: pointer; border: 0; }
+        .layui-form-color { width: 120px; height: 38px; padding: 2px; }
+        .setting-title { margin: 20px 0 12px; padding-left: 10px; border-left: 4px solid #1e9fff; font-weight: 600; color: #333; }
+        .nav-style-preview { margin-top: 8px; padding: 12px 18px; border: 1px solid #e6e6e6; border-radius: 4px; display: inline-flex; align-items: center; gap: 26px; }
+        .nav-style-preview strong { margin-right: 14px; }
     </style>
 </head>
 <body>
@@ -29,6 +33,7 @@
             <div class="layui-card-header">站点设置</div>
             <div class="layui-card-body" style="padding: 15px;">
                 <form class="layui-form" lay-filter="form-group">
+                    <div class="setting-title">基础信息</div>
                     <div class="layui-form-item">
                         <label class="layui-form-label">站点名称</label>
                         <div class="layui-input-block">
@@ -72,6 +77,37 @@
                             <textarea name="Description" placeholder="SEO网站描述" class="layui-textarea" style="height:80px;">@Html.Raw(Model.Description)</textarea>
                         </div>
                     </div>
+
+                    <div class="setting-title">顶部导航样式</div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">背景色</label>
+                        <div class="layui-input-inline" style="width:140px;">
+                            <input type="color" name="HeaderBgColor" class="layui-input layui-form-color" value="@(string.IsNullOrWhiteSpace(Model.HeaderBgColor) ? "#ffffff" : Model.HeaderBgColor)">
+                        </div>
+                        <label class="layui-form-label">文字色</label>
+                        <div class="layui-input-inline" style="width:140px;">
+                            <input type="color" name="HeaderTextColor" class="layui-input layui-form-color" value="@(string.IsNullOrWhiteSpace(Model.HeaderTextColor) ? "#333333" : Model.HeaderTextColor)">
+                        </div>
+                        <label class="layui-form-label">高亮色</label>
+                        <div class="layui-input-inline" style="width:140px;">
+                            <input type="color" name="HeaderActiveColor" class="layui-input layui-form-color" value="@(string.IsNullOrWhiteSpace(Model.HeaderActiveColor) ? "#1e9fff" : Model.HeaderActiveColor)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">固定顶部</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="HeaderFixedTop" value="true" title="固定" @Html.Raw(Model.HeaderFixedTop ? " checked" : "")>
+                            <input type="radio" name="HeaderFixedTop" value="false" title="不固定" @Html.Raw(!Model.HeaderFixedTop ? " checked" : "")>
+                            <div class="nav-style-preview" id="navStylePreview">
+                                <strong>企业官网</strong>
+                                <span>首页</span>
+                                <span>产品中心</span>
+                                <span>新闻中心</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="setting-title">联系与备案</div>
                     <div class="layui-form-item">
                         <label class="layui-form-label">联系电话</label>
                         <div class="layui-input-inline" style="width:240px;">
@@ -144,6 +180,17 @@
         layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'form'], function () {
             var $ = layui.$, form = layui.form, layer = layui.layer;
 
+            function refreshNavPreview() {
+                var bg = $('input[name="HeaderBgColor"]').val() || '#ffffff';
+                var text = $('input[name="HeaderTextColor"]').val() || '#333333';
+                var active = $('input[name="HeaderActiveColor"]').val() || '#1e9fff';
+                $('#navStylePreview').css({ backgroundColor: bg, color: text });
+                $('#navStylePreview span:first').css('color', active);
+                $('#navStylePreview span:not(:first)').css('color', text);
+            }
+            refreshNavPreview();
+            $('input[name="HeaderBgColor"],input[name="HeaderTextColor"],input[name="HeaderActiveColor"]').on('change input', refreshNavPreview);
+
             function openImageSelector(wrapId, inputId) {
                 window._imgSelectorWrap = wrapId;
                 window._imgSelectorInput = inputId;
@@ -182,7 +229,7 @@
                             layer.msg(res.message, { icon: 5 });
                         }
                     },
-                    error: function (res) {
+                    error: function () {
                         layer.msg('保存失败', { icon: 5 });
                     }
                 });
