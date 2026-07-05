@@ -1,0 +1,59 @@
+@using CIMC.Data
+@model MySite.Web.Models.ComponentModel
+@{
+    var productList = ViewBag.ProductList as List<ContentProduct> ?? new List<ContentProduct>();
+    int pageSize = 8, colsPerRow = 4;
+    bool showImage = true, showSummary = false;
+    string moreLink = "/products";
+
+    if (Model.Props != null)
+    {
+        if (Model.Props.TryGetValue("pageSize", out var ps) && ps != null && int.TryParse(ps.ToString(), out var psp)) pageSize = psp;
+        if (Model.Props.TryGetValue("colsPerRow", out var cpr) && cpr != null && int.TryParse(cpr.ToString(), out var cprp)) colsPerRow = Math.Max(1, cprp);
+        if (Model.Props.TryGetValue("showImage", out var si) && si != null && bool.TryParse(si.ToString(), out var siv)) showImage = siv;
+        if (Model.Props.TryGetValue("showSummary", out var ss) && ss != null && bool.TryParse(ss.ToString(), out var ssv)) showSummary = ssv;
+        if (Model.Props.TryGetValue("moreLink", out var ml) && ml != null) moreLink = ml.ToString();
+    }
+
+    var items = productList.Take(pageSize).ToList();
+}
+<section class="product-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">产品中心</h2>
+            @if (!string.IsNullOrEmpty(moreLink))
+            {
+                <a href="@moreLink" class="more-link">查看更多 &rsaquo;</a>
+            }
+        </div>
+        @if (items.Count == 0)
+        {
+            <p class="empty-tip">暂无产品</p>
+        }
+        else
+        {
+            <div class="product-grid" style="--cols:@colsPerRow;">
+                @foreach (var product in items)
+                {
+                    <article class="product-card">
+                        <a href="/products/detail-@(product.Id).html" class="product-link">
+                            @if (showImage && !string.IsNullOrEmpty(product.CoverImage))
+                            {
+                                <div class="product-cover">
+                                    <img src="@product.CoverImage" alt="@product.ProductName" loading="lazy" />
+                                </div>
+                            }
+                            <div class="product-body">
+                                <h3 class="product-name">@product.ProductName</h3>
+                                @if (showSummary && !string.IsNullOrEmpty(product.Summary))
+                                {
+                                    <p class="product-summary">@product.Summary</p>
+                                }
+                            </div>
+                        </a>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

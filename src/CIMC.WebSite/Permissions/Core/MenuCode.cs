@@ -24,6 +24,7 @@ namespace MySite.Web
         public const string Site_Info = "Site_Info";// 网站信息
         public const string Site_Footer = "Site_Footer";// 底部信息
         public const string Site_Message = "Site_Message";//用户留言
+        public const string Website_Page = "Website_Page";// 页面管理
 
 
         #endregion
@@ -41,6 +42,8 @@ namespace MySite.Web
         public const string Content_Category = "Content_Category";//分类管理
         public const string Content_Attachments = "Content_Attachments"; //附件管理
         public const string Content_Images = "Content_Images"; //素材管理
+        public const string Content_Product = "Content_Product";//产品管理
+        public const string Content_ProductCategory = "Content_ProductCategory";//产品分类
                                                                          //
         #endregion
 

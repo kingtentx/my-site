@@ -1,0 +1,136 @@
+@using CIMC.Data
+@using MySite.Web.Models
+@model ContentProduct
+@{
+    Layout = "_PublicLayout";
+    ViewData["Title"] = Model.ProductName;
+
+    var navList = ViewBag.NavigationList as List<NavigationModel> ?? new List<NavigationModel>();
+    var footer = ViewBag.Footer as FooterModel ?? new FooterModel();
+    var siteConfig = ViewBag.SiteConfig as SiteConfigModel;
+    var images = ViewBag.ProductImages as List<string> ?? new List<string>();
+    var category = ViewBag.ProductCategory as ContentProductCategory;
+    var currentPath = Context.Request.Path.Value ?? "/";
+
+    var allImages = new List<string>();
+    if (!string.IsNullOrEmpty(Model.CoverImage)) { allImages.Add(Model.CoverImage); }
+    foreach (var img in images)
+    {
+        if (!allImages.Contains(img)) { allImages.Add(img); }
+    }
+}
+
+<header class="site-header is-fixed">
+    <div class="container header-inner">
+        <a href="/" class="logo">
+            @if (!string.IsNullOrEmpty(siteConfig?.Logo))
+            {
+                <img src="@siteConfig.Logo" alt="@siteConfig.SiteName" />
+            }
+            else
+            {
+                <span class="logo-text">@(siteConfig?.SiteName ?? "企业官网")</span>
+            }
+        </a>
+        <button type="button" class="nav-toggle" aria-label="切换菜单" data-nav-toggle>
+            <span></span><span></span><span></span>
+        </button>
+        <nav class="main-nav" data-nav-menu>
+            <ul>
+                @foreach (var nav in navList.Where(n => n.Pid == 0).OrderBy(n => n.Sort))
+                {
+                    var isActive = currentPath.Equals(nav.Path, StringComparison.OrdinalIgnoreCase)
+                                || (nav.Path != "/" && currentPath.StartsWith(nav.Path, StringComparison.OrdinalIgnoreCase));
+                    <li class="nav-item @(isActive ? "active" : "")">
+                        <a href="@nav.Path" target="@(nav.Target == 1 ? "_blank" : "_self")">@nav.Title</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+    </div>
+</header>
+
+<section class="product-detail">
+    <div class="container product-detail-grid">
+        <div class="product-gallery">
+            @if (allImages.Count > 0)
+            {
+                <div class="product-main-image">
+                    <img src="@allImages[0]" alt="@Model.ProductName" id="mainImage" />
+                </div>
+                @if (allImages.Count > 1)
+                {
+                    <div class="product-thumb-list">
+                        @foreach (var img in allImages)
+                        {
+                            <img src="@img" alt="@Model.ProductName" class="product-thumb" data-full="@img" loading="lazy" />
+                        }
+                    </div>
+                }
+            }
+        </div>
+        <div class="product-info">
+            @if (category != null)
+            {
+                <div class="product-breadcrumb">
+                    <a href="/">首页</a> &rsaquo; <a href="/products">产品中心</a> &rsaquo; <span>@category.Name</span>
+                </div>
+            }
+            <h1 class="product-title">@Model.ProductName</h1>
+            @if (!string.IsNullOrEmpty(Model.Summary))
+            {
+                <div class="product-summary">@Model.Summary</div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Feature))
+            {
+                <div class="product-feature">
+                    <h3>产品特点</h3>
+                    <div>@Html.Raw(Model.Feature)</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Description))
+    {
+        <div class="container product-section">
+            <h2 class="section-title">产品详情</h2>
+            <div class="product-description">@Html.Raw(Model.Description)</div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Specification))
+    {
+        <div class="container product-section">
+            <h2 class="section-title">产品参数</h2>
+            <div class="product-specification">@Html.Raw(Model.Specification)</div>
+        </div>
+    }
+
+    <div class="container product-footer-nav">
+        <a href="/products" class="back-btn">&lsaquo; 返回列表</a>
+    </div>
+</section>
+
+<footer class="site-footer" style="background-color:@(footer.BgColor); color:@(footer.TextColor);">
+    <div class="container">
+        <div class="footer-copyright">
+            @if (!string.IsNullOrEmpty(footer.Copyright)) { <span>@footer.Copyright</span> }
+            @if (!string.IsNullOrEmpty(footer.IcpNo)) { <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" style="color:@footer.TextColor;">@footer.IcpNo</a> }
+        </div>
+    </div>
+</footer>
+
+@section Scripts {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var thumbs = document.querySelectorAll('.product-thumb');
+        var mainImg = document.getElementById('mainImage');
+        thumbs.forEach(function (thumb) {
+            thumb.addEventListener('click', function () {
+                if (mainImg) { mainImg.src = thumb.getAttribute('data-full'); }
+            });
+        });
+    });
+</script>
+}

@@ -1,66 +1,69 @@
-﻿namespace MySite.Web.Models
+using System.ComponentModel.DataAnnotations;
+
+namespace MySite.Web.Models
 {
     public class ProductModel
     {
-        /// <summary>
-        /// 
-        /// </summary>        
         public int Id { get; set; }
-        /// <summary>
-        /// 产品名称
-        /// </summary>       
+
+        [Display(Name = "产品名称")]
+        [Required(ErrorMessage = "请输入产品名称")]
         public string ProductName { get; set; }
-        /// <summary>
-        /// 产品编码（后续下单使用该字段，请保证唯一）
-        /// </summary>     
-        public string ProductSn { get; set; }
-        /// <summary>
-        /// 产品编号
-        /// </summary>
-        public string ProductNo { get; set; }
-        /// <summary>
-        /// 产品封面图
-        /// </summary>    
+
+        [Display(Name = "分类")]
+        public int CategoryId { get; set; }
+
+        [Display(Name = "封面图")]
         public string CoverImage { get; set; }
-        /// <summary>
-        /// 产品详情图片；以英文半角逗号分隔的图片
-        /// </summary>      
+
+        [Display(Name = "多图列表")]
         public string ImageList { get; set; }
-        /// <summary>
-        /// 对中台商品的成本价（单位为元）
-        /// </summary>
-        public decimal ApplyPrice { get; set; }
-        /// <summary>
-        /// 对用户的显示价格（单位为元）
-        /// </summary>
-        public decimal ShowPrice { get; set; }
-        /// <summary>
-        /// 对用户的售价（单位为元）
-        /// </summary>
-        public decimal SalePrice { get; set; }
-        /// <summary>
-        /// 当前产品库存库存
-        /// </summary>
-        public long TotalCount { get; set; }
-        /// <summary>
-        /// 产品状态。1:启用，0：禁用
-        /// </summary>
-        public int State { get; set; }
-        /// <summary>
-        /// 物品是否需要邮寄0:不需要邮寄；1：需要邮寄
-        /// </summary>
-        public int NeedMail { get; set; }
-        /// <summary>
-        /// 产品备注（给后台人员查看的，不超过500字符）
-        /// </summary>      
-        public string Remark { get; set; }
-        /// <summary>
-        /// 购买须知（给客户查看的，不超过500字符）
-        /// </summary>     
-        public string BuyNotice { get; set; }
-        /// <summary>
-        /// 
-        /// </summary>
-        public string[] ImageArray { get; set; } = new string[] { };
+
+        [Display(Name = "摘要")]
+        public string Summary { get; set; }
+
+        [Display(Name = "详情")]
+        public string Description { get; set; }
+
+        [Display(Name = "产品参数")]
+        public string Specification { get; set; }
+
+        [Display(Name = "产品特点")]
+        public string Feature { get; set; }
+
+        [Display(Name = "排序")]
+        public int Sort { get; set; } = 0;
+
+        [Display(Name = "是否推荐")]
+        public bool IsRecommend { get; set; }
+
+        [Display(Name = "是否上架")]
+        public bool IsActive { get; set; } = true;
+
+        public int ViewCount { get; set; }
+
+        public System.DateTime? CreationTime { get; set; }
+
+        public string CreationBy { get; set; }
+
+        public System.DateTime? UpdateTime { get; set; }
+
+        public string UpdateBy { get; set; }
+    }
+
+    public class ProductCategoryModel
+    {
+        public int Id { get; set; }
+
+        public int Pid { get; set; }
+
+        [Display(Name = "分类名称")]
+        [Required(ErrorMessage = "请输入分类名称")]
+        public string Name { get; set; }
+
+        [Display(Name = "排序")]
+        public int Sort { get; set; } = 0;
+
+        public bool IsActive { get; set; } = true;
     }
 }

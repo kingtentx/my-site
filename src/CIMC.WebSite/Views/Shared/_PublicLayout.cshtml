@@ -1,0 +1,31 @@
+@{
+    var siteConfig = ViewBag.SiteConfig as MySite.Web.Models.SiteConfigModel;
+    var title = ViewData["Title"] as string ?? siteConfig?.BrowserTitle ?? siteConfig?.SiteName ?? "企业官网";
+    var keywords = ViewData["Keywords"] as string ?? siteConfig?.Keywords;
+    var description = ViewData["Description"] as string ?? siteConfig?.Description;
+    var currentPath = Context.Request.Path.Value ?? "/";
+}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@title</title>
+    @if (!string.IsNullOrEmpty(keywords))
+    {
+        <meta name="keywords" content="@keywords" />
+    }
+    @if (!string.IsNullOrEmpty(description))
+    {
+        <meta name="description" content="@description" />
+    }
+    <link rel="stylesheet" href="~/site/css/site.css" />
+</head>
+<body>
+    <div class="page-wrapper" data-current-path="@currentPath">
+        @RenderBody()
+    </div>
+    <script src="~/site/js/site.js" defer></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

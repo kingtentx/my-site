@@ -1,4 +1,4 @@
-﻿namespace MySite.Web
+namespace MySite.Web
 {
     public class PageCode
     {
@@ -37,6 +37,18 @@
         /// 页面 [配置]
         /// </summary>
         public const string PAGE_Button_Layout = "PAGE_Button_Layout";
+        /// <summary>
+        /// 页面 [装修]
+        /// </summary>
+        public const string PAGE_Button_Design = "PAGE_Button_Design";
+        /// <summary>
+        /// 页面 [发布]
+        /// </summary>
+        public const string PAGE_Button_Publish = "PAGE_Button_Publish";
+        /// <summary>
+        /// 页面 [预览]
+        /// </summary>
+        public const string PAGE_Button_Preview = "PAGE_Button_Preview";
 
         #endregion
 

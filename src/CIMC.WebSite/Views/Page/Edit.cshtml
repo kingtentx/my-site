@@ -1,0 +1,113 @@
+@{
+    Layout = null;
+}
+@model MySite.Web.Models.PageModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>页面编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+    <div class="layui-fluid">
+        <div class="layui-card">
+            <div class="layui-card-header">@(Model.Id > 0 ? "修改页面" : "添加页面")</div>
+            <div class="layui-card-body" style="padding: 15px;">
+                <form class="layui-form" lay-filter="form-group">
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">页面名称</label>
+                        <div class="layui-input-inline" style="width:300px;">
+                            <input type="text" name="PageName" lay-verify="required" autocomplete="off" placeholder="如：首页" class="layui-input" value="@Html.Raw(Model.PageName)">
+                        </div>
+                        <label class="layui-form-label">页面编码</label>
+                        <div class="layui-input-inline" style="width:200px;">
+                            <input type="text" name="PageCode" autocomplete="off" placeholder="如：home" class="layui-input" value="@Html.Raw(Model.PageCode)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">页面路径</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="PagePath" lay-verify="required" autocomplete="off" placeholder="/ 或 /about 或 /products" class="layui-input" value="@Html.Raw(Model.PagePath)">
+                            <div class="layui-form-mid layui-word-aux">路径需唯一；首页请填 /</div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">浏览器标题</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="PageTitle" autocomplete="off" placeholder="SEO 浏览器标题" class="layui-input" value="@Html.Raw(Model.PageTitle)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">SEO关键词</label>
+                        <div class="layui-input-block">
+                            <input type="text" name="SeoKeywords" autocomplete="off" placeholder="逗号分隔" class="layui-input" value="@Html.Raw(Model.SeoKeywords)">
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-form-text">
+                        <label class="layui-form-label">SEO描述</label>
+                        <div class="layui-input-block">
+                            <textarea name="SeoDescription" class="layui-textarea" style="height:80px;">@Html.Raw(Model.SeoDescription)</textarea>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">排序</label>
+                        <div class="layui-input-inline" style="width:120px;">
+                            <input type="number" name="Sort" autocomplete="off" class="layui-input" value="@Model.Sort">
+                        </div>
+                        <label class="layui-form-label">是否首页</label>
+                        <div class="layui-input-inline" style="width:160px;">
+                            <input type="checkbox" name="IsHome" value="true" lay-skin="switch" lay-text="是|否" @Html.Raw(Model.IsHome ? " checked" : "")>
+                        </div>
+                    </div>
+                    <div class="layui-form-item">
+                        <label class="layui-form-label">是否启用</label>
+                        <div class="layui-input-block">
+                            <input type="radio" name="IsActive" value="true" title="启用" @Html.Raw(Model.IsActive ? " checked" : "")>
+                            <input type="radio" name="IsActive" value="false" title="禁用" @Html.Raw(!Model.IsActive ? " checked" : "")>
+                        </div>
+                    </div>
+                    <div class="layui-form-item layui-layout-admin">
+                        <div class="layui-input-block">
+                            <div class="layui-footer" style="left: 0; z-index: 20000">
+                                <button class="layui-btn" lay-submit="" lay-filter="form-page">立即保存</button>
+                                <a href="@Url.Content("~")/page/index" class="layui-btn layui-btn-primary">返回列表</a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script>
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'form'], function () {
+            var $ = layui.$, form = layui.form, layer = layui.layer;
+
+            form.on('submit(form-page)', function (data) {
+                $.ajax({
+                    type: "post",
+                    url: '/page/edit?id=@Model.Id',
+                    data: data.field,
+                    dataType: "json",
+                    success: function (res) {
+                        if (res.code == 200) {
+                            layer.alert(res.message, function (index) {
+                                window.location.href = '/page/index';
+                                layer.close(index);
+                            });
+                        } else { layer.msg(res.message, { icon: 5 }); }
+                    },
+                    error: function () { layer.msg('保存失败', { icon: 5 }); }
+                });
+                return false;
+            });
+        });
+    </script>
+</body>
+</html>

@@ -230,6 +230,13 @@ namespace MySite.Web.Filters
                 "Menu" => typeof(Menu),
                 "Article" => typeof(Article),
                 "Images" => typeof(Images),
+                "Page" => typeof(WebsitePage),
+                "SiteConfig" => typeof(WebsiteSiteConfig),
+                "Navigation" => typeof(WebsiteNavigation),
+                "Footer" => typeof(WebsiteFooter),
+                "Product" => typeof(ContentProduct),
+                "ProductCategory" => typeof(ContentProductCategory),
+                "Job" => typeof(ContentJob),
                 _ => null
             };
         }
@@ -243,6 +250,13 @@ namespace MySite.Web.Filters
                 "Menu" => "Menu",
                 "Article" => "Article",
                 "Images" => "Images",
+                "Page" => "WebsitePage",
+                "SiteConfig" => "WebsiteSiteConfig",
+                "Navigation" => "WebsiteNavigation",
+                "Footer" => "WebsiteFooter",
+                "Product" => "ContentProduct",
+                "ProductCategory" => "ContentProductCategory",
+                "Job" => "ContentJob",
                 _ => controllerName
             };
         }
@@ -262,6 +276,13 @@ namespace MySite.Web.Filters
                 "Menu" => "菜单",
                 "Article" => "文章",
                 "Images" => "素材",
+                "Page" => "页面",
+                "SiteConfig" => "站点配置",
+                "Navigation" => "导航",
+                "Footer" => "页脚",
+                "Product" => "产品",
+                "ProductCategory" => "产品分类",
+                "Job" => "招聘",
                 "Admin" => "系统设置",
                 "Authorize" => "认证",
                 "Upload" => "文件上传",
@@ -278,6 +299,8 @@ namespace MySite.Web.Filters
                 "Delete" => $"删除{moduleName}",
                 "Authorize" => $"变更{moduleName}权限",
                 "Upload" => $"上传文件",
+                "Publish" => $"发布{moduleName}",
+                "Design" => $"装修{moduleName}",
                 _ => $"{operationType}{moduleName}"
             };
 
@@ -293,21 +316,27 @@ namespace MySite.Web.Filters
                 || actionName.IndexOf("SaveRoleMenu", StringComparison.OrdinalIgnoreCase) >= 0) return "Authorize";
             if (actionName.IndexOf("Upload", StringComparison.OrdinalIgnoreCase) >= 0) return "Upload";
             if (actionName.IndexOf("Export", StringComparison.OrdinalIgnoreCase) >= 0) return "Export";
+            if (actionName.IndexOf("Publish", StringComparison.OrdinalIgnoreCase) >= 0) return "Publish";
 
             if (httpMethod.Equals("POST", StringComparison.OrdinalIgnoreCase))
             {
                 if (actionName.IndexOf("Edit", StringComparison.OrdinalIgnoreCase) >= 0) return "Edit";
                 if (actionName.IndexOf("Add", StringComparison.OrdinalIgnoreCase) >= 0) return "Add";
                 if (actionName.IndexOf("SetHot", StringComparison.OrdinalIgnoreCase) >= 0) return "Edit";
+                if (actionName.IndexOf("SetRecommend", StringComparison.OrdinalIgnoreCase) >= 0) return "Edit";
+                if (actionName.IndexOf("SetHome", StringComparison.OrdinalIgnoreCase) >= 0) return "Edit";
                 if (actionName.IndexOf("UpdatePassword", StringComparison.OrdinalIgnoreCase) >= 0) return "Edit";
-                if (actionName.IndexOf("Save", StringComparison.OrdinalIgnoreCase) >= 0) return "Edit";
+                if (actionName.IndexOf("SaveDraft", StringComparison.OrdinalIgnoreCase) >= 0
+                    || actionName.IndexOf("Save", StringComparison.OrdinalIgnoreCase) >= 0) return "Edit";
                 return "Edit";
             }
 
             if (actionName.IndexOf("Get", StringComparison.OrdinalIgnoreCase) >= 0
                 || actionName.IndexOf("List", StringComparison.OrdinalIgnoreCase) >= 0
                 || actionName.IndexOf("Detail", StringComparison.OrdinalIgnoreCase) >= 0
-                || actionName.IndexOf("Info", StringComparison.OrdinalIgnoreCase) >= 0)
+                || actionName.IndexOf("Info", StringComparison.OrdinalIgnoreCase) >= 0
+                || actionName.IndexOf("Design", StringComparison.OrdinalIgnoreCase) >= 0
+                || actionName.IndexOf("Preview", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "View";
 
             return "View";

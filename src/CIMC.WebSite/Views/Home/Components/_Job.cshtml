@@ -1,0 +1,60 @@
+@using CIMC.Data
+@model MySite.Web.Models.ComponentModel
+@{
+    var jobList = ViewBag.JobList as List<ContentJob> ?? new List<ContentJob>();
+    int pageSize = 10;
+    bool showLocation = true, showSalary = true, showCount = true, showPublishTime = true;
+
+    if (Model.Props != null)
+    {
+        if (Model.Props.TryGetValue("pageSize", out var ps) && ps != null && int.TryParse(ps.ToString(), out var psp)) pageSize = psp;
+        if (Model.Props.TryGetValue("showLocation", out var sl) && sl != null && bool.TryParse(sl.ToString(), out var slv)) showLocation = slv;
+        if (Model.Props.TryGetValue("showSalary", out var ss) && ss != null && bool.TryParse(ss.ToString(), out var ssv)) showSalary = ssv;
+        if (Model.Props.TryGetValue("showCount", out var sc) && sc != null && bool.TryParse(sc.ToString(), out var scv)) showCount = scv;
+        if (Model.Props.TryGetValue("showPublishTime", out var sp) && sp != null && bool.TryParse(sp.ToString(), out var spv)) showPublishTime = spv;
+    }
+
+    var items = jobList.Take(pageSize).ToList();
+}
+<section class="job-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">人才招聘</h2>
+        </div>
+        @if (items.Count == 0)
+        {
+            <p class="empty-tip">暂无招聘职位</p>
+        }
+        else
+        {
+            <table class="job-table">
+                <thead>
+                    <tr>
+                        <th>职位名称</th>
+                        <th>部门</th>
+                        @if (showLocation) { <th>工作地点</th> }
+                        @if (showSalary) { <th>薪资范围</th> }
+                        @if (showCount) { <th>招聘人数</th> }
+                        @if (showPublishTime) { <th>发布时间</th> }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var job in items)
+                    {
+                        <tr>
+                            <td class="job-title">@job.JobTitle</td>
+                            <td>@(job.Department ?? "-")</td>
+                            @if (showLocation) { <td>@(job.WorkLocation ?? "-")</td> }
+                            @if (showSalary) { <td>@(job.SalaryRange ?? "面议")</td> }
+                            @if (showCount) { <td>@job.RecruitCount</td> }
+                            @if (showPublishTime)
+                            {
+                                <td>@(job.PublishTime.HasValue ? job.PublishTime.Value.ToString("yyyy-MM-dd") : "-")</td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</section>

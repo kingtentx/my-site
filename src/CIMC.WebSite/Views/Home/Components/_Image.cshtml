@@ -1,0 +1,24 @@
+@model MySite.Web.Models.ComponentModel
+@{
+    string src = "", alt = "", width = "100%", align = "center";
+
+    if (Model.Props != null)
+    {
+        if (Model.Props.TryGetValue("src", out var s) && s != null) src = s.ToString();
+        if (Model.Props.TryGetValue("alt", out var a) && a != null) alt = a.ToString();
+        if (Model.Props.TryGetValue("width", out var w) && w != null) width = w.ToString();
+        if (Model.Props.TryGetValue("align", out var al) && al != null) align = al.ToString();
+    }
+}
+<section class="image-section" style="text-align:@align;">
+    <div class="container">
+        @if (!string.IsNullOrEmpty(src))
+        {
+            <img src="@src" alt="@alt" style="width:@width;" loading="lazy" />
+        }
+        else
+        {
+            <div class="image-placeholder">尚未配置图片</div>
+        }
+    </div>
+</section>

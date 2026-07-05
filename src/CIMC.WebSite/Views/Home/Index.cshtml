@@ -1,0 +1,39 @@
+@{
+    Layout = "_PublicLayout";
+}
+@model MySite.Web.Models.PageRenderModel
+
+<div class="page-content">
+    @if (Model?.Components != null && Model.Components.Count > 0)
+    {
+        foreach (var comp in Model.Components)
+        {
+            if (!comp.Visible) { continue; }
+            if (string.IsNullOrEmpty(comp.Type)) { continue; }
+
+            var partialName = "_" + char.ToUpper(comp.Type[0]) + comp.Type.Substring(1);
+            try
+            {
+                <text>@await Html.PartialAsync("~/Views/Home/Components/" + partialName + ".cshtml", comp)</text>
+            }
+            catch (Exception ex)
+            {
+                <div class="component-error">
+                    <div class="container">
+                        <strong>组件渲染失败：@comp.Type</strong>
+                        <p>@ex.Message</p>
+                    </div>
+                </div>
+            }
+        }
+    }
+    else
+    {
+        <section class="empty-page">
+            <div class="container">
+                <h2>页面尚未发布</h2>
+                <p>请管理员登录后台，进入"页面管理"创建并发布此页面。</p>
+            </div>
+        </section>
+    }
+</div>

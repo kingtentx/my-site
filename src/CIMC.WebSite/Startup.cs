@@ -383,7 +383,7 @@ namespace MySite.Web
 
             using (var dbContext = serviceScope.ServiceProvider.GetService<AppDbContext>())
             {
-                dbContext.Database.EnsureCreated();
+                dbContext.Database.Migrate();
                 new DataInitializer().Create(dbContext);//注册默认超级管理员和前台内容
             }
             #endregion

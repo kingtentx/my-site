@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 
 namespace MySite.Web
 {
@@ -43,6 +43,16 @@ namespace MySite.Web
         /// 配置页面
         /// </summary>
         [Description("配置页面")]
-        Layout = 7
+        Layout = 7,
+        /// <summary>
+        /// 页面装修
+        /// </summary>
+        [Description("页面装修")]
+        Design = 8,
+        /// <summary>
+        /// 页面发布
+        /// </summary>
+        [Description("页面发布")]
+        Publish = 9
     }
 }

@@ -1,0 +1,665 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>页面设计器 - @ViewBag.PageName</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css">
+    <style>
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: "Microsoft YaHei", sans-serif; background: #f1f1f1; }
+        .designer-layout { display: flex; flex-direction: column; height: 100vh; }
+        .designer-toolbar { height: 50px; background: #1e9fff; color: #fff; display: flex; align-items: center; padding: 0 16px; box-shadow: 0 1px 4px rgba(0,0,0,.1); z-index: 100; }
+        .designer-toolbar .title { flex: 1; font-size: 15px; }
+        .designer-toolbar .btn { background: rgba(255,255,255,.2); border: 0; color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; margin-left: 8px; font-size: 13px; }
+        .designer-toolbar .btn:hover { background: rgba(255,255,255,.3); }
+        .designer-toolbar .btn.primary { background: #fff; color: #1e9fff; }
+        .designer-toolbar .btn.primary:hover { background: #f0f9ff; }
+        .designer-toolbar .btn.disabled { opacity: .5; cursor: not-allowed; }
+        .designer-main { flex: 1; display: flex; overflow: hidden; }
+        .designer-lib { width: 220px; background: #fff; border-right: 1px solid #e6e6e6; overflow-y: auto; padding: 12px 8px; }
+        .designer-lib .lib-title { font-size: 12px; color: #999; padding: 8px 4px 4px; }
+        .designer-lib .lib-item { padding: 10px 12px; margin-bottom: 6px; background: #f7f7f7; border: 1px solid #eee; border-radius: 4px; cursor: move; font-size: 13px; display: flex; align-items: center; gap: 8px; user-select: none; }
+        .designer-lib .lib-item:hover { background: #e6f7ff; border-color: #1e9fff; }
+        .designer-lib .lib-item i { font-size: 18px; color: #1e9fff; }
+        .designer-canvas-wrap { flex: 1; overflow: auto; padding: 20px; background: #f1f1f1; }
+        .designer-canvas { min-height: 100%; background: #fff; border-radius: 4px; box-shadow: 0 0 8px rgba(0,0,0,.05); }
+        .designer-canvas .empty-tip { text-align: center; padding: 80px 20px; color: #999; }
+        .block { border: 1px dashed #d2d2d2; margin: 8px; border-radius: 4px; position: relative; }
+        .block.selected { border-color: #1e9fff; border-style: solid; box-shadow: 0 0 0 2px rgba(30,159,255,.15); }
+        .block.hidden-block { opacity: .45; }
+        .block-header { display: flex; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #f0f0f0; cursor: move; }
+        .block-header .name { flex: 1; font-size: 13px; color: #333; }
+        .block-header .type { font-size: 11px; color: #999; margin-left: 8px; }
+        .block-tools { display: none; gap: 4px; }
+        .block:hover .block-tools { display: flex; }
+        .block-tools .tool-btn { width: 22px; height: 22px; line-height: 22px; text-align: center; background: #fff; border: 1px solid #e6e6e6; border-radius: 3px; cursor: pointer; font-size: 12px; color: #666; }
+        .block-tools .tool-btn:hover { background: #1e9fff; color: #fff; border-color: #1e9fff; }
+        .block-tools .tool-btn.danger:hover { background: #ff5722; border-color: #ff5722; }
+        .block-body { padding: 12px; min-height: 40px; font-size: 13px; color: #666; }
+        .block-body .preview-empty { color: #ccc; font-size: 12px; padding: 8px; text-align: center; }
+        .block-body img { max-width: 100%; max-height: 120px; }
+        .designer-props { width: 320px; background: #fff; border-left: 1px solid #e6e6e6; overflow-y: auto; padding: 16px; }
+        .designer-props .props-title { font-size: 13px; color: #333; font-weight: 600; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; margin-bottom: 12px; }
+        .designer-props .props-empty { text-align: center; color: #999; padding: 40px 0; font-size: 13px; }
+        .designer-props .layui-form-item { margin-bottom: 12px; }
+        .designer-props .layui-form-label { width: 90px; padding: 6px 8px; font-size: 12px; }
+        .designer-props .layui-input-block { margin-left: 90px; }
+        .designer-props .layui-input { height: 30px; font-size: 12px; }
+        .designer-props textarea.layui-textarea { font-size: 12px; }
+        .banner-items-list { border: 1px solid #f0f0f0; border-radius: 4px; padding: 8px; margin-bottom: 8px; }
+        .banner-item-row { background: #f9f9f9; padding: 8px; margin-bottom: 6px; border-radius: 3px; font-size: 12px; }
+        .banner-item-row .row-title { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .banner-item-row .row-title .del-btn { color: #ff5722; cursor: pointer; }
+        .img-thumb { width: 60px; height: 40px; object-fit: cover; border: 1px solid #eee; border-radius: 3px; vertical-align: middle; }
+        .pick-btn { display: inline-block; padding: 2px 8px; background: #1e9fff; color: #fff; border-radius: 3px; font-size: 11px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="designer-layout">
+        <div class="designer-toolbar">
+            <button class="btn" onclick="window.location.href='/page/index'"><i class="layui-icon layui-icon-left"></i> 返回</button>
+            <div class="title">页面装修：<span id="spPageName">@ViewBag.PageName</span> <span style="color:#cce6ff; margin-left:8px;">@ViewBag.PagePath</span></span></div>
+            <button class="btn" id="btnUndo"><i class="layui-icon layui-icon-refresh-3"></i> 撤销</button>
+            <button class="btn" id="btnRedo"><i class="layui-icon layui-icon-refresh"></i> 重做</button>
+            <button class="btn" id="btnPreview"><i class="layui-icon layui-icon-search"></i> 预览</button>
+            <button class="btn primary" id="btnSaveDraft"><i class="layui-icon layui-icon-ok"></i> 保存草稿</button>
+            <button class="btn primary" id="btnPublish"><i class="layui-icon layui-icon-release"></i> 发布</button>
+        </div>
+        <div class="designer-main">
+            <div class="designer-lib">
+                <div class="lib-title">布局组件</div>
+                <div class="lib-item" data-type="navigation"><i class="layui-icon layui-icon-nav"></i>顶部导航</div>
+                <div class="lib-item" data-type="banner"><i class="layui-icon layui-icon-picture"></i>Banner图</div>
+                <div class="lib-item" data-type="footer"><i class="layui-icon layui-icon-bottom"></i>页脚</div>
+                <div class="lib-item" data-type="richText"><i class="layui-icon layui-icon-edit"></i>富文本</div>
+                <div class="lib-item" data-type="image"><i class="layui-icon layui-icon-image"></i>图片</div>
+                <div class="lib-item" data-type="title"><i class="layui-icon layui-icon-fonts"></i>标题</div>
+                <div class="lib-title">内容组件</div>
+                <div class="lib-item" data-type="news"><i class="layui-icon layui-icon-list"></i>新闻列表</div>
+                <div class="lib-item" data-type="product"><i class="layui-icon layui-icon-component"></i>产品列表</div>
+                <div class="lib-item" data-type="job"><i class="layui-icon layui-icon-friends"></i>招聘列表</div>
+            </div>
+            <div class="designer-canvas-wrap">
+                <div class="designer-canvas" id="canvas">
+                    <div class="empty-tip">从左侧拖入组件开始装修</div>
+                </div>
+            </div>
+            <div class="designer-props" id="propsPanel">
+                <div class="props-empty">请选择一个组件</div>
+            </div>
+        </div>
+    </div>
+    <input type="hidden" id="hfPageId" value="@ViewBag.PageId" />
+    <script src="~/resource/layuiadmin/layui/layui.js"></script>
+    <script src="~/resource/js/Sortable.min.js"></script>
+    <script src="~/resource/js/jquery-1.12.4.min.js"></script>
+    <script src="~/resource/wangeditor-4.7.9/wangEditor.min.js"></script>
+    <script>
+        var pageState = {
+            pageId: @ViewBag.PageId,
+            pageName: '@Html.Raw(ViewBag.PageName)',
+            pagePath: '@Html.Raw(ViewBag.PagePath)',
+            components: []
+        };
+        var history = [];
+        var historyIndex = -1;
+        var selectedIdx = -1;
+        var editor = null;
+
+        var typeNames = {
+            navigation: '顶部导航', banner: 'Banner图', footer: '页脚', richText: '富文本',
+            image: '图片', title: '标题', news: '新闻列表', product: '产品列表', job: '招聘列表'
+        };
+        var typeIcons = {
+            navigation: 'layui-icon-nav', banner: 'layui-icon-picture', footer: 'layui-icon-bottom',
+            richText: 'layui-icon-edit', image: 'layui-icon-image', title: 'layui-icon-fonts',
+            news: 'layui-icon-list', product: 'layui-icon-component', job: 'layui-icon-friends'
+        };
+        var defaultProps = {
+            navigation: { navStyle: 'horizontal', isFixedTop: false, bgColor: '#ffffff', textColor: '#333333', activeColor: '#1e9fff' },
+            banner: { height: 400, autoplay: true, interval: 5000, items: [] },
+            footer: { bgColor: '#2c3e50', textColor: '#ffffff' },
+            richText: { html: '', paddingTop: 20, paddingBottom: 20 },
+            image: { src: '', alt: '', width: '100%', align: 'center' },
+            title: { text: '标题', level: 2, align: 'center', color: '#333333' },
+            news: { categoryId: 0, pageSize: 6, showStyle: 'list', showCover: true, showSummary: true, showDate: true, moreLink: '/news' },
+            product: { categoryId: 0, pageSize: 8, colsPerRow: 4, showImage: true, showSummary: false, showSpec: false, moreLink: '/products' },
+            job: { pageSize: 10, showLocation: true, showSalary: true, showCount: true, showPublishTime: true }
+        };
+
+        function genId(type) { return type + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000); }
+
+        function getProp(comp, key, def) {
+            if (!comp.props) return def;
+            var v = comp.props[key];
+            return (v === undefined || v === null) ? def : v;
+        }
+        function setProp(comp, key, val) {
+            if (!comp.props) comp.props = {};
+            comp.props[key] = val;
+        }
+
+        function pushHistory() {
+            history = history.slice(0, historyIndex + 1);
+            history.push(JSON.parse(JSON.stringify(pageState.components)));
+            historyIndex = history.length - 1;
+            if (history.length > 50) { history.shift(); historyIndex--; }
+        }
+        function undo() {
+            if (historyIndex <= 0) { return; }
+            historyIndex--;
+            pageState.components = JSON.parse(JSON.stringify(history[historyIndex]));
+            selectedIdx = -1;
+            renderCanvas();
+            renderProps();
+        }
+        function redo() {
+            if (historyIndex >= history.length - 1) return;
+            historyIndex++;
+            pageState.components = JSON.parse(JSON.stringify(history[historyIndex]));
+            selectedIdx = -1;
+            renderCanvas();
+            renderProps();
+        }
+
+        function addBlock(type) {
+            pushHistory();
+            var comp = {
+                id: genId(type),
+                type: type,
+                name: typeNames[type] || type,
+                sort: pageState.components.length + 1,
+                visible: true,
+                locked: false,
+                props: JSON.parse(JSON.stringify(defaultProps[type] || {})),
+                style: {}
+            };
+            pageState.components.push(comp);
+            renderCanvas();
+            selectBlock(pageState.components.length - 1);
+        }
+
+        function renderBlockPreview(comp) {
+            var html = '';
+            if (comp.type === 'banner') {
+                var items = getProp(comp, 'items', []) || [];
+                if (items.length === 0) {
+                    html += '<div class="preview-empty">尚未配置 Banner 图片项</div>';
+                } else {
+                    for (var i = 0; i < items.length; i++) {
+                        var it = items[i] || {};
+                        if (it.image) {
+                            html += '<div style="position:relative; height:120px; background:url(\'' + it.image + '\') center/cover; color:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column;">';
+                            if (it.title) html += '<strong style="text-shadow:0 1px 3px rgba(0,0,0,.6);">' + it.title + '</strong>';
+                            html += '</div>';
+                        }
+                    }
+                }
+            } else if (comp.type === 'news') {
+                html += '<div class="preview-empty">将展示最新 ' + getProp(comp, 'pageSize', 6) + ' 条新闻</div>';
+            } else if (comp.type === 'product') {
+                var cols = getProp(comp, 'colsPerRow', 4);
+                html += '<div style="display:grid; grid-template-columns: repeat(' + cols + ', 1fr); gap:8px;">';
+                for (var p = 0; p < Math.min(getProp(comp, 'pageSize', 8), cols * 2); p++) {
+                    html += '<div style="height:80px; background:#f0f0f0; border-radius:3px;"></div>';
+                }
+                html += '</div>';
+            } else if (comp.type === 'job') {
+                html += '<div class="preview-empty">将展示最新 ' + getProp(comp, 'pageSize', 10) + ' 条招聘信息</div>';
+            } else if (comp.type === 'footer') {
+                html += '<div style="background:' + getProp(comp, 'bgColor', '#2c3e50') + '; color:' + getProp(comp, 'textColor', '#fff') + '; padding:16px; text-align:center;"><strong>页脚</strong><br><small>© 2026 企业名称 | 备案号</small></div>';
+            } else if (comp.type === 'navigation') {
+                html += '<div style="background:' + getProp(comp, 'bgColor', '#fff') + '; color:' + getProp(comp, 'textColor', '#333') + '; padding:10px 16px;"><strong>网站名称</strong> <span style="margin-left:24px;">首页 关于 产品 新闻 招聘 联系</span></div>';
+            } else if (comp.type === 'richText') {
+                var h = getProp(comp, 'html', '');
+                html += h ? '<div style="max-height:200px; overflow:hidden;">' + h + '</div>' : '<div class="preview-empty">点击右侧编辑富文本内容</div>';
+            } else if (comp.type === 'image') {
+                var src = getProp(comp, 'src', '');
+                html += src ? '<img src="' + src + '" alt="" style="width:' + getProp(comp, 'width', '100%') + ';">' : '<div class="preview-empty">点击右侧选择图片</div>';
+            } else if (comp.type === 'title') {
+                var lvl = getProp(comp, 'level', 2);
+                html += '<h' + lvl + ' style="text-align:' + getProp(comp, 'align', 'center') + '; color:' + getProp(comp, 'color', '#333') + ';">' + (getProp(comp, 'text', '标题') || '标题') + '</h' + lvl + '>';
+            }
+            return html;
+        }
+
+        function renderBlock(comp, idx) {
+            var visClass = comp.visible === false ? ' hidden-block' : '';
+            var selClass = idx === selectedIdx ? ' selected' : '';
+            var html = '<div class="block' + visClass + selClass + '" data-idx="' + idx + '">';
+            html += '<div class="block-header drag-handle">';
+            html += '<span class="name"><i class="layui-icon ' + (typeIcons[comp.type] || 'layui-icon-component') + '"></i> ' + (comp.name || typeNames[comp.type] || comp.type) + '</span>';
+            html += '<span class="type">' + comp.type + '</span>';
+            html += '<span class="block-tools">';
+            html += '<span class="tool-btn" data-action="up" title="上移"><i class="layui-icon layui-icon-up"></i></span>';
+            html += '<span class="tool-btn" data-action="down" title="下移"><i class="layui-icon layui-icon-down"></i></span>';
+            html += '<span class="tool-btn" data-action="copy" title="复制"><i class="layui-icon layui-icon-file"></i></span>';
+            html += '<span class="tool-btn" data-action="toggle" title="显示/隐藏"><i class="layui-icon layui-icon-show"></i></span>';
+            html += '<span class="tool-btn danger" data-action="del" title="删除"><i class="layui-icon layui-icon-delete"></i></span>';
+            html += '</span>';
+            html += '</div>';
+            html += '<div class="block-body">' + renderBlockPreview(comp) + '</div>';
+            html += '</div>';
+            return html;
+        }
+
+        function renderCanvas() {
+            if (pageState.components.length === 0) {
+                $('#canvas').html('<div class="empty-tip">从左侧拖入组件开始装修</div>');
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < pageState.components.length; i++) {
+                html += renderBlock(pageState.components[i], i);
+            }
+            $('#canvas').html(html);
+        }
+
+        function selectBlock(idx) {
+            selectedIdx = idx;
+            renderCanvas();
+            renderProps();
+        }
+
+        function renderProps() {
+            if (selectedIdx < 0 || selectedIdx >= pageState.components.length) {
+                $('#propsPanel').html('<div class="props-empty">请选择一个组件</div>');
+                return;
+            }
+            var comp = pageState.components[selectedIdx];
+            var html = '<div class="props-title">编辑属性 - ' + (typeNames[comp.type] || comp.type) + '</div>';
+            html += '<form class="layui-form" lay-filter="propsForm" onsubmit="return false;">';
+            html += '<div class="layui-form-item"><label class="layui-form-label">组件名称</label><div class="layui-input-block"><input type="text" name="name" class="layui-input" value="' + (comp.name || '') + '" data-prop="name"></div></div>';
+            html += '<div class="layui-form-item"><label class="layui-form-label">是否显示</label><div class="layui-input-block"><input type="checkbox" lay-skin="switch" lay-text="显示|隐藏" lay-filter="visible"' + (comp.visible !== false ? ' checked' : '') + ' data-prop="visible"></div></div>';
+
+            if (comp.type === 'navigation') {
+                html += propSelect('navStyle', '导航样式', [{ v: 'horizontal', t: '横向' }, { v: 'vertical', t: '纵向' }], getProp(comp, 'navStyle', 'horizontal'));
+                html += propCheckbox('isFixedTop', '固定顶部', getProp(comp, 'isFixedTop', false));
+                html += propColor('bgColor', '背景色', getProp(comp, 'bgColor', '#ffffff'));
+                html += propColor('textColor', '文字色', getProp(comp, 'textColor', '#333333'));
+                html += propColor('activeColor', '高亮色', getProp(comp, 'activeColor', '#1e9fff'));
+            } else if (comp.type === 'banner') {
+                html += propNumber('height', '高度(px)', getProp(comp, 'height', 400));
+                html += propCheckbox('autoplay', '自动播放', getProp(comp, 'autoplay', true));
+                html += propNumber('interval', '间隔(ms)', getProp(comp, 'interval', 5000));
+                html += '<div class="layui-form-item"><label class="layui-form-label">图片项</label><div class="layui-input-block" id="bannerItemsBox">';
+                var items = getProp(comp, 'items', []) || [];
+                for (var i = 0; i < items.length; i++) {
+                    var it = items[i] || {};
+                    html += '<div class="banner-item-row" data-item-idx="' + i + '">';
+                    html += '<div class="row-title"><span>Banner ' + (i + 1) + '</span><span class="del-btn" data-action="del-banner-item">删除</span></div>';
+                    html += '<div style="margin-bottom:4px;"><span class="pick-btn" data-action="pick-banner-image" data-field="image">选图</span> ';
+                    if (it.image) html += '<img src="' + it.image + '" class="img-thumb" alt="">';
+                    html += '<input type="hidden" data-item-field="image" value="' + (it.image || '') + '"></div>';
+                    html += '<input type="text" class="layui-input" placeholder="标题" value="' + (it.title || '') + '" data-item-field="title" style="margin-bottom:4px;">';
+                    html += '<input type="text" class="layui-input" placeholder="副标题" value="' + (it.subtitle || '') + '" data-item-field="subtitle" style="margin-bottom:4px;">';
+                    html += '<input type="text" class="layui-input" placeholder="按钮文字" value="' + (it.buttonText || '') + '" data-item-field="buttonText" style="margin-bottom:4px;">';
+                    html += '<input type="text" class="layui-input" placeholder="按钮链接" value="' + (it.buttonLink || '') + '" data-item-field="buttonLink">';
+                    html += '</div>';
+                }
+                html += '<button type="button" class="layui-btn layui-btn-sm layui-btn-normal" data-action="add-banner-item"><i class="layui-icon layui-icon-addition"></i>新增图片项</button>';
+                html += '</div></div>';
+            } else if (comp.type === 'news') {
+                html += propNumber('categoryId', '分类ID(0=全部)', getProp(comp, 'categoryId', 0));
+                html += propNumber('pageSize', '显示条数', getProp(comp, 'pageSize', 6));
+                html += propSelect('showStyle', '展示样式', [{ v: 'list', t: '列表' }, { v: 'card', t: '卡片' }], getProp(comp, 'showStyle', 'list'));
+                html += propCheckbox('showCover', '显示封面', getProp(comp, 'showCover', true));
+                html += propCheckbox('showSummary', '显示摘要', getProp(comp, 'showSummary', true));
+                html += propCheckbox('showDate', '显示日期', getProp(comp, 'showDate', true));
+                html += propText('moreLink', '更多链接', getProp(comp, 'moreLink', '/news'));
+            } else if (comp.type === 'product') {
+                html += propNumber('categoryId', '分类ID(0=全部)', getProp(comp, 'categoryId', 0));
+                html += propNumber('pageSize', '显示条数', getProp(comp, 'pageSize', 8));
+                html += propSelect('colsPerRow', '每行列数', [{ v: '1', t: '1' }, { v: '2', t: '2' }, { v: '3', t: '3' }, { v: '4', t: '4' }], String(getProp(comp, 'colsPerRow', 4)));
+                html += propCheckbox('showImage', '显示图片', getProp(comp, 'showImage', true));
+                html += propCheckbox('showSummary', '显示摘要', getProp(comp, 'showSummary', false));
+                html += propCheckbox('showSpec', '显示规格', getProp(comp, 'showSpec', false));
+                html += propText('moreLink', '更多链接', getProp(comp, 'moreLink', '/products'));
+            } else if (comp.type === 'job') {
+                html += propNumber('pageSize', '显示条数', getProp(comp, 'pageSize', 10));
+                html += propCheckbox('showLocation', '显示地点', getProp(comp, 'showLocation', true));
+                html += propCheckbox('showSalary', '显示薪资', getProp(comp, 'showSalary', true));
+                html += propCheckbox('showCount', '显示人数', getProp(comp, 'showCount', true));
+                html += propCheckbox('showPublishTime', '显示发布时间', getProp(comp, 'showPublishTime', true));
+            } else if (comp.type === 'footer') {
+                html += propColor('bgColor', '背景色', getProp(comp, 'bgColor', '#2c3e50'));
+                html += propColor('textColor', '文字色', getProp(comp, 'textColor', '#ffffff'));
+            } else if (comp.type === 'richText') {
+                html += '<div class="layui-form-item"><label class="layui-form-label">内容</label><div class="layui-input-block"><div id="richTextEditor" style="border:1px solid #ccc; min-height:200px;"></div></div></div>';
+                html += propNumber('paddingTop', '上边距', getProp(comp, 'paddingTop', 20));
+                html += propNumber('paddingBottom', '下边距', getProp(comp, 'paddingBottom', 20));
+            } else if (comp.type === 'image') {
+                html += '<div class="layui-form-item"><label class="layui-form-label">图片</label><div class="layui-input-block"><span class="pick-btn" data-action="pick-image">选择图片</span> ';
+                var src = getProp(comp, 'src', '');
+                if (src) html += '<img src="' + src + '" class="img-thumb" alt="">';
+                html += '<input type="hidden" data-prop="src" value="' + src + '"></div></div>';
+                html += propText('alt', '替代文字', getProp(comp, 'alt', ''));
+                html += propText('width', '宽度', getProp(comp, 'width', '100%'));
+                html += propSelect('align', '对齐', [{ v: 'left', t: '左' }, { v: 'center', t: '中' }, { v: 'right', t: '右' }], getProp(comp, 'align', 'center'));
+            } else if (comp.type === 'title') {
+                html += propText('text', '文本', getProp(comp, 'text', ''));
+                html += propSelect('level', '标题级别', [{ v: '1', t: 'H1' }, { v: '2', t: 'H2' }, { v: '3', t: 'H3' }, { v: '4', t: 'H4' }, { v: '5', t: 'H5' }, { v: '6', t: 'H6' }], String(getProp(comp, 'level', 2)));
+                html += propSelect('align', '对齐', [{ v: 'left', t: '左' }, { v: 'center', t: '中' }, { v: 'right', t: '右' }], getProp(comp, 'align', 'center'));
+                html += propColor('color', '颜色', getProp(comp, 'color', '#333333'));
+            }
+
+            html += '</form>';
+            $('#propsPanel').html(html);
+
+            if (comp.type === 'richText') {
+                initRichTextEditor(comp);
+            }
+        }
+
+        function propText(name, label, val) {
+            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="text" class="layui-input" value="' + (val || '') + '" data-prop="' + name + '"></div></div>';
+        }
+        function propNumber(name, label, val) {
+            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="number" class="layui-input" value="' + (val || 0) + '" data-prop="' + name + '"></div></div>';
+        }
+        function propCheckbox(name, label, checked) {
+            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="checkbox" lay-skin="switch" lay-text="是|否" lay-filter="p_' + name + '"' + (checked ? ' checked' : '') + ' data-prop="' + name + '"></div></div>';
+        }
+        function propSelect(name, label, opts, val) {
+            var html = '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><select data-prop="' + name + '">';
+            for (var i = 0; i < opts.length; i++) {
+                html += '<option value="' + opts[i].v + '"' + (String(opts[i].v) === String(val) ? ' selected' : '') + '>' + opts[i].t + '</option>';
+            }
+            html += '</select></div></div>';
+            return html;
+        }
+        function propColor(name, label, val) {
+            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="color" class="layui-input" value="' + (val || '#000000') + '" data-prop="' + name + '" style="height:30px; padding:2px;"></div></div>';
+        }
+
+        function initRichTextEditor(comp) {
+            if (editor) { try { editor.destroy(); } catch (e) {} editor = null; }
+            var E = window.wangEditor;
+            editor = new E('#richTextEditor');
+            editor.config.uploadFileName = 'file';
+            editor.config.uploadImgServer = '/Upload/UploadImage';
+            editor.config.uploadImgHooks = {
+                customInsert: function (insertImg, result) { if (result.url) insertImg(result.url); }
+            };
+            editor.config.height = 200;
+            editor.config.onchange = function (html) {
+                setProp(comp, 'html', html);
+                renderCanvas();
+            };
+            editor.create();
+            editor.txt.html(getProp(comp, 'html', ''));
+        }
+
+        function openImageSelector(callback) {
+            window._designerImgCallback = callback;
+            layer.open({ type: 2, title: '选择图片', area: ['900px', '680px'], content: '/Admin/ImageSelector' });
+        }
+        window.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'imageSelected' && window._designerImgCallback) {
+                window._designerImgCallback(e.data.url);
+                window._designerImgCallback = null;
+            }
+        });
+
+        function updateOrder() {
+            var newOrder = [];
+            $('#canvas .block').each(function (i) {
+                var idx = parseInt($(this).attr('data-idx'));
+                newOrder.push(pageState.components[idx]);
+            });
+            pushHistory();
+            pageState.components = newOrder;
+            for (var i = 0; i < pageState.components.length; i++) {
+                pageState.components[i].sort = i + 1;
+            }
+            selectedIdx = -1;
+            renderCanvas();
+            renderProps();
+        }
+
+        function bindEvents() {
+            var canvasEl = document.getElementById('canvas');
+            var libEl = document.querySelector('.designer-lib');
+
+            Sortable.create(libEl, {
+                group: { name: 'page', pull: 'clone', put: false },
+                sort: false,
+                animation: 150,
+                onEnd: function (evt) {
+                    if (evt.to === canvasEl) {
+                        $(evt.item).remove();
+                        var type = $(evt.originalEvent ? evt.item : evt.clone).attr('data-type') || $(evt.item).attr('data-type');
+                        addBlock(type);
+                    }
+                }
+            });
+
+            Sortable.create(canvasEl, {
+                group: { name: 'page', pull: false, put: false },
+                animation: 150,
+                handle: '.drag-handle',
+                onEnd: updateOrder
+            });
+
+            $('#canvas').on('click', '.block', function (e) {
+                if ($(e.target).closest('.block-tools').length) return;
+                var idx = parseInt($(this).attr('data-idx'));
+                selectBlock(idx);
+            });
+
+            $('#canvas').on('click', '.block-tools .tool-btn', function (e) {
+                e.stopPropagation();
+                var action = $(this).attr('data-action');
+                var idx = parseInt($(this).closest('.block').attr('data-idx'));
+                if (action === 'up' && idx > 0) {
+                    pushHistory();
+                    var tmp = pageState.components[idx - 1];
+                    pageState.components[idx - 1] = pageState.components[idx];
+                    pageState.components[idx] = tmp;
+                    selectedIdx = idx - 1;
+                    renderCanvas(); renderProps();
+                } else if (action === 'down' && idx < pageState.components.length - 1) {
+                    pushHistory();
+                    var tmp2 = pageState.components[idx + 1];
+                    pageState.components[idx + 1] = pageState.components[idx];
+                    pageState.components[idx] = tmp2;
+                    selectedIdx = idx + 1;
+                    renderCanvas(); renderProps();
+                } else if (action === 'copy') {
+                    pushHistory();
+                    var c = JSON.parse(JSON.stringify(pageState.components[idx]));
+                    c.id = genId(c.type);
+                    pageState.components.splice(idx + 1, 0, c);
+                    selectedIdx = idx + 1;
+                    renderCanvas(); renderProps();
+                } else if (action === 'toggle') {
+                    pushHistory();
+                    pageState.components[idx].visible = !(pageState.components[idx].visible !== false);
+                    renderCanvas(); renderProps();
+                } else if (action === 'del') {
+                    layer.confirm('确认删除该组件？', function (i) {
+                        pushHistory();
+                        pageState.components.splice(idx, 1);
+                        selectedIdx = -1;
+                        renderCanvas(); renderProps();
+                        layer.close(i);
+                    });
+                }
+            });
+
+            $('#propsPanel').on('change input', '[data-prop]', function () {
+                if (selectedIdx < 0) return;
+                var comp = pageState.components[selectedIdx];
+                var key = $(this).attr('data-prop');
+                var val;
+                if (this.type === 'checkbox') {
+                    if ($(this).attr('lay-skin') === 'switch') {
+                        val = this.checked;
+                        if (key === 'visible') comp.visible = val;
+                        else setProp(comp, key, val);
+                    } else {
+                        val = this.checked;
+                        setProp(comp, key, val);
+                    }
+                } else if (this.type === 'number') {
+                    val = parseInt(this.value) || 0;
+                    setProp(comp, key, val);
+                } else {
+                    val = this.value;
+                    if (key === 'name') comp.name = val;
+                    else setProp(comp, key, val);
+                }
+                renderCanvas();
+            });
+
+            $('#propsPanel').on('change', 'select[data-prop]', function () {
+                if (selectedIdx < 0) return;
+                var comp = pageState.components[selectedIdx];
+                var key = $(this).attr('data-prop');
+                var val = $(this).val();
+                if (key === 'level' || key === 'colsPerRow') val = parseInt(val) || 0;
+                setProp(comp, key, val);
+                renderCanvas();
+            });
+
+            $('#propsPanel').on('click', '[data-action="pick-image"]', function () {
+                if (selectedIdx < 0) return;
+                var comp = pageState.components[selectedIdx];
+                openImageSelector(function (url) {
+                    setProp(comp, 'src', url);
+                    renderProps();
+                    renderCanvas();
+                });
+            });
+
+            $('#propsPanel').on('click', '[data-action="add-banner-item"]', function () {
+                if (selectedIdx < 0) return;
+                var comp = pageState.components[selectedIdx];
+                var items = getProp(comp, 'items', []) || [];
+                items.push({ title: '', subtitle: '', image: '', buttonText: '', buttonLink: '' });
+                setProp(comp, 'items', items);
+                renderProps();
+            });
+
+            $('#propsPanel').on('click', '[data-action="del-banner-item"]', function () {
+                if (selectedIdx < 0) return;
+                var comp = pageState.components[selectedIdx];
+                var itemIdx = parseInt($(this).closest('.banner-item-row').attr('data-item-idx'));
+                var items = getProp(comp, 'items', []) || [];
+                items.splice(itemIdx, 1);
+                setProp(comp, 'items', items);
+                renderProps();
+            });
+
+            $('#propsPanel').on('click', '[data-action="pick-banner-image"]', function () {
+                if (selectedIdx < 0) return;
+                var comp = pageState.components[selectedIdx];
+                var row = $(this).closest('.banner-item-row');
+                var itemIdx = parseInt(row.attr('data-item-idx'));
+                openImageSelector(function (url) {
+                    var items = getProp(comp, 'items', []) || [];
+                    if (!items[itemIdx]) items[itemIdx] = {};
+                    items[itemIdx].image = url;
+                    setProp(comp, 'items', items);
+                    renderProps();
+                    renderCanvas();
+                });
+            });
+
+            $('#propsPanel').on('change input', '[data-item-field]', function () {
+                if (selectedIdx < 0) return;
+                var comp = pageState.components[selectedIdx];
+                var row = $(this).closest('.banner-item-row');
+                var itemIdx = parseInt(row.attr('data-item-idx'));
+                var field = $(this).attr('data-item-field');
+                var items = getProp(comp, 'items', []) || [];
+                if (!items[itemIdx]) items[itemIdx] = {};
+                items[itemIdx][field] = this.value;
+                setProp(comp, 'items', items);
+                if (field === 'image') renderCanvas();
+            });
+
+            $('#btnUndo').on('click', undo);
+            $('#btnRedo').on('click', redo);
+
+            $('#btnSaveDraft').on('click', function () {
+                var loading = layer.load(1, { shade: 0.3 });
+                $.ajax({
+                    type: 'post',
+                    url: '/Page/SaveDraft?id=' + pageState.pageId,
+                    data: { componentJson: JSON.stringify(pageState.components) },
+                    dataType: 'json',
+                    success: function (res) {
+                        layer.close(loading);
+                        if (res.code == 200) layer.msg(res.message, { icon: 1 });
+                        else layer.msg(res.message, { icon: 5 });
+                    },
+                    error: function () { layer.close(loading); layer.msg('保存失败', { icon: 5 }); }
+                });
+            });
+
+            $('#btnPreview').on('click', function () {
+                window.open('/page/preview/' + pageState.pageId);
+            });
+
+            $('#btnPublish').on('click', function () {
+                layer.confirm('发布前请先保存草稿。是否已保存？确认将直接发布当前草稿。', function (i) {
+                    layer.close(i);
+                    var loading = layer.load(1, { shade: 0.3 });
+                    $.ajax({
+                        type: 'post', url: '/Page/Publish?id=' + pageState.pageId, dataType: 'json',
+                        success: function (res) {
+                            layer.close(loading);
+                            if (res.code == 200) {
+                                layer.alert(res.message, function (idx) {
+                                    window.location.href = '/page/index';
+                                    layer.close(idx);
+                                });
+                            } else { layer.msg(res.message, { icon: 5 }); }
+                        },
+                        error: function () { layer.close(loading); layer.msg('发布失败', { icon: 5 }); }
+                    });
+                });
+            });
+        }
+
+        function loadComponents() {
+            var loading = layer.load(1, { shade: 0.3 });
+            $.ajax({
+                type: 'get', url: '/Page/GetComponentData?pageId=' + pageState.pageId, dataType: 'json',
+                success: function (res) {
+                    layer.close(loading);
+                    if (res.code == 200) {
+                        pageState.components = res.components || [];
+                        for (var i = 0; i < pageState.components.length; i++) {
+                            if (!pageState.components[i].props) pageState.components[i].props = {};
+                            if (!pageState.components[i].style) pageState.components[i].style = {};
+                        }
+                        history = [JSON.parse(JSON.stringify(pageState.components))];
+                        historyIndex = 0;
+                        renderCanvas();
+                        renderProps();
+                        bindEvents();
+                    } else {
+                        layer.msg(res.message || '加载失败', { icon: 5 });
+                    }
+                },
+                error: function () { layer.close(loading); layer.msg('加载失败', { icon: 5 }); }
+            });
+        }
+
+        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'form', 'layer'], function () {
+            var form = layui.form;
+            $(document).on('change', 'input[lay-skin="switch"]', function () {
+                form.render('checkbox');
+            });
+            loadComponents();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+@using CIMC.Data
+@model MySite.Web.Models.ComponentModel
+@{
+    var newsList = ViewBag.NewsList as List<Article> ?? new List<Article>();
+    int pageSize = 6;
+    bool showCover = true, showSummary = true, showDate = true;
+    string moreLink = "/news";
+
+    if (Model.Props != null)
+    {
+        if (Model.Props.TryGetValue("pageSize", out var ps) && ps != null && int.TryParse(ps.ToString(), out var psp)) pageSize = psp;
+        if (Model.Props.TryGetValue("showCover", out var sc) && sc != null && bool.TryParse(sc.ToString(), out var scv)) showCover = scv;
+        if (Model.Props.TryGetValue("showSummary", out var ss) && ss != null && bool.TryParse(ss.ToString(), out var ssv)) showSummary = ssv;
+        if (Model.Props.TryGetValue("showDate", out var sd) && sd != null && bool.TryParse(sd.ToString(), out var sdv)) showDate = sdv;
+        if (Model.Props.TryGetValue("moreLink", out var ml) && ml != null) moreLink = ml.ToString();
+    }
+
+    var items = newsList.Take(pageSize).ToList();
+}
+<section class="news-section">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title">新闻动态</h2>
+            @if (!string.IsNullOrEmpty(moreLink))
+            {
+                <a href="@moreLink" class="more-link">查看更多 &rsaquo;</a>
+            }
+        </div>
+        @if (items.Count == 0)
+        {
+            <p class="empty-tip">暂无新闻</p>
+        }
+        else
+        {
+            <div class="news-grid">
+                @foreach (var news in items)
+                {
+                    <article class="news-card">
+                        @if (showCover && !string.IsNullOrEmpty(news.ImageUrl))
+                        {
+                            <a href="/news/info-@(news.Id).html" class="news-cover">
+                                <img src="@news.ImageUrl" alt="@news.Title" loading="lazy" />
+                            </a>
+                        }
+                        <div class="news-body">
+                            <h3 class="news-title"><a href="/news/info-@(news.Id).html">@news.Title</a></h3>
+                            @if (showSummary && !string.IsNullOrEmpty(news.Description))
+                            {
+                                <p class="news-summary">@news.Description</p>
+                            }
+                            @if (showDate && news.CreationTime.HasValue)
+                            {
+                                <time class="news-date">@news.CreationTime.Value.ToString("yyyy-MM-dd")</time>
+                            }
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>

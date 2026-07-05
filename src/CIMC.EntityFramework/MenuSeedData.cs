@@ -38,5 +38,28 @@ namespace CIMC.Data
                 new Menu { Pid = systemMenuId, Title = "审计日志", Icon = "layui-icon-survey", Path = "/auditlog/index", PermissionKey = "System_AuditLog", Buttons = "View,Delete", MenuType = 2, Spread = false, IsShow = true, Sort = 95 }
             };
         }
+
+        public static Menu WebsiteMenu => new Menu
+        {
+            Pid = 0,
+            Title = "网站管理",
+            Icon = "layui-icon-website",
+            PermissionKey = "Site",
+            MenuType = 1,
+            Spread = false,
+            IsShow = true,
+            Sort = 10
+        };
+
+        public static List<Menu> GetWebsiteMenus(int websiteMenuId)
+        {
+            return new List<Menu>
+            {
+                new Menu { Pid = websiteMenuId, Title = "站点设置", Icon = "layui-icon-set", Path = "/siteconfig/index", PermissionKey = "Site_Info", Buttons = "Edit", MenuType = 2, Spread = false, IsShow = true, Sort = 11 },
+                new Menu { Pid = websiteMenuId, Title = "页面管理", Icon = "layui-icon-template", Path = "/page/index", PermissionKey = "Website_Page", Buttons = "Add,Edit,Delete,Design,Publish", MenuType = 2, Spread = false, IsShow = true, Sort = 12 },
+                new Menu { Pid = websiteMenuId, Title = "导航管理", Icon = "layui-icon-nav", Path = "/navigation/index", PermissionKey = "Site_Navigation", Buttons = "Add,Edit,Delete", MenuType = 2, Spread = false, IsShow = true, Sort = 13 },
+                new Menu { Pid = websiteMenuId, Title = "页脚设置", Icon = "layui-icon-bottom", Path = "/footer/index", PermissionKey = "Site_Footer", Buttons = "Edit", MenuType = 2, Spread = false, IsShow = true, Sort = 14 }
+            };
+        }
     }
 }
