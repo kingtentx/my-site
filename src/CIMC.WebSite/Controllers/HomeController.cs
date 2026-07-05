@@ -75,7 +75,7 @@ namespace MySite.Web.Controllers
             List<ContentProduct> products;
             if (!string.IsNullOrWhiteSpace(category))
             {
-                var catEntity = _productCategoryRepository.GetOne(c => c.Name == category && !c.IsDelete);
+                var catEntity = _productCategoryRepository.GetOne(c => c.Name == category && !c.IsDelete && c.IsActive);
                 if (catEntity != null)
                 {
                     products = _productRepository.GetList(p => !p.IsDelete && p.IsActive && p.CategoryId == catEntity.Id,
@@ -100,7 +100,7 @@ namespace MySite.Web.Controllers
         public IActionResult ProductDetail(int id)
         {
             var product = _productRepository.GetOne(id);
-            if (product == null || product.IsDelete)
+            if (product == null || product.IsDelete || !product.IsActive)
             {
                 return NotFound();
             }
@@ -110,7 +110,7 @@ namespace MySite.Web.Controllers
             {
                 try
                 {
-                    ViewBag.ProductImages = JsonConvert.DeserializeObject<List<string>>(product.ImageList);
+                    ViewBag.ProductImages = JsonConvert.DeserializeObject<List<string>>(product.ImageList) ?? new List<string>();
                 }
                 catch
                 {
@@ -123,7 +123,7 @@ namespace MySite.Web.Controllers
             }
 
             var category = product.CategoryId > 0
-                ? _productCategoryRepository.GetOne(product.CategoryId)
+                ? _productCategoryRepository.GetOne(c => c.Id == product.CategoryId && !c.IsDelete && c.IsActive)
                 : null;
             ViewBag.ProductCategory = category;
 
@@ -197,7 +197,7 @@ namespace MySite.Web.Controllers
         private PageRenderModel BuildPage(Expression<Func<WebsitePage, bool>> predicate)
         {
             var page = _pageRepository.GetOne(predicate);
-            if (page == null || page.Status != 1)
+            if (page == null || page.Status != 1 || !page.IsActive)
             {
                 return null;
             }
@@ -210,7 +210,7 @@ namespace MySite.Web.Controllers
             List<ComponentModel> components;
             try
             {
-                components = JsonConvert.DeserializeObject<List<ComponentModel>>(componentJson);
+                components = JsonConvert.DeserializeObject<List<ComponentModel>>(componentJson) ?? new List<ComponentModel>();
             }
             catch
             {
@@ -231,13 +231,15 @@ namespace MySite.Web.Controllers
                 PageTitle = page.PageTitle,
                 SeoKeywords = page.SeoKeywords,
                 SeoDescription = page.SeoDescription,
-                Components = components ?? new List<ComponentModel>(),
+                Components = components,
                 SiteConfig = ToSiteConfigModel(siteConfig),
                 Navigation = navigations.Select(n => ToNavigationModel(n)).ToList(),
                 Footer = ToFooterModel(footer)
             };
 
             ViewData["Title"] = page.PageTitle ?? siteConfig?.BrowserTitle ?? siteConfig?.SiteName ?? "企业官网";
+            ViewData["Keywords"] = page.SeoKeywords ?? siteConfig?.Keywords;
+            ViewData["Description"] = page.SeoDescription ?? siteConfig?.Description;
             ViewBag.SiteConfig = model.SiteConfig;
             ViewBag.NavigationList = model.Navigation;
             ViewBag.Footer = model.Footer;
@@ -264,6 +266,8 @@ namespace MySite.Web.Controllers
             var navList = navigations.Select(n => ToNavigationModel(n)).ToList();
 
             ViewData["Title"] = siteConfigModel?.BrowserTitle ?? siteConfigModel?.SiteName ?? "企业官网";
+            ViewData["Keywords"] = siteConfigModel?.Keywords;
+            ViewData["Description"] = siteConfigModel?.Description;
             ViewBag.SiteConfig = siteConfigModel;
             ViewBag.NavigationList = navList;
             ViewBag.Footer = footerModel;
