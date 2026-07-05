@@ -91,6 +91,29 @@ namespace CIMC.Data
         public string Language { get; set; }
 
         /// <summary>
+        /// 顶部导航背景色
+        /// </summary>
+        [StringLength(ModelUnits.Len_20)]
+        public string HeaderBgColor { get; set; } = "#ffffff";
+
+        /// <summary>
+        /// 顶部导航文字色
+        /// </summary>
+        [StringLength(ModelUnits.Len_20)]
+        public string HeaderTextColor { get; set; } = "#333333";
+
+        /// <summary>
+        /// 顶部导航高亮色
+        /// </summary>
+        [StringLength(ModelUnits.Len_20)]
+        public string HeaderActiveColor { get; set; } = "#1e9fff";
+
+        /// <summary>
+        /// 顶部导航是否固定在顶部
+        /// </summary>
+        public bool HeaderFixedTop { get; set; } = false;
+
+        /// <summary>
         /// 网站状态：true=启用，false=停用
         /// </summary>
         public bool IsActive { get; set; } = true;
