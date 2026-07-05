@@ -54,7 +54,7 @@ namespace MySite.Web.Controllers
             if (id > 0)
             {
                 var entity = _repository.GetOne(id);
-                if (entity == null)
+                if (entity == null || entity.IsDelete)
                 {
                     return NotFound();
                 }
@@ -72,15 +72,34 @@ namespace MySite.Web.Controllers
             {
                 return Json(result);
             }
+            if (id > 0 && input.Pid == id)
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "不能选择自身作为父级分类" });
+            }
+            if (input.Pid > 0)
+            {
+                var parent = _repository.GetOne(input.Pid);
+                if (parent == null || parent.IsDelete)
+                {
+                    return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "父级分类不存在" });
+                }
+            }
+
+            var name = input.Name.Trim();
+            var exists = _repository.GetList(p => !p.IsDelete && p.Pid == input.Pid && p.Name == name && p.Id != id);
+            if (exists.Any())
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "同级分类名称已存在" });
+            }
 
             var entity = id > 0 ? _repository.GetOne(id) : new ContentProductCategory { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (entity == null)
+            if (entity == null || entity.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
             }
 
             entity.Pid = input.Pid;
-            entity.Name = input.Name;
+            entity.Name = name;
             entity.Sort = input.Sort;
             entity.IsActive = input.IsActive;
             entity.IsDelete = false;
@@ -106,7 +125,7 @@ namespace MySite.Web.Controllers
         public IActionResult Delete(int id)
         {
             var entity = _repository.GetOne(id);
-            if (entity == null)
+            if (entity == null || entity.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
             }
