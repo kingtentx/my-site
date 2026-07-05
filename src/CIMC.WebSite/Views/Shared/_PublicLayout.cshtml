@@ -1,5 +1,6 @@
 @{
     var siteConfig = ViewBag.SiteConfig as MySite.Web.Models.SiteConfigModel;
+    var footer = ViewBag.Footer as MySite.Web.Models.FooterModel;
     var title = ViewData["Title"] as string ?? siteConfig?.BrowserTitle ?? siteConfig?.SiteName ?? "企业官网";
     var keywords = ViewData["Keywords"] as string ?? siteConfig?.Keywords;
     var description = ViewData["Description"] as string ?? siteConfig?.Description;
@@ -23,7 +24,11 @@
 </head>
 <body>
     <div class="page-wrapper" data-current-path="@currentPath">
-        @RenderBody()
+        @await Html.PartialAsync("~/Views/Home/Components/_Navigation.cshtml", siteConfig)
+        <main class="site-main">
+            @RenderBody()
+        </main>
+        @await Html.PartialAsync("~/Views/Home/Components/_Footer.cshtml", footer)
     </div>
     <script src="~/site/js/site.js" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
