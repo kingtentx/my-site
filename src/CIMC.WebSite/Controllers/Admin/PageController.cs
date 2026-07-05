@@ -4,6 +4,8 @@ using CIMC.Helper;
 using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -46,7 +48,7 @@ namespace MySite.Web.Controllers
             if (id > 0)
             {
                 var page = _pageRepository.GetOne(id);
-                if (page == null)
+                if (page == null || page.IsDelete)
                 {
                     return NotFound();
                 }
@@ -65,22 +67,23 @@ namespace MySite.Web.Controllers
                 return Json(result);
             }
 
-            var pathExists = _pageRepository.GetList(p => p.PagePath == input.PagePath && p.Id != id && !p.IsDelete);
+            var normalizedPath = NormalizePagePath(input.PagePath);
+            var pathExists = _pageRepository.GetList(p => p.PagePath == normalizedPath && p.Id != id && !p.IsDelete);
             if (pathExists.Any())
             {
                 return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "页面路径已存在" });
             }
 
             var page = id > 0 ? _pageRepository.GetOne(id) : new WebsitePage { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (page == null)
+            if (page == null || page.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
             }
 
-            page.SiteId = 1;
-            page.PageName = input.PageName;
-            page.PageCode = input.PageCode;
-            page.PagePath = input.PagePath.StartsWith("/") ? input.PagePath : "/" + input.PagePath;
+            page.SiteId = input.SiteId <= 0 ? 1 : input.SiteId;
+            page.PageName = input.PageName.Trim();
+            page.PageCode = input.PageCode?.Trim();
+            page.PagePath = normalizedPath;
             page.PageTitle = input.PageTitle;
             page.SeoKeywords = input.SeoKeywords;
             page.SeoDescription = input.SeoDescription;
@@ -101,6 +104,7 @@ namespace MySite.Web.Controllers
                     _pageRepository.Update(oh);
                 }
                 page.IsHome = true;
+                page.PagePath = "/";
             }
             else
             {
@@ -132,6 +136,8 @@ namespace MySite.Web.Controllers
                 where = where.And(p => p.PageName.Contains(keywords) || p.PagePath.Contains(keywords));
             }
 
+            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            pageSize = pageSize <= 0 ? 10 : pageSize;
             var query = _pageRepository.GetList(where, p => p.Sort, pageIndex, pageSize, true);
             var data = query.List.Select(p => new
             {
@@ -152,19 +158,30 @@ namespace MySite.Web.Controllers
 
         [HttpPost]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Delete)]
-        public IActionResult Delete(int id, int[] ids, int isAll = 0)
+        public IActionResult Delete(int id, int[] ids = null, int isAll = 0)
         {
-            var deleteIds = isAll == 1 ? ids : new[] { id };
-            foreach (var deleteId in deleteIds.Where(p => p > 0))
+            var deleteIds = ResolveIds(id, ids, isAll);
+            if (!deleteIds.Any())
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择要删除的数据" });
+            }
+
+            foreach (var deleteId in deleteIds)
             {
                 var page = _pageRepository.GetOne(deleteId);
-                if (page != null)
+                if (page == null || page.IsDelete)
                 {
-                    page.IsDelete = true;
-                    page.UpdateTime = DateTime.Now;
-                    page.UpdateBy = LoginUser.UserName;
-                    _pageRepository.Update(page);
+                    continue;
                 }
+                if (page.IsHome)
+                {
+                    return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "首页不能直接删除，请先设置其他页面为首页" });
+                }
+
+                page.IsDelete = true;
+                page.UpdateTime = DateTime.Now;
+                page.UpdateBy = LoginUser.UserName;
+                _pageRepository.Update(page);
             }
 
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "删除成功" });
@@ -175,9 +192,13 @@ namespace MySite.Web.Controllers
         public IActionResult SetHome(int id)
         {
             var page = _pageRepository.GetOne(id);
-            if (page == null)
+            if (page == null || page.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
+            }
+            if (!page.IsActive)
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "禁用页面不能设为首页" });
             }
 
             var oldHomes = _pageRepository.GetList(p => p.IsHome && p.Id != id && !p.IsDelete);
@@ -190,6 +211,7 @@ namespace MySite.Web.Controllers
             }
 
             page.IsHome = true;
+            page.PagePath = "/";
             page.UpdateTime = DateTime.Now;
             page.UpdateBy = LoginUser.UserName;
             _pageRepository.Update(page);
@@ -201,7 +223,7 @@ namespace MySite.Web.Controllers
         public IActionResult Design(int id)
         {
             var page = _pageRepository.GetOne(id);
-            if (page == null)
+            if (page == null || page.IsDelete)
             {
                 return NotFound();
             }
@@ -216,12 +238,17 @@ namespace MySite.Web.Controllers
         public JsonResult GetComponentData(int pageId)
         {
             var page = _pageRepository.GetOne(pageId);
-            if (page == null)
+            if (page == null || page.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "页面不存在" });
             }
 
-            var componentJson = string.IsNullOrWhiteSpace(page.ComponentJson) ? "[]" : page.ComponentJson;
+            var componentJson = NormalizeComponentJson(page.ComponentJson, out var error);
+            if (!string.IsNullOrEmpty(error))
+            {
+                componentJson = "[]";
+            }
+
             return Json(new
             {
                 code = (int)ResultCode.Success,
@@ -230,7 +257,7 @@ namespace MySite.Web.Controllers
                 pageName = page.PageName,
                 pagePath = page.PagePath,
                 status = page.Status,
-                components = Newtonsoft.Json.JsonConvert.DeserializeObject(componentJson)
+                components = JsonConvert.DeserializeObject(componentJson)
             });
         }
 
@@ -239,12 +266,18 @@ namespace MySite.Web.Controllers
         public IActionResult SaveDraft(int id, string componentJson)
         {
             var page = _pageRepository.GetOne(id);
-            if (page == null)
+            if (page == null || page.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "页面不存在" });
             }
 
-            page.ComponentJson = componentJson ?? "[]";
+            var normalizedJson = NormalizeComponentJson(componentJson, out var error);
+            if (!string.IsNullOrEmpty(error))
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = error });
+            }
+
+            page.ComponentJson = normalizedJson;
             page.UpdateBy = LoginUser.UserName;
             page.UpdateTime = DateTime.Now;
             _pageRepository.Update(page);
@@ -259,7 +292,7 @@ namespace MySite.Web.Controllers
                 {
                     PageId = id,
                     VersionNo = nextVersionNo,
-                    DraftJson = componentJson,
+                    DraftJson = normalizedJson,
                     PublishJson = version?.PublishJson,
                     Status = 0,
                     CreateUserId = LoginUser.UserId,
@@ -269,7 +302,7 @@ namespace MySite.Web.Controllers
             }
             else
             {
-                draftVersion.DraftJson = componentJson;
+                draftVersion.DraftJson = normalizedJson;
                 draftVersion.CreateUserName = LoginUser.UserName;
                 _versionRepository.Update(draftVersion);
             }
@@ -282,12 +315,20 @@ namespace MySite.Web.Controllers
         public IActionResult Publish(int id)
         {
             var page = _pageRepository.GetOne(id);
-            if (page == null)
+            if (page == null || page.IsDelete)
             {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "页面不存在" });
             }
+            if (!page.IsActive)
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "禁用页面不能发布" });
+            }
 
-            var componentJson = string.IsNullOrWhiteSpace(page.ComponentJson) ? "[]" : page.ComponentJson;
+            var componentJson = NormalizeComponentJson(page.ComponentJson, out var error);
+            if (!string.IsNullOrEmpty(error))
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = error });
+            }
 
             var lastVersion = _versionRepository.GetList(p => p.PageId == id).OrderByDescending(p => p.VersionNo).FirstOrDefault();
             var nextVersionNo = (lastVersion?.VersionNo ?? 0) + 1;
@@ -305,6 +346,7 @@ namespace MySite.Web.Controllers
                 CreationTime = DateTime.Now
             });
 
+            page.ComponentJson = componentJson;
             page.Status = 1;
             page.PublishTime = DateTime.Now;
             page.UpdateBy = LoginUser.UserName;
@@ -318,14 +360,14 @@ namespace MySite.Web.Controllers
         public IActionResult Preview(int id)
         {
             var page = _pageRepository.GetOne(id);
-            if (page == null)
+            if (page == null || page.IsDelete)
             {
                 return NotFound();
             }
             ViewBag.PageId = page.Id;
             ViewBag.PageName = page.PageName;
             ViewBag.PagePath = page.PagePath;
-            ViewBag.ComponentJson = string.IsNullOrWhiteSpace(page.ComponentJson) ? "[]" : page.ComponentJson;
+            ViewBag.ComponentJson = NormalizeComponentJson(page.ComponentJson, out _) ?? "[]";
             return View();
         }
 
@@ -352,6 +394,44 @@ namespace MySite.Web.Controllers
                 UpdateTime = page.UpdateTime,
                 UpdateBy = page.UpdateBy
             };
+        }
+
+        private static string NormalizePagePath(string path)
+        {
+            path = (path ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(path)) return "/";
+            path = path.Replace("\\", "/");
+            if (!path.StartsWith("/")) path = "/" + path;
+            while (path.Contains("//")) path = path.Replace("//", "/");
+            if (path.Length > 1) path = path.TrimEnd('/');
+            return path;
+        }
+
+        private static string NormalizeComponentJson(string componentJson, out string error)
+        {
+            error = null;
+            if (string.IsNullOrWhiteSpace(componentJson)) return "[]";
+            try
+            {
+                var token = JToken.Parse(componentJson);
+                if (token.Type != JTokenType.Array)
+                {
+                    error = "组件配置格式错误，必须是数组 JSON";
+                    return null;
+                }
+                return token.ToString(Formatting.None);
+            }
+            catch
+            {
+                error = "组件配置不是合法 JSON，请重新保存页面装修内容";
+                return null;
+            }
+        }
+
+        private static List<int> ResolveIds(int id, int[] ids, int isAll)
+        {
+            var source = isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id };
+            return source.Where(p => p > 0).Distinct().ToList();
         }
     }
 }
