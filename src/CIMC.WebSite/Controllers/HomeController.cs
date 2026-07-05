@@ -211,6 +211,9 @@ namespace MySite.Web.Controllers
             try
             {
                 components = JsonConvert.DeserializeObject<List<ComponentModel>>(componentJson) ?? new List<ComponentModel>();
+                components = components
+                    .Where(c => c != null && !string.Equals(c.Type, "navigation", StringComparison.OrdinalIgnoreCase) && !string.Equals(c.Type, "footer", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
             }
             catch
             {
@@ -292,6 +295,10 @@ namespace MySite.Web.Controllers
                 Copyright = entity.Copyright,
                 Theme = entity.Theme,
                 Language = entity.Language,
+                HeaderBgColor = string.IsNullOrWhiteSpace(entity.HeaderBgColor) ? "#ffffff" : entity.HeaderBgColor,
+                HeaderTextColor = string.IsNullOrWhiteSpace(entity.HeaderTextColor) ? "#333333" : entity.HeaderTextColor,
+                HeaderActiveColor = string.IsNullOrWhiteSpace(entity.HeaderActiveColor) ? "#1e9fff" : entity.HeaderActiveColor,
+                HeaderFixedTop = entity.HeaderFixedTop,
                 IsActive = entity.IsActive
             };
         }
