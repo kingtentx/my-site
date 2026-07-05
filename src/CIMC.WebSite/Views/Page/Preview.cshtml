@@ -1,5 +1,12 @@
 @{
     Layout = null;
+    var componentJson = ViewBag.ComponentJson as string;
+    if (string.IsNullOrWhiteSpace(componentJson))
+    {
+        componentJson = "[]";
+    }
+    // 防止富文本中出现 </script> 造成脚本提前结束。
+    var safeComponentJson = componentJson.Replace("</", "<\\/");
 }
 <!DOCTYPE html>
 <html>
@@ -44,69 +51,94 @@
     <div class="preview-canvas" id="canvas">
         <div class="empty-tip">暂无组件，请先在设计器中添加组件</div>
     </div>
-    <input type="hidden" id="hfComponentJson" value="@Html.Raw(ViewBag.ComponentJson)" />
+    <script type="application/json" id="componentJson">@Html.Raw(safeComponentJson)</script>
     <script src="~/resource/layuiadmin/layui/layui.js"></script>
     <script>
         layui.use(['carousel'], function () {
             var $ = layui.$;
             var components = [];
-            try { components = JSON.parse($('#hfComponentJson').val() || '[]') || []; } catch (e) { components = []; }
 
+            function escapeHtml(value) {
+                return String(value == null ? '' : value)
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+            function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
+            function safeUrl(value) {
+                var url = String(value == null ? '' : value).trim();
+                if (!url) return '';
+                if (/^(javascript|vbscript|data):/i.test(url)) return '';
+                return url;
+            }
             function getProp(comp, key, def) {
-                if (!comp.props) return def;
+                if (!comp || !comp.props) return def;
                 var v = comp.props[key];
                 return (v === undefined || v === null) ? def : v;
             }
 
+            try {
+                var jsonText = document.getElementById('componentJson').textContent || '[]';
+                components = JSON.parse(jsonText) || [];
+                if (!Array.isArray(components)) components = [];
+            } catch (e) {
+                components = [];
+            }
+
             function renderBlock(comp) {
-                if (comp.visible === false) return '';
-                var html = '<div class="comp-block" data-type="' + comp.type + '">';
-                html += '<div class="comp-title">[' + comp.type + '] ' + (comp.name || '') + '</div>';
+                if (!comp || comp.visible === false) return '';
+                var type = String(comp.type || '');
+                var html = '<div class="comp-block" data-type="' + escapeAttr(type) + '">';
+                html += '<div class="comp-title">[' + escapeHtml(type) + '] ' + escapeHtml(comp.name || '') + '</div>';
                 html += '<div class="comp-content">';
-                if (comp.type === 'banner') {
+                if (type === 'banner') {
                     var items = getProp(comp, 'items', []) || [];
-                    var height = getProp(comp, 'height', 360);
-                    if (items.length === 0) {
+                    var height = parseInt(getProp(comp, 'height', 360), 10) || 360;
+                    if (!Array.isArray(items) || items.length === 0) {
                         html += '<div class="empty-tip">Banner 无图片项</div>';
                     } else {
                         for (var i = 0; i < items.length; i++) {
                             var it = items[i] || {};
-                            html += '<div class="banner-item" style="background-image:url(\'' + (it.image || '') + '\'); height:' + height + 'px;">';
-                            if (it.title) html += '<h2>' + it.title + '</h2>';
-                            if (it.subtitle) html += '<p>' + it.subtitle + '</p>';
-                            if (it.buttonText && it.buttonLink) html += '<a href="' + it.buttonLink + '">' + it.buttonText + '</a>';
+                            var image = safeUrl(it.image || '');
+                            html += '<div class="banner-item" style="background-image:url(\'' + escapeAttr(image) + '\'); height:' + height + 'px;">';
+                            if (it.title) html += '<h2>' + escapeHtml(it.title) + '</h2>';
+                            if (it.subtitle) html += '<p>' + escapeHtml(it.subtitle) + '</p>';
+                            if (it.buttonText && it.buttonLink) html += '<a href="' + escapeAttr(safeUrl(it.buttonLink)) + '">' + escapeHtml(it.buttonText) + '</a>';
                             html += '</div>';
                         }
                     }
-                } else if (comp.type === 'news') {
-                    var pageSize = getProp(comp, 'pageSize', 5);
-                    html += '<div>将展示最新 ' + pageSize + ' 条新闻</div>';
+                } else if (type === 'news') {
+                    var newsSize = parseInt(getProp(comp, 'pageSize', 5), 10) || 5;
+                    html += '<div>将展示最新 ' + newsSize + ' 条新闻</div>';
                     html += '<div class="news-item"><strong>新闻标题示例</strong><br><span style="color:#999;">2026-07-04</span></div>';
-                } else if (comp.type === 'product') {
-                    var cols = getProp(comp, 'colsPerRow', 4);
-                    var pageSize = getProp(comp, 'pageSize', 8);
+                } else if (type === 'product') {
+                    var cols = parseInt(getProp(comp, 'colsPerRow', 4), 10) || 4;
+                    var pageSize = parseInt(getProp(comp, 'pageSize', 8), 10) || 8;
                     html += '<div class="product-grid" style="grid-template-columns: repeat(' + cols + ', 1fr);">';
                     for (var p = 0; p < Math.min(pageSize, 4); p++) {
                         html += '<div class="product-item"><div style="height:80px; background:#eee; margin-bottom:8px;"></div><div>产品名称示例</div></div>';
                     }
                     html += '</div>';
-                } else if (comp.type === 'job') {
+                } else if (type === 'job') {
                     html += '<div class="job-item"><strong>岗位示例</strong> | 部门 | 工作地点 | 面议</div>';
-                } else if (comp.type === 'footer') {
+                } else if (type === 'footer') {
                     html += '<div class="footer-preview"><h3>企业名称</h3><p>联系电话 | 邮箱 | 地址</p><p style="margin-top:8px; font-size:12px;">Copyright © 2026 | 备案号</p></div>';
-                } else if (comp.type === 'navigation') {
+                } else if (type === 'navigation') {
                     html += '<div style="background:#1e9fff; color:#fff; padding:12px 16px;"><strong>网站名称</strong><span style="margin-left:24px;">首页 关于 产品 新闻 招聘 联系</span></div>';
-                } else if (comp.type === 'richText') {
+                } else if (type === 'richText') {
                     html += '<div class="rich-text-content">' + (getProp(comp, 'html', '') || '') + '</div>';
-                } else if (comp.type === 'image') {
-                    var src = getProp(comp, 'src', '');
-                    if (src) html += '<div class="image-content"><img src="' + src + '" alt=""></div>';
-                } else if (comp.type === 'title') {
+                } else if (type === 'image') {
+                    var src = safeUrl(getProp(comp, 'src', ''));
+                    if (src) html += '<div class="image-content"><img src="' + escapeAttr(src) + '" alt=""></div>';
+                } else if (type === 'title') {
                     var text = getProp(comp, 'text', '');
-                    var level = getProp(comp, 'level', 2);
-                    html += '<div class="title-content"><h' + level + '>' + text + '</h' + level + '></div>';
+                    var level = parseInt(getProp(comp, 'level', 2), 10) || 2;
+                    level = Math.min(Math.max(level, 1), 6);
+                    html += '<div class="title-content"><h' + level + '>' + escapeHtml(text) + '</h' + level + '></div>';
                 } else {
-                    html += '<div class="empty-tip">未知组件类型：' + comp.type + '</div>';
+                    html += '<div class="empty-tip">未知组件类型：' + escapeHtml(type) + '</div>';
                 }
                 html += '</div></div>';
                 return html;
@@ -121,7 +153,7 @@
                 for (var i = 0; i < components.length; i++) {
                     html += renderBlock(components[i]);
                 }
-                $('#canvas').html(html);
+                $('#canvas').html(html || '<div class="empty-tip">暂无可显示组件</div>');
             }
 
             render();
