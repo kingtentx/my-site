@@ -4,7 +4,6 @@ using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Linq;
 
 namespace MySite.Web.Controllers
 {
@@ -39,13 +38,10 @@ namespace MySite.Web.Controllers
                 return Json(result);
             }
 
-            var entity = _repository.GetOne(1);
-            if (entity == null)
-            {
-                entity = new WebsiteSiteConfig { Id = 1, CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            }
+            var existed = _repository.GetOne(1);
+            var entity = existed ?? new WebsiteSiteConfig { Id = 1, CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
 
-            entity.SiteName = input.SiteName;
+            entity.SiteName = input.SiteName.Trim();
             entity.Logo = input.Logo;
             entity.BrowserTitle = input.BrowserTitle;
             entity.Keywords = input.Keywords;
@@ -56,14 +52,18 @@ namespace MySite.Web.Controllers
             entity.Email = input.Email;
             entity.Address = input.Address;
             entity.Copyright = input.Copyright;
-            entity.Theme = input.Theme;
-            entity.Language = input.Language;
+            entity.Theme = string.IsNullOrWhiteSpace(input.Theme) ? "default" : input.Theme;
+            entity.Language = string.IsNullOrWhiteSpace(input.Language) ? "zh-CN" : input.Language;
+            entity.HeaderBgColor = string.IsNullOrWhiteSpace(input.HeaderBgColor) ? "#ffffff" : input.HeaderBgColor;
+            entity.HeaderTextColor = string.IsNullOrWhiteSpace(input.HeaderTextColor) ? "#333333" : input.HeaderTextColor;
+            entity.HeaderActiveColor = string.IsNullOrWhiteSpace(input.HeaderActiveColor) ? "#1e9fff" : input.HeaderActiveColor;
+            entity.HeaderFixedTop = input.HeaderFixedTop;
             entity.IsActive = input.IsActive;
             entity.IsDelete = false;
             entity.UpdateBy = LoginUser.UserName;
             entity.UpdateTime = DateTime.Now;
 
-            if (entity.Id > 0 && _repository.GetOne(1) != null)
+            if (existed != null)
             {
                 _repository.Update(entity);
             }
@@ -95,6 +95,10 @@ namespace MySite.Web.Controllers
                 Copyright = entity.Copyright,
                 Theme = entity.Theme,
                 Language = entity.Language,
+                HeaderBgColor = string.IsNullOrWhiteSpace(entity.HeaderBgColor) ? "#ffffff" : entity.HeaderBgColor,
+                HeaderTextColor = string.IsNullOrWhiteSpace(entity.HeaderTextColor) ? "#333333" : entity.HeaderTextColor,
+                HeaderActiveColor = string.IsNullOrWhiteSpace(entity.HeaderActiveColor) ? "#1e9fff" : entity.HeaderActiveColor,
+                HeaderFixedTop = entity.HeaderFixedTop,
                 IsActive = entity.IsActive
             };
         }
