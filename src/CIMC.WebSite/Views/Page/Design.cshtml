@@ -106,7 +106,7 @@
             pagePath: '@Html.Raw(ViewBag.PagePath)',
             components: []
         };
-        var history = [];
+        var historyStack = [];
         var historyIndex = -1;
         var selectedIdx = -1;
         var editor = null;
@@ -145,23 +145,23 @@
         }
 
         function pushHistory() {
-            history = history.slice(0, historyIndex + 1);
-            history.push(JSON.parse(JSON.stringify(pageState.components)));
-            historyIndex = history.length - 1;
-            if (history.length > 50) { history.shift(); historyIndex--; }
+            historyStack = historyStack.slice(0, historyIndex + 1);
+            historyStack.push(JSON.parse(JSON.stringify(pageState.components)));
+            historyIndex = historyStack.length - 1;
+            if (historyStack.length > 50) { historyStack.shift(); historyIndex--; }
         }
         function undo() {
             if (historyIndex <= 0) { return; }
             historyIndex--;
-            pageState.components = JSON.parse(JSON.stringify(history[historyIndex]));
+            pageState.components = JSON.parse(JSON.stringify(historyStack[historyIndex]));
             selectedIdx = -1;
             renderCanvas();
             renderProps();
         }
         function redo() {
-            if (historyIndex >= history.length - 1) return;
+            if (historyIndex >= historyStack.length - 1) return;
             historyIndex++;
-            pageState.components = JSON.parse(JSON.stringify(history[historyIndex]));
+            pageState.components = JSON.parse(JSON.stringify(historyStack[historyIndex]));
             selectedIdx = -1;
             renderCanvas();
             renderProps();
@@ -443,6 +443,8 @@
                 group: { name: 'page', pull: false, put: false },
                 animation: 150,
                 handle: '.drag-handle',
+                filter: '.block-tools',
+                preventOnFilter: false,
                 onEnd: updateOrder
             });
 
@@ -640,7 +642,7 @@
                             if (!pageState.components[i].props) pageState.components[i].props = {};
                             if (!pageState.components[i].style) pageState.components[i].style = {};
                         }
-                        history = [JSON.parse(JSON.stringify(pageState.components))];
+                        historyStack = [JSON.parse(JSON.stringify(pageState.components))];
                         historyIndex = 0;
                         renderCanvas();
                         renderProps();
