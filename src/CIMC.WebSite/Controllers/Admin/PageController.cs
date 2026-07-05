@@ -104,7 +104,6 @@ namespace MySite.Web.Controllers
                     _pageRepository.Update(oh);
                 }
                 page.IsHome = true;
-                page.PagePath = "/";
             }
             else
             {
@@ -211,7 +210,6 @@ namespace MySite.Web.Controllers
             }
 
             page.IsHome = true;
-            page.PagePath = "/";
             page.UpdateTime = DateTime.Now;
             page.UpdateBy = LoginUser.UserName;
             _pageRepository.Update(page);
