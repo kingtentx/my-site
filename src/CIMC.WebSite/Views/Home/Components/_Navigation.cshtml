@@ -1,23 +1,17 @@
 @using MySite.Web.Models
-@model ComponentModel
+@model SiteConfigModel
 @{
     var navList = ViewBag.NavigationList as List<NavigationModel> ?? new List<NavigationModel>();
-    var siteConfig = ViewBag.SiteConfig as SiteConfigModel;
+    var siteConfig = Model ?? ViewBag.SiteConfig as SiteConfigModel ?? new SiteConfigModel();
     var currentPath = Context.Request.Path.Value ?? "/";
 
-    string bgColor = "#ffffff", textColor = "#333333", activeColor = "#1e9fff";
-    bool isFixedTop = false;
-    if (Model.Props != null)
-    {
-        if (Model.Props.TryGetValue("bgColor", out var bg) && bg != null) bgColor = bg.ToString();
-        if (Model.Props.TryGetValue("textColor", out var tc) && tc != null) textColor = tc.ToString();
-        if (Model.Props.TryGetValue("activeColor", out var ac) && ac != null) activeColor = ac.ToString();
-        if (Model.Props.TryGetValue("isFixedTop", out var ft) && ft != null && bool.TryParse(ft.ToString(), out var fixedParsed)) isFixedTop = fixedParsed;
-    }
-
+    var bgColor = string.IsNullOrWhiteSpace(siteConfig.HeaderBgColor) ? "#ffffff" : siteConfig.HeaderBgColor;
+    var textColor = string.IsNullOrWhiteSpace(siteConfig.HeaderTextColor) ? "#333333" : siteConfig.HeaderTextColor;
+    var activeColor = string.IsNullOrWhiteSpace(siteConfig.HeaderActiveColor) ? "#1e9fff" : siteConfig.HeaderActiveColor;
+    var isFixedTop = siteConfig.HeaderFixedTop;
     var topLevel = navList.Where(n => n.Pid == 0).OrderBy(n => n.Sort).ToList();
-    var logo = siteConfig?.Logo;
-    var siteName = siteConfig?.SiteName ?? "企业官网";
+    var logo = siteConfig.Logo;
+    var siteName = siteConfig.SiteName ?? "企业官网";
 }
 <header class="site-header @(isFixedTop ? "is-fixed" : "")" style="background-color:@bgColor; color:@textColor;">
     <div class="container header-inner">
