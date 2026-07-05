@@ -1,5 +1,8 @@
+@using Newtonsoft.Json
 @{
     Layout = null;
+    var pageNameJson = JsonConvert.SerializeObject(ViewBag.PageName ?? string.Empty);
+    var pagePathJson = JsonConvert.SerializeObject(ViewBag.PagePath ?? string.Empty);
 }
 <!DOCTYPE html>
 <html>
@@ -19,7 +22,6 @@
         .designer-toolbar .btn:hover { background: rgba(255,255,255,.3); }
         .designer-toolbar .btn.primary { background: #fff; color: #1e9fff; }
         .designer-toolbar .btn.primary:hover { background: #f0f9ff; }
-        .designer-toolbar .btn.disabled { opacity: .5; cursor: not-allowed; }
         .designer-main { flex: 1; display: flex; overflow: hidden; }
         .designer-lib { width: 220px; background: #fff; border-right: 1px solid #e6e6e6; overflow-y: auto; padding: 12px 8px; }
         .designer-lib .lib-title { font-size: 12px; color: #999; padding: 8px 4px 4px; }
@@ -27,9 +29,9 @@
         .designer-lib .lib-item:hover { background: #e6f7ff; border-color: #1e9fff; }
         .designer-lib .lib-item i { font-size: 18px; color: #1e9fff; }
         .designer-canvas-wrap { flex: 1; overflow: auto; padding: 20px; background: #f1f1f1; }
-        .designer-canvas { min-height: 100%; background: #fff; border-radius: 4px; box-shadow: 0 0 8px rgba(0,0,0,.05); }
+        .designer-canvas { min-height: 100%; background: #fff; border-radius: 4px; box-shadow: 0 0 8px rgba(0,0,0,.05); padding: 1px 0; }
         .designer-canvas .empty-tip { text-align: center; padding: 80px 20px; color: #999; }
-        .block { border: 1px dashed #d2d2d2; margin: 8px; border-radius: 4px; position: relative; }
+        .block { border: 1px dashed #d2d2d2; margin: 8px; border-radius: 4px; position: relative; background: #fff; }
         .block.selected { border-color: #1e9fff; border-style: solid; box-shadow: 0 0 0 2px rgba(30,159,255,.15); }
         .block.hidden-block { opacity: .45; }
         .block-header { display: flex; align-items: center; padding: 8px 12px; background: #fafafa; border-bottom: 1px solid #f0f0f0; cursor: move; }
@@ -41,7 +43,7 @@
         .block-tools .tool-btn:hover { background: #1e9fff; color: #fff; border-color: #1e9fff; }
         .block-tools .tool-btn.danger:hover { background: #ff5722; border-color: #ff5722; }
         .block-body { padding: 12px; min-height: 40px; font-size: 13px; color: #666; }
-        .block-body .preview-empty { color: #ccc; font-size: 12px; padding: 8px; text-align: center; }
+        .block-body .preview-empty { color: #bbb; font-size: 12px; padding: 8px; text-align: center; }
         .block-body img { max-width: 100%; max-height: 120px; }
         .designer-props { width: 320px; background: #fff; border-left: 1px solid #e6e6e6; overflow-y: auto; padding: 16px; }
         .designer-props .props-title { font-size: 13px; color: #333; font-weight: 600; padding-bottom: 10px; border-bottom: 1px solid #f0f0f0; margin-bottom: 12px; }
@@ -51,8 +53,7 @@
         .designer-props .layui-input-block { margin-left: 90px; }
         .designer-props .layui-input { height: 30px; font-size: 12px; }
         .designer-props textarea.layui-textarea { font-size: 12px; }
-        .banner-items-list { border: 1px solid #f0f0f0; border-radius: 4px; padding: 8px; margin-bottom: 8px; }
-        .banner-item-row { background: #f9f9f9; padding: 8px; margin-bottom: 6px; border-radius: 3px; font-size: 12px; }
+        .banner-item-row { background: #f9f9f9; padding: 8px; margin-bottom: 6px; border-radius: 3px; font-size: 12px; border: 1px solid #f0f0f0; }
         .banner-item-row .row-title { font-weight: 600; margin-bottom: 4px; display: flex; justify-content: space-between; }
         .banner-item-row .row-title .del-btn { color: #ff5722; cursor: pointer; }
         .img-thumb { width: 60px; height: 40px; object-fit: cover; border: 1px solid #eee; border-radius: 3px; vertical-align: middle; }
@@ -63,7 +64,7 @@
     <div class="designer-layout">
         <div class="designer-toolbar">
             <button class="btn" onclick="window.location.href='/page/index'"><i class="layui-icon layui-icon-left"></i> 返回</button>
-            <div class="title">页面装修：<span id="spPageName">@ViewBag.PageName</span> <span style="color:#cce6ff; margin-left:8px;">@ViewBag.PagePath</span></span></div>
+            <div class="title">页面装修：<span id="spPageName">@ViewBag.PageName</span> <span style="color:#cce6ff; margin-left:8px;">@ViewBag.PagePath</span></div>
             <button class="btn" id="btnUndo"><i class="layui-icon layui-icon-refresh-3"></i> 撤销</button>
             <button class="btn" id="btnRedo"><i class="layui-icon layui-icon-refresh"></i> 重做</button>
             <button class="btn" id="btnPreview"><i class="layui-icon layui-icon-search"></i> 预览</button>
@@ -100,10 +101,12 @@
     <script src="~/resource/js/jquery-1.12.4.min.js"></script>
     <script src="~/resource/wangeditor-4.7.9/wangEditor.min.js"></script>
     <script>
+        var layuiLayer = null;
+        var layuiForm = null;
         var pageState = {
             pageId: @ViewBag.PageId,
-            pageName: '@Html.Raw(ViewBag.PageName)',
-            pagePath: '@Html.Raw(ViewBag.PagePath)',
+            pageName: @Html.Raw(pageNameJson),
+            pagePath: @Html.Raw(pagePathJson),
             components: []
         };
         var historyStack = [];
@@ -132,10 +135,24 @@
             job: { pageSize: 10, showLocation: true, showSalary: true, showCount: true, showPublishTime: true }
         };
 
+        function clone(obj) { return JSON.parse(JSON.stringify(obj || [])); }
         function genId(type) { return type + '_' + Date.now() + '_' + Math.floor(Math.random() * 1000); }
-
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+        function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
+        function safeUrl(value) {
+            var url = String(value == null ? '' : value).trim();
+            if (/^(javascript|vbscript|data):/i.test(url)) return '';
+            return url;
+        }
         function getProp(comp, key, def) {
-            if (!comp.props) return def;
+            if (!comp || !comp.props) return def;
             var v = comp.props[key];
             return (v === undefined || v === null) ? def : v;
         }
@@ -143,89 +160,91 @@
             if (!comp.props) comp.props = {};
             comp.props[key] = val;
         }
-
-        function pushHistory() {
-            historyStack = historyStack.slice(0, historyIndex + 1);
-            historyStack.push(JSON.parse(JSON.stringify(pageState.components)));
-            historyIndex = historyStack.length - 1;
-            if (historyStack.length > 50) { historyStack.shift(); historyIndex--; }
+        function syncSort() {
+            for (var i = 0; i < pageState.components.length; i++) {
+                pageState.components[i].sort = i + 1;
+            }
         }
-        function undo() {
-            if (historyIndex <= 0) { return; }
-            historyIndex--;
-            pageState.components = JSON.parse(JSON.stringify(historyStack[historyIndex]));
+        function recordHistory() {
+            historyStack = historyStack.slice(0, historyIndex + 1);
+            historyStack.push(clone(pageState.components));
+            historyIndex = historyStack.length - 1;
+            if (historyStack.length > 50) {
+                historyStack.shift();
+                historyIndex--;
+            }
+        }
+        function restoreHistory() {
+            pageState.components = clone(historyStack[historyIndex]);
             selectedIdx = -1;
             renderCanvas();
             renderProps();
+        }
+        function undo() {
+            if (historyIndex <= 0) return;
+            historyIndex--;
+            restoreHistory();
         }
         function redo() {
             if (historyIndex >= historyStack.length - 1) return;
             historyIndex++;
-            pageState.components = JSON.parse(JSON.stringify(historyStack[historyIndex]));
-            selectedIdx = -1;
+            restoreHistory();
+        }
+        function afterChange(keepSelection) {
+            syncSort();
+            recordHistory();
             renderCanvas();
+            if (!keepSelection && selectedIdx >= pageState.components.length) selectedIdx = -1;
             renderProps();
         }
 
         function addBlock(type) {
-            pushHistory();
+            if (!typeNames[type]) return;
             var comp = {
-                id: genId(type),
-                type: type,
-                name: typeNames[type] || type,
-                sort: pageState.components.length + 1,
-                visible: true,
-                locked: false,
-                props: JSON.parse(JSON.stringify(defaultProps[type] || {})),
-                style: {}
+                id: genId(type), type: type, name: typeNames[type] || type,
+                sort: pageState.components.length + 1, visible: true, locked: false,
+                props: clone(defaultProps[type] || {}), style: {}
             };
             pageState.components.push(comp);
-            renderCanvas();
-            selectBlock(pageState.components.length - 1);
+            selectedIdx = pageState.components.length - 1;
+            afterChange(true);
         }
 
         function renderBlockPreview(comp) {
             var html = '';
             if (comp.type === 'banner') {
                 var items = getProp(comp, 'items', []) || [];
-                if (items.length === 0) {
-                    html += '<div class="preview-empty">尚未配置 Banner 图片项</div>';
-                } else {
-                    for (var i = 0; i < items.length; i++) {
-                        var it = items[i] || {};
-                        if (it.image) {
-                            html += '<div style="position:relative; height:120px; background:url(\'' + it.image + '\') center/cover; color:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column;">';
-                            if (it.title) html += '<strong style="text-shadow:0 1px 3px rgba(0,0,0,.6);">' + it.title + '</strong>';
-                            html += '</div>';
-                        }
-                    }
+                if (!Array.isArray(items) || items.length === 0) return '<div class="preview-empty">尚未配置 Banner 图片项</div>';
+                for (var i = 0; i < items.length; i++) {
+                    var it = items[i] || {};
+                    var image = safeUrl(it.image || '');
+                    if (!image) continue;
+                    html += '<div style="position:relative; height:120px; background:url(\'' + escapeAttr(image) + '\') center/cover; color:#fff; display:flex; align-items:center; justify-content:center; flex-direction:column;">';
+                    if (it.title) html += '<strong style="text-shadow:0 1px 3px rgba(0,0,0,.6);">' + escapeHtml(it.title) + '</strong>';
+                    html += '</div>';
                 }
-            } else if (comp.type === 'news') {
-                html += '<div class="preview-empty">将展示最新 ' + getProp(comp, 'pageSize', 6) + ' 条新闻</div>';
-            } else if (comp.type === 'product') {
-                var cols = getProp(comp, 'colsPerRow', 4);
-                html += '<div style="display:grid; grid-template-columns: repeat(' + cols + ', 1fr); gap:8px;">';
-                for (var p = 0; p < Math.min(getProp(comp, 'pageSize', 8), cols * 2); p++) {
-                    html += '<div style="height:80px; background:#f0f0f0; border-radius:3px;"></div>';
-                }
-                html += '</div>';
-            } else if (comp.type === 'job') {
-                html += '<div class="preview-empty">将展示最新 ' + getProp(comp, 'pageSize', 10) + ' 条招聘信息</div>';
-            } else if (comp.type === 'footer') {
-                html += '<div style="background:' + getProp(comp, 'bgColor', '#2c3e50') + '; color:' + getProp(comp, 'textColor', '#fff') + '; padding:16px; text-align:center;"><strong>页脚</strong><br><small>© 2026 企业名称 | 备案号</small></div>';
-            } else if (comp.type === 'navigation') {
-                html += '<div style="background:' + getProp(comp, 'bgColor', '#fff') + '; color:' + getProp(comp, 'textColor', '#333') + '; padding:10px 16px;"><strong>网站名称</strong> <span style="margin-left:24px;">首页 关于 产品 新闻 招聘 联系</span></div>';
-            } else if (comp.type === 'richText') {
-                var h = getProp(comp, 'html', '');
-                html += h ? '<div style="max-height:200px; overflow:hidden;">' + h + '</div>' : '<div class="preview-empty">点击右侧编辑富文本内容</div>';
-            } else if (comp.type === 'image') {
-                var src = getProp(comp, 'src', '');
-                html += src ? '<img src="' + src + '" alt="" style="width:' + getProp(comp, 'width', '100%') + ';">' : '<div class="preview-empty">点击右侧选择图片</div>';
-            } else if (comp.type === 'title') {
-                var lvl = getProp(comp, 'level', 2);
-                html += '<h' + lvl + ' style="text-align:' + getProp(comp, 'align', 'center') + '; color:' + getProp(comp, 'color', '#333') + ';">' + (getProp(comp, 'text', '标题') || '标题') + '</h' + lvl + '>';
+                return html || '<div class="preview-empty">Banner 图片地址为空</div>';
             }
-            return html;
+            if (comp.type === 'news') return '<div class="preview-empty">将展示最新 ' + escapeHtml(getProp(comp, 'pageSize', 6)) + ' 条新闻</div>';
+            if (comp.type === 'product') {
+                var cols = Math.max(1, parseInt(getProp(comp, 'colsPerRow', 4), 10) || 4);
+                html += '<div style="display:grid; grid-template-columns: repeat(' + cols + ', 1fr); gap:8px;">';
+                for (var p = 0; p < Math.min(parseInt(getProp(comp, 'pageSize', 8), 10) || 8, cols * 2); p++) html += '<div style="height:80px; background:#f0f0f0; border-radius:3px;"></div>';
+                return html + '</div>';
+            }
+            if (comp.type === 'job') return '<div class="preview-empty">将展示最新 ' + escapeHtml(getProp(comp, 'pageSize', 10)) + ' 条招聘信息</div>';
+            if (comp.type === 'footer') return '<div style="background:' + escapeAttr(getProp(comp, 'bgColor', '#2c3e50')) + '; color:' + escapeAttr(getProp(comp, 'textColor', '#fff')) + '; padding:16px; text-align:center;"><strong>页脚</strong><br><small>© 2026 企业名称 | 备案号</small></div>';
+            if (comp.type === 'navigation') return '<div style="background:' + escapeAttr(getProp(comp, 'bgColor', '#fff')) + '; color:' + escapeAttr(getProp(comp, 'textColor', '#333')) + '; padding:10px 16px;"><strong>网站名称</strong> <span style="margin-left:24px;">首页 关于 产品 新闻 招聘 联系</span></div>';
+            if (comp.type === 'richText') return getProp(comp, 'html', '') ? '<div style="max-height:200px; overflow:hidden;">' + getProp(comp, 'html', '') + '</div>' : '<div class="preview-empty">点击右侧编辑富文本内容</div>';
+            if (comp.type === 'image') {
+                var src = safeUrl(getProp(comp, 'src', ''));
+                return src ? '<img src="' + escapeAttr(src) + '" alt="" style="width:' + escapeAttr(getProp(comp, 'width', '100%')) + ';">' : '<div class="preview-empty">点击右侧选择图片</div>';
+            }
+            if (comp.type === 'title') {
+                var lvl = Math.min(Math.max(parseInt(getProp(comp, 'level', 2), 10) || 2, 1), 6);
+                return '<h' + lvl + ' style="text-align:' + escapeAttr(getProp(comp, 'align', 'center')) + '; color:' + escapeAttr(getProp(comp, 'color', '#333')) + ';">' + escapeHtml(getProp(comp, 'text', '标题') || '标题') + '</h' + lvl + '>';
+            }
+            return '<div class="preview-empty">未知组件类型</div>';
         }
 
         function renderBlock(comp, idx) {
@@ -233,49 +252,49 @@
             var selClass = idx === selectedIdx ? ' selected' : '';
             var html = '<div class="block' + visClass + selClass + '" data-idx="' + idx + '">';
             html += '<div class="block-header drag-handle">';
-            html += '<span class="name"><i class="layui-icon ' + (typeIcons[comp.type] || 'layui-icon-component') + '"></i> ' + (comp.name || typeNames[comp.type] || comp.type) + '</span>';
-            html += '<span class="type">' + comp.type + '</span>';
+            html += '<span class="name"><i class="layui-icon ' + (typeIcons[comp.type] || 'layui-icon-component') + '"></i> ' + escapeHtml(comp.name || typeNames[comp.type] || comp.type) + '</span>';
+            html += '<span class="type">' + escapeHtml(comp.type) + '</span>';
             html += '<span class="block-tools">';
             html += '<span class="tool-btn" data-action="up" title="上移"><i class="layui-icon layui-icon-up"></i></span>';
             html += '<span class="tool-btn" data-action="down" title="下移"><i class="layui-icon layui-icon-down"></i></span>';
             html += '<span class="tool-btn" data-action="copy" title="复制"><i class="layui-icon layui-icon-file"></i></span>';
             html += '<span class="tool-btn" data-action="toggle" title="显示/隐藏"><i class="layui-icon layui-icon-show"></i></span>';
             html += '<span class="tool-btn danger" data-action="del" title="删除"><i class="layui-icon layui-icon-delete"></i></span>';
-            html += '</span>';
-            html += '</div>';
-            html += '<div class="block-body">' + renderBlockPreview(comp) + '</div>';
-            html += '</div>';
+            html += '</span></div><div class="block-body">' + renderBlockPreview(comp) + '</div></div>';
             return html;
         }
-
         function renderCanvas() {
             if (pageState.components.length === 0) {
                 $('#canvas').html('<div class="empty-tip">从左侧拖入组件开始装修</div>');
                 return;
             }
             var html = '';
-            for (var i = 0; i < pageState.components.length; i++) {
-                html += renderBlock(pageState.components[i], i);
-            }
+            for (var i = 0; i < pageState.components.length; i++) html += renderBlock(pageState.components[i], i);
             $('#canvas').html(html);
         }
+        function selectBlock(idx) { selectedIdx = idx; renderCanvas(); renderProps(); }
 
-        function selectBlock(idx) {
-            selectedIdx = idx;
-            renderCanvas();
-            renderProps();
+        function propText(name, label, val) { return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="text" class="layui-input" value="' + escapeAttr(val || '') + '" data-prop="' + name + '"></div></div>'; }
+        function propNumber(name, label, val) { return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="number" class="layui-input" value="' + escapeAttr(val || 0) + '" data-prop="' + name + '"></div></div>'; }
+        function propCheckbox(name, label, checked) { return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="checkbox" lay-skin="switch" lay-text="是|否"' + (checked ? ' checked' : '') + ' data-prop="' + name + '"></div></div>'; }
+        function propColor(name, label, val) { return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="color" class="layui-input" value="' + escapeAttr(val || '#000000') + '" data-prop="' + name + '" style="height:30px; padding:2px;"></div></div>'; }
+        function propSelect(name, label, opts, val) {
+            var html = '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><select data-prop="' + name + '">';
+            for (var i = 0; i < opts.length; i++) html += '<option value="' + escapeAttr(opts[i].v) + '"' + (String(opts[i].v) === String(val) ? ' selected' : '') + '>' + escapeHtml(opts[i].t) + '</option>';
+            return html + '</select></div></div>';
         }
 
         function renderProps() {
+            if (editor) { try { editor.destroy(); } catch (e) {} editor = null; }
             if (selectedIdx < 0 || selectedIdx >= pageState.components.length) {
                 $('#propsPanel').html('<div class="props-empty">请选择一个组件</div>');
                 return;
             }
             var comp = pageState.components[selectedIdx];
-            var html = '<div class="props-title">编辑属性 - ' + (typeNames[comp.type] || comp.type) + '</div>';
+            var html = '<div class="props-title">编辑属性 - ' + escapeHtml(typeNames[comp.type] || comp.type) + '</div>';
             html += '<form class="layui-form" lay-filter="propsForm" onsubmit="return false;">';
-            html += '<div class="layui-form-item"><label class="layui-form-label">组件名称</label><div class="layui-input-block"><input type="text" name="name" class="layui-input" value="' + (comp.name || '') + '" data-prop="name"></div></div>';
-            html += '<div class="layui-form-item"><label class="layui-form-label">是否显示</label><div class="layui-input-block"><input type="checkbox" lay-skin="switch" lay-text="显示|隐藏" lay-filter="visible"' + (comp.visible !== false ? ' checked' : '') + ' data-prop="visible"></div></div>';
+            html += '<div class="layui-form-item"><label class="layui-form-label">组件名称</label><div class="layui-input-block"><input type="text" name="name" class="layui-input" value="' + escapeAttr(comp.name || '') + '" data-prop="name"></div></div>';
+            html += '<div class="layui-form-item"><label class="layui-form-label">是否显示</label><div class="layui-input-block"><input type="checkbox" lay-skin="switch" lay-text="显示|隐藏"' + (comp.visible !== false ? ' checked' : '') + ' data-prop="visible"></div></div>';
 
             if (comp.type === 'navigation') {
                 html += propSelect('navStyle', '导航样式', [{ v: 'horizontal', t: '横向' }, { v: 'vertical', t: '纵向' }], getProp(comp, 'navStyle', 'horizontal'));
@@ -293,19 +312,19 @@
                     var it = items[i] || {};
                     html += '<div class="banner-item-row" data-item-idx="' + i + '">';
                     html += '<div class="row-title"><span>Banner ' + (i + 1) + '</span><span class="del-btn" data-action="del-banner-item">删除</span></div>';
-                    html += '<div style="margin-bottom:4px;"><span class="pick-btn" data-action="pick-banner-image" data-field="image">选图</span> ';
-                    if (it.image) html += '<img src="' + it.image + '" class="img-thumb" alt="">';
-                    html += '<input type="hidden" data-item-field="image" value="' + (it.image || '') + '"></div>';
-                    html += '<input type="text" class="layui-input" placeholder="标题" value="' + (it.title || '') + '" data-item-field="title" style="margin-bottom:4px;">';
-                    html += '<input type="text" class="layui-input" placeholder="副标题" value="' + (it.subtitle || '') + '" data-item-field="subtitle" style="margin-bottom:4px;">';
-                    html += '<input type="text" class="layui-input" placeholder="按钮文字" value="' + (it.buttonText || '') + '" data-item-field="buttonText" style="margin-bottom:4px;">';
-                    html += '<input type="text" class="layui-input" placeholder="按钮链接" value="' + (it.buttonLink || '') + '" data-item-field="buttonLink">';
+                    html += '<div style="margin-bottom:4px;"><span class="pick-btn" data-action="pick-banner-image">选图</span> ';
+                    if (it.image) html += '<img src="' + escapeAttr(safeUrl(it.image)) + '" class="img-thumb" alt="">';
+                    html += '</div>';
+                    html += '<input type="text" class="layui-input" placeholder="标题" value="' + escapeAttr(it.title || '') + '" data-item-field="title" style="margin-bottom:4px;">';
+                    html += '<input type="text" class="layui-input" placeholder="副标题" value="' + escapeAttr(it.subtitle || '') + '" data-item-field="subtitle" style="margin-bottom:4px;">';
+                    html += '<input type="text" class="layui-input" placeholder="按钮文字" value="' + escapeAttr(it.buttonText || '') + '" data-item-field="buttonText" style="margin-bottom:4px;">';
+                    html += '<input type="text" class="layui-input" placeholder="按钮链接" value="' + escapeAttr(it.buttonLink || '') + '" data-item-field="buttonLink">';
                     html += '</div>';
                 }
                 html += '<button type="button" class="layui-btn layui-btn-sm layui-btn-normal" data-action="add-banner-item"><i class="layui-icon layui-icon-addition"></i>新增图片项</button>';
                 html += '</div></div>';
             } else if (comp.type === 'news') {
-                html += propNumber('categoryId', '分类ID(0=全部)', getProp(comp, 'categoryId', 0));
+                html += propNumber('categoryId', '分类ID', getProp(comp, 'categoryId', 0));
                 html += propNumber('pageSize', '显示条数', getProp(comp, 'pageSize', 6));
                 html += propSelect('showStyle', '展示样式', [{ v: 'list', t: '列表' }, { v: 'card', t: '卡片' }], getProp(comp, 'showStyle', 'list'));
                 html += propCheckbox('showCover', '显示封面', getProp(comp, 'showCover', true));
@@ -313,9 +332,9 @@
                 html += propCheckbox('showDate', '显示日期', getProp(comp, 'showDate', true));
                 html += propText('moreLink', '更多链接', getProp(comp, 'moreLink', '/news'));
             } else if (comp.type === 'product') {
-                html += propNumber('categoryId', '分类ID(0=全部)', getProp(comp, 'categoryId', 0));
+                html += propNumber('categoryId', '分类ID', getProp(comp, 'categoryId', 0));
                 html += propNumber('pageSize', '显示条数', getProp(comp, 'pageSize', 8));
-                html += propSelect('colsPerRow', '每行列数', [{ v: '1', t: '1' }, { v: '2', t: '2' }, { v: '3', t: '3' }, { v: '4', t: '4' }], String(getProp(comp, 'colsPerRow', 4)));
+                html += propSelect('colsPerRow', '每行列数', [{ v: '1', t: '1' }, { v: '2', t: '2' }, { v: '3', t: '3' }, { v: '4', t: '4' }], getProp(comp, 'colsPerRow', 4));
                 html += propCheckbox('showImage', '显示图片', getProp(comp, 'showImage', true));
                 html += propCheckbox('showSummary', '显示摘要', getProp(comp, 'showSummary', false));
                 html += propCheckbox('showSpec', '显示规格', getProp(comp, 'showSpec', false));
@@ -336,60 +355,35 @@
             } else if (comp.type === 'image') {
                 html += '<div class="layui-form-item"><label class="layui-form-label">图片</label><div class="layui-input-block"><span class="pick-btn" data-action="pick-image">选择图片</span> ';
                 var src = getProp(comp, 'src', '');
-                if (src) html += '<img src="' + src + '" class="img-thumb" alt="">';
-                html += '<input type="hidden" data-prop="src" value="' + src + '"></div></div>';
+                if (src) html += '<img src="' + escapeAttr(safeUrl(src)) + '" class="img-thumb" alt="">';
+                html += '</div></div>';
                 html += propText('alt', '替代文字', getProp(comp, 'alt', ''));
                 html += propText('width', '宽度', getProp(comp, 'width', '100%'));
                 html += propSelect('align', '对齐', [{ v: 'left', t: '左' }, { v: 'center', t: '中' }, { v: 'right', t: '右' }], getProp(comp, 'align', 'center'));
             } else if (comp.type === 'title') {
                 html += propText('text', '文本', getProp(comp, 'text', ''));
-                html += propSelect('level', '标题级别', [{ v: '1', t: 'H1' }, { v: '2', t: 'H2' }, { v: '3', t: 'H3' }, { v: '4', t: 'H4' }, { v: '5', t: 'H5' }, { v: '6', t: 'H6' }], String(getProp(comp, 'level', 2)));
+                html += propSelect('level', '标题级别', [{ v: '1', t: 'H1' }, { v: '2', t: 'H2' }, { v: '3', t: 'H3' }, { v: '4', t: 'H4' }, { v: '5', t: 'H5' }, { v: '6', t: 'H6' }], getProp(comp, 'level', 2));
                 html += propSelect('align', '对齐', [{ v: 'left', t: '左' }, { v: 'center', t: '中' }, { v: 'right', t: '右' }], getProp(comp, 'align', 'center'));
                 html += propColor('color', '颜色', getProp(comp, 'color', '#333333'));
             }
-
             html += '</form>';
             $('#propsPanel').html(html);
-
-            if (comp.type === 'richText') {
-                initRichTextEditor(comp);
-            }
-        }
-
-        function propText(name, label, val) {
-            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="text" class="layui-input" value="' + (val || '') + '" data-prop="' + name + '"></div></div>';
-        }
-        function propNumber(name, label, val) {
-            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="number" class="layui-input" value="' + (val || 0) + '" data-prop="' + name + '"></div></div>';
-        }
-        function propCheckbox(name, label, checked) {
-            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="checkbox" lay-skin="switch" lay-text="是|否" lay-filter="p_' + name + '"' + (checked ? ' checked' : '') + ' data-prop="' + name + '"></div></div>';
-        }
-        function propSelect(name, label, opts, val) {
-            var html = '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><select data-prop="' + name + '">';
-            for (var i = 0; i < opts.length; i++) {
-                html += '<option value="' + opts[i].v + '"' + (String(opts[i].v) === String(val) ? ' selected' : '') + '>' + opts[i].t + '</option>';
-            }
-            html += '</select></div></div>';
-            return html;
-        }
-        function propColor(name, label, val) {
-            return '<div class="layui-form-item"><label class="layui-form-label">' + label + '</label><div class="layui-input-block"><input type="color" class="layui-input" value="' + (val || '#000000') + '" data-prop="' + name + '" style="height:30px; padding:2px;"></div></div>';
+            if (layuiForm) layuiForm.render();
+            if (comp.type === 'richText') initRichTextEditor(comp);
         }
 
         function initRichTextEditor(comp) {
-            if (editor) { try { editor.destroy(); } catch (e) {} editor = null; }
             var E = window.wangEditor;
+            if (!E) return;
             editor = new E('#richTextEditor');
             editor.config.uploadFileName = 'file';
             editor.config.uploadImgServer = '/Upload/UploadImage';
-            editor.config.uploadImgHooks = {
-                customInsert: function (insertImg, result) { if (result.url) insertImg(result.url); }
-            };
+            editor.config.uploadImgHooks = { customInsert: function (insertImg, result) { if (result && result.url) insertImg(result.url); } };
             editor.config.height = 200;
             editor.config.onchange = function (html) {
                 setProp(comp, 'html', html);
                 renderCanvas();
+                recordHistory();
             };
             editor.create();
             editor.txt.html(getProp(comp, 'html', ''));
@@ -397,99 +391,82 @@
 
         function openImageSelector(callback) {
             window._designerImgCallback = callback;
-            layer.open({ type: 2, title: '选择图片', area: ['900px', '680px'], content: '/Admin/ImageSelector' });
+            layuiLayer.open({ type: 2, title: '选择图片', area: ['900px', '680px'], content: '/Admin/ImageSelector' });
         }
         window.addEventListener('message', function (e) {
             if (e.data && e.data.type === 'imageSelected' && window._designerImgCallback) {
-                window._designerImgCallback(e.data.url);
+                window._designerImgCallback(e.data.url || '');
                 window._designerImgCallback = null;
             }
         });
 
         function updateOrder() {
             var newOrder = [];
-            $('#canvas .block').each(function (i) {
-                var idx = parseInt($(this).attr('data-idx'));
-                newOrder.push(pageState.components[idx]);
+            $('#canvas .block').each(function () {
+                var idx = parseInt($(this).attr('data-idx'), 10);
+                if (!isNaN(idx) && pageState.components[idx]) newOrder.push(pageState.components[idx]);
             });
-            pushHistory();
+            if (newOrder.length !== pageState.components.length) { renderCanvas(); return; }
             pageState.components = newOrder;
-            for (var i = 0; i < pageState.components.length; i++) {
-                pageState.components[i].sort = i + 1;
-            }
             selectedIdx = -1;
-            renderCanvas();
-            renderProps();
+            afterChange(false);
         }
 
         function bindEvents() {
             var canvasEl = document.getElementById('canvas');
             var libEl = document.querySelector('.designer-lib');
-
             Sortable.create(libEl, {
-                group: { name: 'page', pull: 'clone', put: false },
-                sort: false,
-                animation: 150,
+                group: { name: 'page', pull: 'clone', put: false }, sort: false, animation: 150,
                 onEnd: function (evt) {
                     if (evt.to === canvasEl) {
+                        var type = $(evt.item).attr('data-type');
                         $(evt.item).remove();
-                        var type = $(evt.originalEvent ? evt.item : evt.clone).attr('data-type') || $(evt.item).attr('data-type');
                         addBlock(type);
                     }
                 }
             });
-
             Sortable.create(canvasEl, {
-                group: { name: 'page', pull: false, put: false },
-                animation: 150,
-                handle: '.drag-handle',
-                filter: '.block-tools',
-                preventOnFilter: false,
-                onEnd: updateOrder
+                group: { name: 'page', pull: false, put: true }, animation: 150,
+                handle: '.drag-handle', filter: '.block-tools', preventOnFilter: false, onEnd: updateOrder
             });
 
             $('#canvas').on('click', '.block', function (e) {
                 if ($(e.target).closest('.block-tools').length) return;
-                var idx = parseInt($(this).attr('data-idx'));
-                selectBlock(idx);
+                selectBlock(parseInt($(this).attr('data-idx'), 10));
             });
-
             $('#canvas').on('click', '.block-tools .tool-btn', function (e) {
                 e.stopPropagation();
                 var action = $(this).attr('data-action');
-                var idx = parseInt($(this).closest('.block').attr('data-idx'));
+                var idx = parseInt($(this).closest('.block').attr('data-idx'), 10);
+                if (isNaN(idx) || !pageState.components[idx]) return;
                 if (action === 'up' && idx > 0) {
-                    pushHistory();
                     var tmp = pageState.components[idx - 1];
                     pageState.components[idx - 1] = pageState.components[idx];
                     pageState.components[idx] = tmp;
                     selectedIdx = idx - 1;
-                    renderCanvas(); renderProps();
+                    afterChange(true);
                 } else if (action === 'down' && idx < pageState.components.length - 1) {
-                    pushHistory();
                     var tmp2 = pageState.components[idx + 1];
                     pageState.components[idx + 1] = pageState.components[idx];
                     pageState.components[idx] = tmp2;
                     selectedIdx = idx + 1;
-                    renderCanvas(); renderProps();
+                    afterChange(true);
                 } else if (action === 'copy') {
-                    pushHistory();
-                    var c = JSON.parse(JSON.stringify(pageState.components[idx]));
+                    var c = clone(pageState.components[idx]);
                     c.id = genId(c.type);
                     pageState.components.splice(idx + 1, 0, c);
                     selectedIdx = idx + 1;
-                    renderCanvas(); renderProps();
+                    afterChange(true);
                 } else if (action === 'toggle') {
-                    pushHistory();
                     pageState.components[idx].visible = !(pageState.components[idx].visible !== false);
-                    renderCanvas(); renderProps();
+                    selectedIdx = idx;
+                    afterChange(true);
                 } else if (action === 'del') {
-                    layer.confirm('确认删除该组件？', function (i) {
-                        pushHistory();
+                    layuiLayer.confirm('确认删除该组件？', function (i) {
                         pageState.components.splice(idx, 1);
                         selectedIdx = -1;
-                        renderCanvas(); renderProps();
-                        layer.close(i);
+                        afterChange(false);
+                        layuiLayer.close(i);
                     });
                 }
             });
@@ -499,36 +476,15 @@
                 var comp = pageState.components[selectedIdx];
                 var key = $(this).attr('data-prop');
                 var val;
-                if (this.type === 'checkbox') {
-                    if ($(this).attr('lay-skin') === 'switch') {
-                        val = this.checked;
-                        if (key === 'visible') comp.visible = val;
-                        else setProp(comp, key, val);
-                    } else {
-                        val = this.checked;
-                        setProp(comp, key, val);
-                    }
-                } else if (this.type === 'number') {
-                    val = parseInt(this.value) || 0;
-                    setProp(comp, key, val);
-                } else {
-                    val = this.value;
-                    if (key === 'name') comp.name = val;
-                    else setProp(comp, key, val);
-                }
+                if (this.type === 'checkbox') val = this.checked;
+                else if (this.type === 'number') val = parseInt(this.value, 10) || 0;
+                else val = this.value;
+                if (key === 'name') comp.name = val;
+                else if (key === 'visible') comp.visible = val;
+                else setProp(comp, key, val);
                 renderCanvas();
+                recordHistory();
             });
-
-            $('#propsPanel').on('change', 'select[data-prop]', function () {
-                if (selectedIdx < 0) return;
-                var comp = pageState.components[selectedIdx];
-                var key = $(this).attr('data-prop');
-                var val = $(this).val();
-                if (key === 'level' || key === 'colsPerRow') val = parseInt(val) || 0;
-                setProp(comp, key, val);
-                renderCanvas();
-            });
-
             $('#propsPanel').on('click', '[data-action="pick-image"]', function () {
                 if (selectedIdx < 0) return;
                 var comp = pageState.components[selectedIdx];
@@ -536,130 +492,120 @@
                     setProp(comp, 'src', url);
                     renderProps();
                     renderCanvas();
+                    recordHistory();
                 });
             });
-
             $('#propsPanel').on('click', '[data-action="add-banner-item"]', function () {
                 if (selectedIdx < 0) return;
                 var comp = pageState.components[selectedIdx];
                 var items = getProp(comp, 'items', []) || [];
+                if (!Array.isArray(items)) items = [];
                 items.push({ title: '', subtitle: '', image: '', buttonText: '', buttonLink: '' });
                 setProp(comp, 'items', items);
                 renderProps();
+                renderCanvas();
+                recordHistory();
             });
-
             $('#propsPanel').on('click', '[data-action="del-banner-item"]', function () {
                 if (selectedIdx < 0) return;
                 var comp = pageState.components[selectedIdx];
-                var itemIdx = parseInt($(this).closest('.banner-item-row').attr('data-item-idx'));
+                var itemIdx = parseInt($(this).closest('.banner-item-row').attr('data-item-idx'), 10);
                 var items = getProp(comp, 'items', []) || [];
+                if (!Array.isArray(items)) items = [];
                 items.splice(itemIdx, 1);
                 setProp(comp, 'items', items);
                 renderProps();
+                renderCanvas();
+                recordHistory();
             });
-
             $('#propsPanel').on('click', '[data-action="pick-banner-image"]', function () {
                 if (selectedIdx < 0) return;
                 var comp = pageState.components[selectedIdx];
                 var row = $(this).closest('.banner-item-row');
-                var itemIdx = parseInt(row.attr('data-item-idx'));
+                var itemIdx = parseInt(row.attr('data-item-idx'), 10);
                 openImageSelector(function (url) {
                     var items = getProp(comp, 'items', []) || [];
+                    if (!Array.isArray(items)) items = [];
                     if (!items[itemIdx]) items[itemIdx] = {};
                     items[itemIdx].image = url;
                     setProp(comp, 'items', items);
                     renderProps();
                     renderCanvas();
+                    recordHistory();
                 });
             });
-
             $('#propsPanel').on('change input', '[data-item-field]', function () {
                 if (selectedIdx < 0) return;
                 var comp = pageState.components[selectedIdx];
-                var row = $(this).closest('.banner-item-row');
-                var itemIdx = parseInt(row.attr('data-item-idx'));
+                var itemIdx = parseInt($(this).closest('.banner-item-row').attr('data-item-idx'), 10);
                 var field = $(this).attr('data-item-field');
                 var items = getProp(comp, 'items', []) || [];
+                if (!Array.isArray(items)) items = [];
                 if (!items[itemIdx]) items[itemIdx] = {};
                 items[itemIdx][field] = this.value;
                 setProp(comp, 'items', items);
-                if (field === 'image') renderCanvas();
+                renderCanvas();
+                recordHistory();
             });
 
             $('#btnUndo').on('click', undo);
             $('#btnRedo').on('click', redo);
-
+            $('#btnPreview').on('click', function () { window.open('/page/preview/' + pageState.pageId); });
             $('#btnSaveDraft').on('click', function () {
-                var loading = layer.load(1, { shade: 0.3 });
+                var loading = layuiLayer.load(1, { shade: 0.3 });
                 $.ajax({
-                    type: 'post',
-                    url: '/Page/SaveDraft?id=' + pageState.pageId,
-                    data: { componentJson: JSON.stringify(pageState.components) },
-                    dataType: 'json',
-                    success: function (res) {
-                        layer.close(loading);
-                        if (res.code == 200) layer.msg(res.message, { icon: 1 });
-                        else layer.msg(res.message, { icon: 5 });
-                    },
-                    error: function () { layer.close(loading); layer.msg('保存失败', { icon: 5 }); }
+                    type: 'post', url: '/Page/SaveDraft?id=' + pageState.pageId,
+                    data: { componentJson: JSON.stringify(pageState.components) }, dataType: 'json',
+                    success: function (res) { layuiLayer.close(loading); res.code == 200 ? layuiLayer.msg(res.message, { icon: 1 }) : layuiLayer.msg(res.message, { icon: 5 }); },
+                    error: function () { layuiLayer.close(loading); layuiLayer.msg('保存失败', { icon: 5 }); }
                 });
             });
-
-            $('#btnPreview').on('click', function () {
-                window.open('/page/preview/' + pageState.pageId);
-            });
-
             $('#btnPublish').on('click', function () {
-                layer.confirm('发布前请先保存草稿。是否已保存？确认将直接发布当前草稿。', function (i) {
-                    layer.close(i);
-                    var loading = layer.load(1, { shade: 0.3 });
+                layuiLayer.confirm('发布前请先保存草稿。是否已保存？确认将直接发布当前草稿。', function (i) {
+                    layuiLayer.close(i);
+                    var loading = layuiLayer.load(1, { shade: 0.3 });
                     $.ajax({
                         type: 'post', url: '/Page/Publish?id=' + pageState.pageId, dataType: 'json',
                         success: function (res) {
-                            layer.close(loading);
-                            if (res.code == 200) {
-                                layer.alert(res.message, function (idx) {
-                                    window.location.href = '/page/index';
-                                    layer.close(idx);
-                                });
-                            } else { layer.msg(res.message, { icon: 5 }); }
+                            layuiLayer.close(loading);
+                            if (res.code == 200) layuiLayer.alert(res.message, function (idx) { window.location.href = '/page/index'; layuiLayer.close(idx); });
+                            else layuiLayer.msg(res.message, { icon: 5 });
                         },
-                        error: function () { layer.close(loading); layer.msg('发布失败', { icon: 5 }); }
+                        error: function () { layuiLayer.close(loading); layuiLayer.msg('发布失败', { icon: 5 }); }
                     });
                 });
             });
         }
 
         function loadComponents() {
-            var loading = layer.load(1, { shade: 0.3 });
+            var loading = layuiLayer.load(1, { shade: 0.3 });
             $.ajax({
                 type: 'get', url: '/Page/GetComponentData?pageId=' + pageState.pageId, dataType: 'json',
                 success: function (res) {
-                    layer.close(loading);
+                    layuiLayer.close(loading);
                     if (res.code == 200) {
-                        pageState.components = res.components || [];
+                        pageState.components = Array.isArray(res.components) ? res.components : [];
                         for (var i = 0; i < pageState.components.length; i++) {
                             if (!pageState.components[i].props) pageState.components[i].props = {};
                             if (!pageState.components[i].style) pageState.components[i].style = {};
                         }
-                        historyStack = [JSON.parse(JSON.stringify(pageState.components))];
+                        syncSort();
+                        historyStack = [clone(pageState.components)];
                         historyIndex = 0;
                         renderCanvas();
                         renderProps();
                         bindEvents();
                     } else {
-                        layer.msg(res.message || '加载失败', { icon: 5 });
+                        layuiLayer.msg(res.message || '加载失败', { icon: 5 });
                     }
                 },
-                error: function () { layer.close(loading); layer.msg('加载失败', { icon: 5 }); }
+                error: function () { layuiLayer.close(loading); layuiLayer.msg('加载失败', { icon: 5 }); }
             });
         }
 
         layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'form', 'layer'], function () {
-            var form = layui.form;
-            $(document).on('change', 'input[lay-skin="switch"]', function () {
-                form.render('checkbox');
-            });
+            layuiForm = layui.form;
+            layuiLayer = layui.layer;
             loadComponents();
         });
     </script>
