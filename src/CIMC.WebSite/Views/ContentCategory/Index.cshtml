@@ -1,0 +1,73 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>内容分类管理</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">内容分类中心</div>
+        <div class="layui-card-body">
+            <blockquote class="layui-elem-quote">文章、产品、招聘为固定大类。可在每个大类下维护二级或更细的分类，页面装修组件可直接选择这些分类。</blockquote>
+            <table id="tree-table" class="layui-table" lay-filter="tree-table"></table>
+            <script type="text/html" id="activeTpl">
+                {{# if(d.isActive){ }}<span class="layui-badge layui-bg-green">启用</span>{{# } else { }}<span class="layui-badge layui-bg-gray">禁用</span>{{# } }}
+            </script>
+            <script type="text/html" id="barTpl">
+                @if ((bool)ViewData[PageCode.PAGE_Button_Add])
+                {
+                    <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="addchild"><i class="layui-icon layui-icon-addition"></i>添加子分类</a>
+                }
+                @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
+                {
+                    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">编辑</a>
+                }
+                {{# if(!d.isRoot){ }}
+                @if ((bool)ViewData[PageCode.PAGE_Button_Delete])
+                {
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                }
+                {{# } }}
+            </script>
+        </div>
+    </div>
+</div>
+<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script>
+layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index:'lib/index' }).use(['index','table','treetable'], function(){
+    var $=layui.$, table=layui.table, treetable=layui.treetable, layer=layui.layer;
+    function load(){
+        $.get('/ContentCategory/GetList', function(res){
+            if(res.code!==200){ layer.msg(res.message||'加载失败',{icon:5}); return; }
+            treetable.render({
+                treeColIndex:0, treeSpid:0, treeIdName:'id', treePidName:'pid', treeDefaultClose:false, treeLinkage:false,
+                elem:'#tree-table', data:res.data||[], page:false,
+                cols:[[
+                    {field:'name',minWidth:280,title:'分类名称'},
+                    {field:'sort',width:100,title:'排序'},
+                    {field:'isActive',width:100,align:'center',title:'状态',templet:'#activeTpl'},
+                    {width:300,align:'center',title:'操作',toolbar:'#barTpl'}
+                ]]
+            });
+        },'json');
+    }
+    table.on('tool(tree-table)', function(obj){
+        var d=obj.data;
+        if(obj.event==='addchild') location.href='/ContentCategory/Edit?pid='+d.id;
+        else if(obj.event==='edit') location.href='/ContentCategory/Edit/'+d.id;
+        else if(obj.event==='del') layer.confirm('确认删除该分类？',function(i){
+            $.post('/ContentCategory/Delete',{id:d.id},function(res){ layer.close(i); if(res.code===200){layer.msg(res.message);load();}else layer.msg(res.message,{icon:5});},'json');
+        });
+    });
+    load();
+});
+</script>
+</body>
+</html>
