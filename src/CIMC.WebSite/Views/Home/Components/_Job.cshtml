@@ -19,17 +19,14 @@
         if (Model.Props.TryGetValue("enablePagination", out var ep) && bool.TryParse(ep?.ToString(), out var b5)) enablePagination = b5;
     }
 
-    var categoryIds = categoryId > 0
-        ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true)
-        : new List<int>();
+    var categoryIds = categoryId > 0 ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true) : new List<int>();
     var allItems = JobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true)
-        .Where(j => categoryId <= 0 || categoryIds.Contains(j.CategoryId))
-        .ToList();
+        .Where(j => categoryId <= 0 || categoryIds.Contains(j.CategoryId)).ToList();
 
     var componentKey = new string((Model.Id ?? "job").Where(char.IsLetterOrDigit).ToArray());
     var pageParam = "page_" + (string.IsNullOrEmpty(componentKey) ? "job" : componentKey);
     var currentPage = 1;
-    if (enablePagination && int.TryParse(Context.Request.Query[pageParam], out var requestedPage)) currentPage = Math.Max(1, requestedPage);
+    if (enablePagination && int.TryParse(Context.Request.Query[pageParam].ToString(), out var requestedPage)) currentPage = Math.Max(1, requestedPage);
     var totalPages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
     currentPage = Math.Min(currentPage, totalPages);
     var items = enablePagination ? allItems.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList() : allItems.Take(pageSize).ToList();
@@ -43,7 +40,7 @@
             foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
         }
         parts.Add(WebUtility.UrlEncode(pageParam) + "=" + page);
-        return Context.Request.PathBase + Context.Request.Path + "?" + string.Join("&", parts);
+        return $"{Context.Request.PathBase}{Context.Request.Path}?{string.Join("&", parts)}";
     }
 }
 <section class="job-section content-component" data-component-id="@Model.Id">
