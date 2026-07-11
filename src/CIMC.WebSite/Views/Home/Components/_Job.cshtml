@@ -1,60 +1,88 @@
 @using CIMC.Data
+@using CIMC.EntityFramework
+@using System.Net
+@using System.Linq
 @model MySite.Web.Models.ComponentModel
+@inject IRepository<ContentJob> JobRepository
+@inject IRepository<ContentProductCategory> CategoryRepository
 @{
-    var jobList = ViewBag.JobList as List<ContentJob> ?? new List<ContentJob>();
-    int pageSize = 10;
-    bool showLocation = true, showSalary = true, showCount = true, showPublishTime = true;
-
+    int pageSize = 10, categoryId = 0;
+    bool showLocation = true, showSalary = true, showCount = true, showPublishTime = true, enablePagination = true;
     if (Model.Props != null)
     {
-        if (Model.Props.TryGetValue("pageSize", out var ps) && ps != null && int.TryParse(ps.ToString(), out var psp)) pageSize = psp;
-        if (Model.Props.TryGetValue("showLocation", out var sl) && sl != null && bool.TryParse(sl.ToString(), out var slv)) showLocation = slv;
-        if (Model.Props.TryGetValue("showSalary", out var ss) && ss != null && bool.TryParse(ss.ToString(), out var ssv)) showSalary = ssv;
-        if (Model.Props.TryGetValue("showCount", out var sc) && sc != null && bool.TryParse(sc.ToString(), out var scv)) showCount = scv;
-        if (Model.Props.TryGetValue("showPublishTime", out var sp) && sp != null && bool.TryParse(sp.ToString(), out var spv)) showPublishTime = spv;
+        if (Model.Props.TryGetValue("pageSize", out var ps) && int.TryParse(ps?.ToString(), out var n)) pageSize = Math.Max(1, Math.Min(100, n));
+        if (Model.Props.TryGetValue("categoryId", out var ci) && int.TryParse(ci?.ToString(), out var c)) categoryId = c;
+        if (Model.Props.TryGetValue("showLocation", out var sl) && bool.TryParse(sl?.ToString(), out var b1)) showLocation = b1;
+        if (Model.Props.TryGetValue("showSalary", out var ss) && bool.TryParse(ss?.ToString(), out var b2)) showSalary = b2;
+        if (Model.Props.TryGetValue("showCount", out var sc) && bool.TryParse(sc?.ToString(), out var b3)) showCount = b3;
+        if (Model.Props.TryGetValue("showPublishTime", out var sp) && bool.TryParse(sp?.ToString(), out var b4)) showPublishTime = b4;
+        if (Model.Props.TryGetValue("enablePagination", out var ep) && bool.TryParse(ep?.ToString(), out var b5)) enablePagination = b5;
     }
 
-    var items = jobList.Take(pageSize).ToList();
+    var categoryIds = categoryId > 0
+        ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true)
+        : new List<int>();
+    var allItems = JobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true)
+        .Where(j => categoryId <= 0 || categoryIds.Contains(j.CategoryId))
+        .ToList();
+
+    var componentKey = new string((Model.Id ?? "job").Where(char.IsLetterOrDigit).ToArray());
+    var pageParam = "page_" + (string.IsNullOrEmpty(componentKey) ? "job" : componentKey);
+    var currentPage = 1;
+    if (enablePagination && int.TryParse(Context.Request.Query[pageParam], out var requestedPage)) currentPage = Math.Max(1, requestedPage);
+    var totalPages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
+    currentPage = Math.Min(currentPage, totalPages);
+    var items = enablePagination ? allItems.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList() : allItems.Take(pageSize).ToList();
+
+    string BuildPageUrl(int page)
+    {
+        var parts = new List<string>();
+        foreach (var pair in Context.Request.Query)
+        {
+            if (string.Equals(pair.Key, pageParam, StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
+        }
+        parts.Add(WebUtility.UrlEncode(pageParam) + "=" + page);
+        return Context.Request.PathBase + Context.Request.Path + "?" + string.Join("&", parts);
+    }
 }
-<section class="job-section">
+<section class="job-section content-component" data-component-id="@Model.Id">
     <div class="container">
-        <div class="section-header">
-            <h2 class="section-title">人才招聘</h2>
-        </div>
+        <div class="section-header"><h2 class="section-title">@(string.IsNullOrWhiteSpace(Model.Name) ? "人才招聘" : Model.Name)</h2></div>
         @if (items.Count == 0)
         {
             <p class="empty-tip">暂无招聘职位</p>
         }
         else
         {
-            <table class="job-table">
-                <thead>
-                    <tr>
-                        <th>职位名称</th>
-                        <th>部门</th>
-                        @if (showLocation) { <th>工作地点</th> }
-                        @if (showSalary) { <th>薪资范围</th> }
-                        @if (showCount) { <th>招聘人数</th> }
-                        @if (showPublishTime) { <th>发布时间</th> }
-                    </tr>
-                </thead>
-                <tbody>
+            <div class="job-table-wrap">
+                <table class="job-table">
+                    <thead><tr><th>职位名称</th><th>部门</th>@if(showLocation){<th>工作地点</th>}@if(showSalary){<th>薪资范围</th>}@if(showCount){<th>招聘人数</th>}@if(showPublishTime){<th>发布时间</th>}</tr></thead>
+                    <tbody>
                     @foreach (var job in items)
                     {
                         <tr>
-                            <td class="job-title">@job.JobTitle</td>
-                            <td>@(job.Department ?? "-")</td>
-                            @if (showLocation) { <td>@(job.WorkLocation ?? "-")</td> }
-                            @if (showSalary) { <td>@(job.SalaryRange ?? "面议")</td> }
-                            @if (showCount) { <td>@job.RecruitCount</td> }
-                            @if (showPublishTime)
-                            {
-                                <td>@(job.PublishTime.HasValue ? job.PublishTime.Value.ToString("yyyy-MM-dd") : "-")</td>
-                            }
+                            <td class="job-title">@job.JobTitle</td><td>@(job.Department ?? "-")</td>
+                            @if(showLocation){<td>@(job.WorkLocation ?? "-")</td>}
+                            @if(showSalary){<td>@(job.SalaryRange ?? "面议")</td>}
+                            @if(showCount){<td>@job.RecruitCount</td>}
+                            @if(showPublishTime){<td>@(job.PublishTime.HasValue ? job.PublishTime.Value.ToString("yyyy-MM-dd") : "-")</td>}
                         </tr>
                     }
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
+            @if (enablePagination && totalPages > 1)
+            {
+                <nav class="component-pagination" aria-label="招聘分页">
+                    @if (currentPage > 1) { <a href="@BuildPageUrl(currentPage - 1)">上一页</a> }
+                    @for (var page = 1; page <= totalPages; page++)
+                    {
+                        if (page == currentPage) { <span class="active">@page</span> } else { <a href="@BuildPageUrl(page)">@page</a> }
+                    }
+                    @if (currentPage < totalPages) { <a href="@BuildPageUrl(currentPage + 1)">下一页</a> }
+                </nav>
+            }
         }
     </div>
 </section>
