@@ -1,11 +1,7 @@
 @{
     Layout = null;
     var componentJson = ViewBag.ComponentJson as string;
-    if (string.IsNullOrWhiteSpace(componentJson))
-    {
-        componentJson = "[]";
-    }
-    // 防止富文本中出现 </script> 造成脚本提前结束。
+    if (string.IsNullOrWhiteSpace(componentJson)) componentJson = "[]";
     var safeComponentJson = componentJson.Replace("</", "<\\/");
 }
 <!DOCTYPE html>
@@ -16,148 +12,43 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, "Microsoft YaHei", sans-serif; background: #f5f5f5; }
-        .preview-toolbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: #1e9fff; color: #fff; display: flex; align-items: center; padding: 0 16px; z-index: 9999; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
-        .preview-toolbar .title { flex: 1; font-size: 15px; }
-        .preview-toolbar .btn { background: rgba(255,255,255,.2); border: 0; color: #fff; padding: 6px 14px; border-radius: 4px; cursor: pointer; margin-left: 8px; }
-        .preview-toolbar .btn:hover { background: rgba(255,255,255,.3); }
-        .preview-canvas { margin-top: 48px; max-width: 1200px; margin-left: auto; margin-right: auto; background: #fff; min-height: calc(100vh - 48px); }
-        .comp-block { border-bottom: 1px dashed #eee; padding: 20px; }
-        .comp-block:last-child { border-bottom: 0; }
-        .comp-title { font-size: 12px; color: #999; margin-bottom: 8px; }
-        .comp-content { min-height: 40px; }
-        .empty-tip { text-align: center; padding: 80px 20px; color: #999; }
-        .banner-item { position: relative; height: 360px; background-size: cover; background-position: center; color: #fff; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-        .banner-item h2 { font-size: 32px; text-shadow: 0 2px 4px rgba(0,0,0,.5); }
-        .banner-item p { margin-top: 8px; text-shadow: 0 2px 4px rgba(0,0,0,.5); }
-        .banner-item a { display: inline-block; margin-top: 16px; padding: 8px 20px; background: rgba(255,255,255,.9); color: #333; border-radius: 4px; text-decoration: none; }
-        .news-item, .product-item, .job-item { padding: 12px; border: 1px solid #f0f0f0; margin-bottom: 8px; }
-        .news-item img, .product-item img { max-width: 120px; float: left; margin-right: 12px; }
-        .product-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-        @@media (max-width: 768px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
-        .footer-preview { background: #2c3e50; color: #fff; padding: 24px; }
-        .rich-text-content { padding: 16px 0; }
-        .title-content { text-align: center; padding: 20px 0; }
-        .image-content { text-align: center; }
-        .image-content img { max-width: 100%; }
+        *{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#f4f6f8;color:#333}.preview-toolbar{position:fixed;top:0;left:0;right:0;height:48px;background:#1677ff;color:#fff;display:flex;align-items:center;padding:0 16px;z-index:9999}.preview-toolbar .title{flex:1}.preview-toolbar button{border:0;background:rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:4px;cursor:pointer}.preview-canvas{margin:48px auto 0;max-width:1200px;min-height:calc(100vh - 48px);background:#fff}.comp-block{padding:20px;border-bottom:1px dashed #eee}.comp-label{font-size:11px;color:#aaa;margin-bottom:10px}.empty{padding:40px;text-align:center;color:#999}.banner{display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;background:#e8edf3 center/cover no-repeat;text-align:center}.banner h2{font-size:34px;text-shadow:0 2px 4px rgba(0,0,0,.35)}.banner p{margin-top:8px}.grid{display:grid;gap:12px}.grid-item{height:90px;background:#f0f2f5;border-radius:5px}.mock-list{border:1px solid #eee;padding:13px;margin-bottom:8px}.preview-button{display:inline-block;padding:10px 22px;background:#1677ff;color:#fff;border-radius:5px}.icon-card{padding:30px;border:1px solid #eee;border-radius:8px}.icon-card .icon{font-size:36px}.pager{display:flex;gap:6px;justify-content:center;margin-top:15px}.pager span{border:1px solid #ddd;padding:5px 10px;border-radius:3px}.pager .active{background:#1677ff;color:#fff}.video{background:#222;color:#fff;display:flex;align-items:center;justify-content:center}.rich{line-height:1.8}
     </style>
 </head>
 <body>
-    <div class="preview-toolbar">
-        <div class="title">预览：@ViewBag.PageName（路径：@ViewBag.PagePath）</div>
-        <button class="btn" onclick="history.back()">返回装修</button>
-    </div>
-    <div class="preview-canvas" id="canvas">
-        <div class="empty-tip">暂无组件，请先在设计器中添加组件</div>
-    </div>
-    <script type="application/json" id="componentJson">@Html.Raw(safeComponentJson)</script>
-    <script src="~/resource/layuiadmin/layui/layui.js"></script>
-    <script>
-        layui.use(['carousel'], function () {
-            var $ = layui.$;
-            var components = [];
-
-            function escapeHtml(value) {
-                return String(value == null ? '' : value)
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
-            }
-            function escapeAttr(value) { return escapeHtml(value).replace(/`/g, '&#96;'); }
-            function safeUrl(value) {
-                var url = String(value == null ? '' : value).trim();
-                if (!url) return '';
-                if (/^(javascript|vbscript|data):/i.test(url)) return '';
-                return url;
-            }
-            function getProp(comp, key, def) {
-                if (!comp || !comp.props) return def;
-                var v = comp.props[key];
-                return (v === undefined || v === null) ? def : v;
-            }
-
-            try {
-                var jsonText = document.getElementById('componentJson').textContent || '[]';
-                components = JSON.parse(jsonText) || [];
-                if (!Array.isArray(components)) components = [];
-            } catch (e) {
-                components = [];
-            }
-
-            function renderBlock(comp) {
-                if (!comp || comp.visible === false) return '';
-                var type = String(comp.type || '');
-                var html = '<div class="comp-block" data-type="' + escapeAttr(type) + '">';
-                html += '<div class="comp-title">[' + escapeHtml(type) + '] ' + escapeHtml(comp.name || '') + '</div>';
-                html += '<div class="comp-content">';
-                if (type === 'banner') {
-                    var items = getProp(comp, 'items', []) || [];
-                    var height = parseInt(getProp(comp, 'height', 360), 10) || 360;
-                    if (!Array.isArray(items) || items.length === 0) {
-                        html += '<div class="empty-tip">Banner 无图片项</div>';
-                    } else {
-                        for (var i = 0; i < items.length; i++) {
-                            var it = items[i] || {};
-                            var image = safeUrl(it.image || '');
-                            html += '<div class="banner-item" style="background-image:url(\'' + escapeAttr(image) + '\'); height:' + height + 'px;">';
-                            if (it.title) html += '<h2>' + escapeHtml(it.title) + '</h2>';
-                            if (it.subtitle) html += '<p>' + escapeHtml(it.subtitle) + '</p>';
-                            if (it.buttonText && it.buttonLink) html += '<a href="' + escapeAttr(safeUrl(it.buttonLink)) + '">' + escapeHtml(it.buttonText) + '</a>';
-                            html += '</div>';
-                        }
-                    }
-                } else if (type === 'news') {
-                    var newsSize = parseInt(getProp(comp, 'pageSize', 5), 10) || 5;
-                    html += '<div>将展示最新 ' + newsSize + ' 条新闻</div>';
-                    html += '<div class="news-item"><strong>新闻标题示例</strong><br><span style="color:#999;">2026-07-04</span></div>';
-                } else if (type === 'product') {
-                    var cols = parseInt(getProp(comp, 'colsPerRow', 4), 10) || 4;
-                    var pageSize = parseInt(getProp(comp, 'pageSize', 8), 10) || 8;
-                    html += '<div class="product-grid" style="grid-template-columns: repeat(' + cols + ', 1fr);">';
-                    for (var p = 0; p < Math.min(pageSize, 4); p++) {
-                        html += '<div class="product-item"><div style="height:80px; background:#eee; margin-bottom:8px;"></div><div>产品名称示例</div></div>';
-                    }
-                    html += '</div>';
-                } else if (type === 'job') {
-                    html += '<div class="job-item"><strong>岗位示例</strong> | 部门 | 工作地点 | 面议</div>';
-                } else if (type === 'footer') {
-                    html += '<div class="footer-preview"><h3>企业名称</h3><p>联系电话 | 邮箱 | 地址</p><p style="margin-top:8px; font-size:12px;">Copyright © 2026 | 备案号</p></div>';
-                } else if (type === 'navigation') {
-                    html += '<div style="background:#1e9fff; color:#fff; padding:12px 16px;"><strong>网站名称</strong><span style="margin-left:24px;">首页 关于 产品 新闻 招聘 联系</span></div>';
-                } else if (type === 'richText') {
-                    html += '<div class="rich-text-content">' + (getProp(comp, 'html', '') || '') + '</div>';
-                } else if (type === 'image') {
-                    var src = safeUrl(getProp(comp, 'src', ''));
-                    if (src) html += '<div class="image-content"><img src="' + escapeAttr(src) + '" alt=""></div>';
-                } else if (type === 'title') {
-                    var text = getProp(comp, 'text', '');
-                    var level = parseInt(getProp(comp, 'level', 2), 10) || 2;
-                    level = Math.min(Math.max(level, 1), 6);
-                    html += '<div class="title-content"><h' + level + '>' + escapeHtml(text) + '</h' + level + '></div>';
-                } else {
-                    html += '<div class="empty-tip">未知组件类型：' + escapeHtml(type) + '</div>';
-                }
-                html += '</div></div>';
-                return html;
-            }
-
-            function render() {
-                if (components.length === 0) {
-                    $('#canvas').html('<div class="empty-tip">暂无组件，请先在设计器中添加组件</div>');
-                    return;
-                }
-                var html = '';
-                for (var i = 0; i < components.length; i++) {
-                    html += renderBlock(components[i]);
-                }
-                $('#canvas').html(html || '<div class="empty-tip">暂无可显示组件</div>');
-            }
-
-            render();
-        });
-    </script>
+<div class="preview-toolbar"><div class="title">预览：@ViewBag.PageName（@ViewBag.PagePath）</div><button onclick="history.back()">返回装修</button></div>
+<div class="preview-canvas" id="canvas"><div class="empty">正在加载预览...</div></div>
+<script type="application/json" id="componentJson">@Html.Raw(safeComponentJson)</script>
+<script>
+(function(){
+    function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+    function attr(v){return esc(v).replace(/`/g,'&#96;');}
+    function prop(c,k,d){var v=c&&c.props?c.props[k]:undefined;return v===undefined||v===null?d:v;}
+    function safeUrl(v){v=String(v||'').trim();return /^(javascript|vbscript|data):/i.test(v)?'':v;}
+    function pager(enabled){return enabled===false?'':'<div class="pager"><span class="active">1</span><span>2</span><span>下一页</span></div>';}
+    function contentRange(c,type){var id=Number(prop(c,'categoryId',0));return id>0?'指定分类 #'+id:'全部'+type;}
+    function render(c){
+        if(!c||c.visible===false)return'';var type=String(c.type||''),html='<div class="comp-block"><div class="comp-label">['+esc(type)+'] '+esc(c.name||'')+'</div>';
+        if(type==='banner'){
+            var items=prop(c,'items',[])||[],it=items[0]||{},height=Math.min(Number(prop(c,'height',360))||360,500),image=safeUrl(it.image||'');
+            html+='<div class="banner" style="height:'+height+'px;background-image:url(\''+attr(image)+'\')"><h2>'+esc(it.title||'Banner 标题')+'</h2><p>'+esc(it.subtitle||'')+'</p></div>';
+        }else if(type==='richText')html+='<div class="rich">'+String(prop(c,'html','')||'<div class="empty">暂无富文本内容</div>')+'</div>';
+        else if(type==='image'){var src=safeUrl(prop(c,'src',''));html+=src?'<div style="text-align:'+attr(prop(c,'align','center'))+'"><img src="'+attr(src)+'" style="max-width:100%"></div>':'<div class="empty">未选择图片</div>';}
+        else if(type==='title')html+='<div style="text-align:'+attr(prop(c,'align','center'))+';color:'+attr(prop(c,'color','#333'))+'"><h2>'+esc(prop(c,'text','标题'))+'</h2><p>'+esc(prop(c,'subtitle',''))+'</p></div>';
+        else if(type==='button')html+='<div style="text-align:'+attr(prop(c,'align','center'))+'"><span class="preview-button">'+esc(prop(c,'text','按钮'))+'</span></div>';
+        else if(type==='divider')html+='<hr style="border:0;border-top:'+Number(prop(c,'width',1))+'px '+attr(prop(c,'lineStyle','solid'))+' '+attr(prop(c,'color','#eee'))+'">';
+        else if(type==='spacer')html+='<div style="height:'+Number(prop(c,'height',40))+'px;background:#fafafa"></div>';
+        else if(type==='video')html+='<div class="video" style="height:'+Math.min(Number(prop(c,'height',480)),400)+'px"><span>视频：'+esc(prop(c,'src','尚未配置'))+'</span></div>';
+        else if(type==='iconText')html+='<div class="icon-card" style="text-align:'+attr(prop(c,'align','center'))+';background:'+attr(prop(c,'backgroundColor','#fff'))+'"><div class="icon">'+esc(prop(c,'icon','★'))+'</div><h3>'+esc(prop(c,'title','卡片标题'))+'</h3><p>'+esc(prop(c,'text',''))+'</p></div>';
+        else if(type==='news'){html+='<p>'+esc(contentRange(c,'文章'))+'，每页 '+Number(prop(c,'pageSize',6))+' 条</p><div class="mock-list"><strong>文章标题示例</strong><p>文章摘要示例</p></div>'+pager(prop(c,'enablePagination',true));}
+        else if(type==='product'){var cols=Math.max(1,Number(prop(c,'colsPerRow',4))||4);html+='<p>'+esc(contentRange(c,'产品'))+'，每页 '+Number(prop(c,'pageSize',8))+' 条</p><div class="grid" style="grid-template-columns:repeat('+cols+',1fr)">';for(var i=0;i<Math.min(cols*2,8);i++)html+='<div class="grid-item"></div>';html+='</div>'+pager(prop(c,'enablePagination',true));}
+        else if(type==='job'){html+='<p>'+esc(contentRange(c,'招聘'))+'，每页 '+Number(prop(c,'pageSize',10))+' 条</p><div class="mock-list"><strong>岗位名称示例</strong>　部门　地点　薪资</div>'+pager(prop(c,'enablePagination',true));}
+        else html+='<div class="empty">未知组件类型：'+esc(type)+'</div>';
+        return html+'</div>';
+    }
+    var components=[];try{components=JSON.parse(document.getElementById('componentJson').textContent||'[]')||[];}catch(e){}
+    var html='';components.forEach(function(c){html+=render(c);});document.getElementById('canvas').innerHTML=html||'<div class="empty">暂无组件</div>';
+})();
+</script>
 </body>
 </html>
