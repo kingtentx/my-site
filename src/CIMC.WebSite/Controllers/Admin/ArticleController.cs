@@ -6,7 +6,6 @@ using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace MySite.Web.Controllers
@@ -15,11 +14,16 @@ namespace MySite.Web.Controllers
     public class ArticleController : AdminBaseController
     {
         private readonly IRepository<Article> _articleRepository;
+        private readonly IRepository<ContentProductCategory> _categoryRepository;
         private readonly IPermissionService _permission;
 
-        public ArticleController(IRepository<Article> articleRepository, IPermissionService permission)
+        public ArticleController(
+            IRepository<Article> articleRepository,
+            IRepository<ContentProductCategory> categoryRepository,
+            IPermissionService permission)
         {
             _articleRepository = articleRepository;
+            _categoryRepository = categoryRepository;
             _permission = permission;
         }
 
@@ -35,18 +39,14 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult Edit(int id = 0)
         {
-            var model = new ArticleModel { IsActive = true, Author = "中集洋山", TagId = 0 };
+            var model = new ArticleModel { IsActive = true, Author = "中集洋山" };
             if (id > 0)
             {
                 var article = _articleRepository.GetOne(id);
-                if (article == null)
-                {
-                    return NotFound();
-                }
-
+                if (article == null || article.IsDelete) return NotFound();
                 model = ToModel(article);
             }
-
+            LoadCategories();
             return View(model);
         }
 
@@ -54,19 +54,19 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult Edit(int id, ArticleModel input)
         {
-            var result = new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请填写文章标题" };
             if (input == null || string.IsNullOrWhiteSpace(input.Title))
-            {
-                return Json(result);
-            }
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请填写文章标题" });
+
+            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "article");
+            var allowedIds = ContentCategoryHelper.GetDescendantIds(_categoryRepository, rootId);
+            if (input.TagId > 0 && !allowedIds.Contains(input.TagId))
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择有效的文章分类" });
 
             var article = id > 0 ? _articleRepository.GetOne(id) : new Article { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (article == null)
-            {
+            if (article == null || article.IsDelete)
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
-            }
 
-            article.Title = input.Title;
+            article.Title = input.Title.Trim();
             article.Title_EN = input.Title_EN;
             article.Keyword = input.Keyword;
             article.Description = input.Description;
@@ -86,19 +86,9 @@ namespace MySite.Web.Controllers
             article.IsDelete = false;
             article.UpdateBy = LoginUser.UserName;
             article.UpdateTime = DateTime.Now;
+            if (id > 0) _articleRepository.Update(article); else _articleRepository.Add(article);
 
-            if (id > 0)
-            {
-                _articleRepository.Update(article);
-            }
-            else
-            {
-                _articleRepository.Add(article);
-            }
-
-            result.Code = (int)ResultCode.Success;
-            result.Message = "保存成功";
-            return Json(result);
+            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "保存成功" });
         }
 
         [HttpGet]
@@ -106,33 +96,29 @@ namespace MySite.Web.Controllers
         public JsonResult GetList(int pageIndex = 1, int pageSize = 10)
         {
             var keywords = HttpContext.Request.Query["keywords"].ToString().Trim();
-            _ = int.TryParse(HttpContext.Request.Query["tagsId"].ToString(), out var tagId);
+            int.TryParse(HttpContext.Request.Query["tagsId"].ToString(), out var tagId);
             var where = LambdaHelper.True<Article>().And(p => !p.IsDelete);
-            if (!string.IsNullOrWhiteSpace(keywords))
-            {
-                where = where.And(p => p.Title.Contains(keywords));
-            }
+            if (!string.IsNullOrWhiteSpace(keywords)) where = where.And(p => p.Title.Contains(keywords));
+            if (tagId > 0) where = where.And(p => p.TagId == tagId);
 
-            if (tagId > 0)
-            {
-                where = where.And(p => p.TagId == tagId);
-            }
-
+            pageIndex = Math.Max(1, pageIndex);
+            pageSize = pageSize <= 0 ? 10 : pageSize;
             var query = _articleRepository.GetList(where, p => p.CreationTime, pageIndex, pageSize, false);
+            var categories = _categoryRepository.GetList(p => !p.IsDelete).ToDictionary(p => p.Id, p => p.Name);
             var data = query.List.Select(p => new
             {
                 p.Id,
                 ArticleId = p.Id,
                 p.Title,
                 p.ImageUrl,
-                TagName = "",
+                p.TagId,
+                TagName = categories.TryGetValue(p.TagId, out var name) ? name : "未分类",
                 p.CreationTime,
                 p.ViewCount,
                 p.ShareCount,
                 p.IsActive,
                 p.IsHot
             }).ToList();
-
             return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Message = "成功", Count = query.Count, Data = data });
         }
 
@@ -141,11 +127,8 @@ namespace MySite.Web.Controllers
         public IActionResult SetHotArticle(int id, bool isHot)
         {
             var article = _articleRepository.GetOne(id);
-            if (article == null)
-            {
+            if (article == null || article.IsDelete)
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
-            }
-
             article.IsHot = isHot;
             article.UpdateTime = DateTime.Now;
             article.UpdateBy = LoginUser.UserName;
@@ -157,23 +140,26 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_Article, PermissionType.Delete)]
         public IActionResult Delete(int id, int[] ids, int isAll = 0)
         {
-            var deleteIds = isAll == 1 ? ids : new[] { id };
+            var deleteIds = isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id };
             foreach (var deleteId in deleteIds.Where(p => p > 0))
             {
                 var article = _articleRepository.GetOne(deleteId);
-                if (article != null)
-                {
-                    article.IsDelete = true;
-                    article.UpdateTime = DateTime.Now;
-                    article.UpdateBy = LoginUser.UserName;
-                    _articleRepository.Update(article);
-                }
+                if (article == null || article.IsDelete) continue;
+                article.IsDelete = true;
+                article.UpdateTime = DateTime.Now;
+                article.UpdateBy = LoginUser.UserName;
+                _articleRepository.Update(article);
             }
-
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "删除成功" });
         }
 
-        private ArticleModel ToModel(Article article)
+        private void LoadCategories()
+        {
+            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "article");
+            ViewBag.Categories = ContentCategoryHelper.GetDescendants(_categoryRepository, rootId, true);
+        }
+
+        private static ArticleModel ToModel(Article article)
         {
             return new ArticleModel
             {
