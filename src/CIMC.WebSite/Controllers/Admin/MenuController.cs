@@ -46,7 +46,11 @@ namespace MySite.Web.Controllers
 
             var query = await _menuRepository.GetListAsync(where, p => p.Sort, true);
             var data = _mapper.Map<List<MenuModel>>(query);
-            foreach (var item in data.Where(p => p.PermissionKey == "Content_ProductCategory")) item.Title = "内容分类";
+            foreach (var item in data.Where(p => p.PermissionKey == "Content_ProductCategory"))
+            {
+                item.Title = "内容分类";
+                item.Path = "/contentcategory/index";
+            }
 
             result.Code = (int)ResultCode.Success;
             result.Message = "成功";
@@ -59,10 +63,13 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.System_Menu, PermissionType.View)]
         public async Task<JsonResult> GetMenuData()
         {
-            // 页面管理已包含导航树配置，后台菜单不再展示重复的导航管理入口。
             var menulist = await _menuRepository.GetListAsync(p => p.IsShow && p.PermissionKey != "Site_Navigation");
             var categoryMenu = menulist.FirstOrDefault(p => p.PermissionKey == "Content_ProductCategory");
-            if (categoryMenu != null) categoryMenu.Title = "内容分类";
+            if (categoryMenu != null)
+            {
+                categoryMenu.Title = "内容分类";
+                categoryMenu.Path = "/contentcategory/index";
+            }
 
             var treeList = new List<TreeSelectModel>();
             foreach (var parentNode in menulist.Where(t => t.Pid == 0))
@@ -117,7 +124,6 @@ namespace MySite.Web.Controllers
                     result.Message = "无操作权限";
                     return Json(result);
                 }
-
                 var editmodel = _menuRepository.GetOne(id);
                 if (editmodel == null)
                 {
