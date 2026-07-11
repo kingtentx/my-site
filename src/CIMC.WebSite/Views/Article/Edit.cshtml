@@ -104,14 +104,50 @@
 <script>
 layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','form'],function(){
     var $=layui.$,form=layui.form,layer=layui.layer,E=window.wangEditor;
-    function makeEditor(selector){var e=new E(selector);e.config.uploadFileName='file';e.config.uploadImgServer='/Upload/UploadImage';e.config.uploadImgHooks={customInsert:function(insertImg,result){if(result&&result.url)insertImg(result.url);}};e.create();return e;}
-    var detail=makeEditor('#txtDetail'), detailEn=makeEditor('#txtDetailEN');
+
+    async function uploadVideoByChunks(file,insertVideo){
+        if(!file)return;
+        var chunkSize=5*1024*1024,totalChunks=Math.ceil(file.size/chunkSize);
+        var extension=file.name.indexOf('.')>=0?file.name.split('.').pop():'mp4';
+        var fileIdentifier=file.lastModified+'.'+extension;
+        try{
+            var checkResponse=await fetch('/Upload/CheckVideoUpload?fileId='+encodeURIComponent(fileIdentifier)+'&fileName='+encodeURIComponent(file.name)+'&totalSize='+file.size+'&totalChunks='+totalChunks);
+            var checkResult=await checkResponse.json(),uploadedChunks=[];
+            if(checkResult.code===200&&checkResult.data&&checkResult.data.uploadedChunks)uploadedChunks=checkResult.data.uploadedChunks;
+            for(var chunkIndex=0;chunkIndex<totalChunks;chunkIndex++){
+                if(uploadedChunks.indexOf(chunkIndex)>=0)continue;
+                var start=chunkIndex*chunkSize,end=Math.min(start+chunkSize,file.size),chunk=file.slice(start,end),formData=new FormData();
+                formData.append('file',chunk);formData.append('fileId',fileIdentifier);formData.append('chunkIndex',chunkIndex);formData.append('totalChunks',totalChunks);formData.append('fileName',file.name);
+                var response=await fetch('/Upload/UploadVideoChunk',{method:'POST',body:formData});
+                var result=await response.json();
+                if(result.code!==200)throw new Error('分块 '+chunkIndex+' 上传失败：'+(result.message||''));
+            }
+            var mergeResponse=await fetch('/Upload/MergeVideoChunks',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fileId:fileIdentifier,fileName:file.name,totalChunks:totalChunks})});
+            var mergeResult=await mergeResponse.json();
+            if(mergeResult.code!==200||!mergeResult.data||!mergeResult.data.url)throw new Error(mergeResult.message||'文件合并失败');
+            insertVideo(mergeResult.data.url);layer.msg('视频上传成功',{icon:1});
+        }catch(error){console.error(error);layer.msg('视频上传失败：'+error.message,{icon:5});}
+    }
+
+    function makeEditor(selector){
+        var editor=new E(selector);
+        editor.config.uploadFileName='file';
+        editor.config.uploadImgServer='/Upload/UploadImage';
+        editor.config.uploadImgHooks={customInsert:function(insertImg,result){if(result&&result.url)insertImg(result.url);}};
+        editor.config.uploadVideoServer='/Upload/UploadVideoChunk';
+        editor.config.uploadVideoMaxSize=1024*1024*1024;
+        editor.config.customUploadVideo=function(files,insertVideo){uploadVideoByChunks(files&&files[0],insertVideo);};
+        editor.create();
+        return editor;
+    }
+
+    var detail=makeEditor('#txtDetail'),detailEn=makeEditor('#txtDetailEN');
     $('#coverCard').on('click',function(){layer.open({type:2,title:'选择图片',area:['900px','680px'],content:'/Admin/ImageSelector'});});
     $('#removeCover').on('click',function(){$('#txtImageUrl').val('');$('#coverCard').html('<span><i class="layui-icon layui-icon-picture" style="font-size:28px"></i> 选择封面图</span>');});
     window.addEventListener('message',function(e){if(e.data&&e.data.type==='imageSelected'){var url=e.data.url||'';$('#txtImageUrl').val(url);$('#coverCard').html('<img src="'+url+'" alt="封面">');}});
     form.on('submit(save)',function(data){
         data.field.Detail=detail.txt.html();data.field.Detail_EN=detailEn.txt.html();data.field.IsHot=$('input[name="IsHot"]').prop('checked');
-        $.post('/article/edit?id=@Model.Id',data.field,function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/article/index';});else layer.msg(res.message,{icon:5});},'json');
+        $.post('/article/edit?id=@Model.Id',data.field,function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/article/index';});else layer.msg(res.message||'保存失败',{icon:5});},'json');
         return false;
     });
 });
