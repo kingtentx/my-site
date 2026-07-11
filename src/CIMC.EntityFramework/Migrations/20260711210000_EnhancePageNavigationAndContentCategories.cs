@@ -1,68 +1,27 @@
+using CIMC.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace CIMC.EntityFramework.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260711210000_EnhancePageNavigationAndContentCategories")]
     public partial class EnhancePageNavigationAndContentCategories : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<int>(
-                name: "ParentId",
-                table: "WebsitePage",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
+            migrationBuilder.AddColumn<int>(name: "ParentId", table: "WebsitePage", type: "int", nullable: false, defaultValue: 0);
+            migrationBuilder.AddColumn<bool>(name: "ShowInNavigation", table: "WebsitePage", type: "tinyint(1)", nullable: false, defaultValue: true);
+            migrationBuilder.AddColumn<string>(name: "NavigationTitle", table: "WebsitePage", type: "varchar(100)", maxLength: 100, nullable: true).Annotation("MySql:CharSet", "utf8mb4");
+            migrationBuilder.AddColumn<string>(name: "NavigationIcon", table: "WebsitePage", type: "varchar(100)", maxLength: 100, nullable: true).Annotation("MySql:CharSet", "utf8mb4");
+            migrationBuilder.AddColumn<int>(name: "NavigationTarget", table: "WebsitePage", type: "int", nullable: false, defaultValue: 0);
+            migrationBuilder.AddColumn<int>(name: "CategoryId", table: "ContentJob", type: "int", nullable: false, defaultValue: 0);
 
-            migrationBuilder.AddColumn<bool>(
-                name: "ShowInNavigation",
-                table: "WebsitePage",
-                type: "tinyint(1)",
-                nullable: false,
-                defaultValue: true);
+            migrationBuilder.CreateIndex(name: "IX_WebsitePage_ParentId", table: "WebsitePage", column: "ParentId");
+            migrationBuilder.CreateIndex(name: "IX_ContentJob_CategoryId", table: "ContentJob", column: "CategoryId");
 
-            migrationBuilder.AddColumn<string>(
-                name: "NavigationTitle",
-                table: "WebsitePage",
-                type: "varchar(100)",
-                maxLength: 100,
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<string>(
-                name: "NavigationIcon",
-                table: "WebsitePage",
-                type: "varchar(100)",
-                maxLength: 100,
-                nullable: true)
-                .Annotation("MySql:CharSet", "utf8mb4");
-
-            migrationBuilder.AddColumn<int>(
-                name: "NavigationTarget",
-                table: "WebsitePage",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.AddColumn<int>(
-                name: "CategoryId",
-                table: "ContentJob",
-                type: "int",
-                nullable: false,
-                defaultValue: 0);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_WebsitePage_ParentId",
-                table: "WebsitePage",
-                column: "ParentId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ContentJob_CategoryId",
-                table: "ContentJob",
-                column: "CategoryId");
-
-            // 兼容已有导航数据：按路径回填页面的导航属性和父页面关系。
             migrationBuilder.Sql(@"
 UPDATE `WebsitePage` p
 LEFT JOIN `WebsiteNavigation` n ON n.`Path` = p.`PagePath` AND n.`IsDelete` = 0
