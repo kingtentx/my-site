@@ -1,0 +1,27 @@
+@model MySite.Web.Models.ComponentModel
+@{
+    string src = string.Empty, poster = string.Empty;
+    int height = 480;
+    bool controls = true, autoplay = false, muted = false;
+    if (Model.Props != null)
+    {
+        if (Model.Props.TryGetValue("src", out var s) && s != null) src = s.ToString();
+        if (Model.Props.TryGetValue("poster", out var p) && p != null) poster = p.ToString();
+        if (Model.Props.TryGetValue("height", out var h) && int.TryParse(h?.ToString(), out var value)) height = Math.Max(120, Math.Min(1000, value));
+        if (Model.Props.TryGetValue("controls", out var c) && bool.TryParse(c?.ToString(), out var b1)) controls = b1;
+        if (Model.Props.TryGetValue("autoplay", out var a) && bool.TryParse(a?.ToString(), out var b2)) autoplay = b2;
+        if (Model.Props.TryGetValue("muted", out var m) && bool.TryParse(m?.ToString(), out var b3)) muted = b3;
+    }
+}
+<section class="generic-component video-component">
+    <div class="container">
+        @if (string.IsNullOrWhiteSpace(src))
+        {
+            <p class="empty-tip">视频地址尚未配置</p>
+        }
+        else
+        {
+            <video class="site-component-video" src="@src" poster="@poster" style="height:@(height)px" controls="@(controls ? "controls" : null)" autoplay="@(autoplay ? "autoplay" : null)" muted="@(muted ? "muted" : null)" playsinline></video>
+        }
+    </div>
+</section>
