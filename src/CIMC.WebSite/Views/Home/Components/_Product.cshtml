@@ -1,30 +1,57 @@
 @using CIMC.Data
+@using CIMC.EntityFramework
+@using System.Net
+@using System.Linq
 @model MySite.Web.Models.ComponentModel
+@inject IRepository<ContentProduct> ProductRepository
+@inject IRepository<ContentProductCategory> CategoryRepository
 @{
-    var productList = ViewBag.ProductList as List<ContentProduct> ?? new List<ContentProduct>();
-    int pageSize = 8, colsPerRow = 4;
-    bool showImage = true, showSummary = false;
+    int pageSize = 8, colsPerRow = 4, categoryId = 0;
+    bool showImage = true, showSummary = false, enablePagination = true;
     string moreLink = "/products";
-
     if (Model.Props != null)
     {
-        if (Model.Props.TryGetValue("pageSize", out var ps) && ps != null && int.TryParse(ps.ToString(), out var psp)) pageSize = psp;
-        if (Model.Props.TryGetValue("colsPerRow", out var cpr) && cpr != null && int.TryParse(cpr.ToString(), out var cprp)) colsPerRow = Math.Max(1, cprp);
-        if (Model.Props.TryGetValue("showImage", out var si) && si != null && bool.TryParse(si.ToString(), out var siv)) showImage = siv;
-        if (Model.Props.TryGetValue("showSummary", out var ss) && ss != null && bool.TryParse(ss.ToString(), out var ssv)) showSummary = ssv;
+        if (Model.Props.TryGetValue("pageSize", out var ps) && int.TryParse(ps?.ToString(), out var n)) pageSize = Math.Max(1, Math.Min(100, n));
+        if (Model.Props.TryGetValue("categoryId", out var ci) && int.TryParse(ci?.ToString(), out var c)) categoryId = c;
+        if (Model.Props.TryGetValue("colsPerRow", out var cr) && int.TryParse(cr?.ToString(), out var cols)) colsPerRow = Math.Max(1, Math.Min(6, cols));
+        if (Model.Props.TryGetValue("showImage", out var si) && bool.TryParse(si?.ToString(), out var b1)) showImage = b1;
+        if (Model.Props.TryGetValue("showSummary", out var ss) && bool.TryParse(ss?.ToString(), out var b2)) showSummary = b2;
+        if (Model.Props.TryGetValue("enablePagination", out var ep) && bool.TryParse(ep?.ToString(), out var b3)) enablePagination = b3;
         if (Model.Props.TryGetValue("moreLink", out var ml) && ml != null) moreLink = ml.ToString();
     }
 
-    var items = productList.Take(pageSize).ToList();
+    var categoryIds = categoryId > 0
+        ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true)
+        : new List<int>();
+    var allItems = ProductRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true)
+        .Where(p => categoryId <= 0 || categoryIds.Contains(p.CategoryId))
+        .ToList();
+
+    var componentKey = new string((Model.Id ?? "product").Where(char.IsLetterOrDigit).ToArray());
+    var pageParam = "page_" + (string.IsNullOrEmpty(componentKey) ? "product" : componentKey);
+    var currentPage = 1;
+    if (enablePagination && int.TryParse(Context.Request.Query[pageParam], out var requestedPage)) currentPage = Math.Max(1, requestedPage);
+    var totalPages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
+    currentPage = Math.Min(currentPage, totalPages);
+    var items = enablePagination ? allItems.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList() : allItems.Take(pageSize).ToList();
+
+    string BuildPageUrl(int page)
+    {
+        var parts = new List<string>();
+        foreach (var pair in Context.Request.Query)
+        {
+            if (string.Equals(pair.Key, pageParam, StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
+        }
+        parts.Add(WebUtility.UrlEncode(pageParam) + "=" + page);
+        return Context.Request.PathBase + Context.Request.Path + "?" + string.Join("&", parts);
+    }
 }
-<section class="product-section">
+<section class="product-section content-component" data-component-id="@Model.Id">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">产品中心</h2>
-            @if (!string.IsNullOrEmpty(moreLink))
-            {
-                <a href="@moreLink" class="more-link">查看更多 &rsaquo;</a>
-            }
+            <h2 class="section-title">@(string.IsNullOrWhiteSpace(Model.Name) ? "产品中心" : Model.Name)</h2>
+            @if (!string.IsNullOrEmpty(moreLink)) { <a href="@moreLink" class="more-link">查看更多 &rsaquo;</a> }
         </div>
         @if (items.Count == 0)
         {
@@ -39,21 +66,27 @@
                         <a href="/products/detail-@(product.Id).html" class="product-link">
                             @if (showImage && !string.IsNullOrEmpty(product.CoverImage))
                             {
-                                <div class="product-cover">
-                                    <img src="@product.CoverImage" alt="@product.ProductName" loading="lazy" />
-                                </div>
+                                <div class="product-cover"><img src="@product.CoverImage" alt="@product.ProductName" loading="lazy" /></div>
                             }
                             <div class="product-body">
                                 <h3 class="product-name">@product.ProductName</h3>
-                                @if (showSummary && !string.IsNullOrEmpty(product.Summary))
-                                {
-                                    <p class="product-summary">@product.Summary</p>
-                                }
+                                @if (showSummary && !string.IsNullOrEmpty(product.Summary)) { <p class="product-summary">@product.Summary</p> }
                             </div>
                         </a>
                     </article>
                 }
             </div>
+            @if (enablePagination && totalPages > 1)
+            {
+                <nav class="component-pagination" aria-label="产品分页">
+                    @if (currentPage > 1) { <a href="@BuildPageUrl(currentPage - 1)">上一页</a> }
+                    @for (var page = 1; page <= totalPages; page++)
+                    {
+                        if (page == currentPage) { <span class="active">@page</span> } else { <a href="@BuildPageUrl(page)">@page</a> }
+                    }
+                    @if (currentPage < totalPages) { <a href="@BuildPageUrl(currentPage + 1)">下一页</a> }
+                </nav>
+            }
         }
     </div>
 </section>
