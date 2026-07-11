@@ -1,0 +1,23 @@
+@model MySite.Web.Models.ComponentModel
+@{
+    string icon = "★", title = "卡片标题", text = string.Empty, link = string.Empty, align = "center", backgroundColor = "#ffffff";
+    if (Model.Props != null)
+    {
+        if (Model.Props.TryGetValue("icon", out var i) && i != null) icon = i.ToString();
+        if (Model.Props.TryGetValue("title", out var t) && t != null) title = t.ToString();
+        if (Model.Props.TryGetValue("text", out var d) && d != null) text = d.ToString();
+        if (Model.Props.TryGetValue("link", out var l) && l != null) link = l.ToString();
+        if (Model.Props.TryGetValue("align", out var a) && a != null) align = a.ToString();
+        if (Model.Props.TryGetValue("backgroundColor", out var bg) && bg != null) backgroundColor = bg.ToString();
+    }
+}
+<section class="generic-component icon-text-component">
+    <div class="container">
+        <article class="site-icon-text-card" style="text-align:@align;background-color:@backgroundColor">
+            <div class="site-icon-text-icon">@icon</div>
+            <h3>@title</h3>
+            @if (!string.IsNullOrWhiteSpace(text)) { <p>@text</p> }
+            @if (!string.IsNullOrWhiteSpace(link)) { <a href="@link" class="more-link">了解更多 &rsaquo;</a> }
+        </article>
+    </div>
+</section>
