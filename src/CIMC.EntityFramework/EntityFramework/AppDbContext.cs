@@ -5,10 +5,9 @@ namespace CIMC.EntityFrameworkCore
 {
     public class AppDbContext : DbContext
     {
-        //构造方法    
-        public AppDbContext(DbContextOptions<AppDbContext> options)
-            : base(options)
-        { }
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+        {
+        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -27,6 +26,8 @@ namespace CIMC.EntityFrameworkCore
             {
                 entity.HasIndex(e => e.PagePath).IsUnique();
                 entity.HasIndex(e => e.IsHome);
+                entity.HasIndex(e => e.ParentId);
+                entity.HasIndex(e => new { e.ParentId, e.Sort });
             });
 
             modelBuilder.Entity<WebsitePageVersion>(entity =>
@@ -53,9 +54,9 @@ namespace CIMC.EntityFrameworkCore
             modelBuilder.Entity<ContentJob>(entity =>
             {
                 entity.HasIndex(e => e.IsActive);
+                entity.HasIndex(e => e.CategoryId);
             });
         }
-
 
         #region 数据区域
 
@@ -66,7 +67,6 @@ namespace CIMC.EntityFrameworkCore
         public DbSet<Images> Images { get; set; }
         public DbSet<Article> Article { get; set; }
         public DbSet<AuditLog> AuditLog { get; set; }
-
         public DbSet<WebsitePage> WebsitePage { get; set; }
         public DbSet<WebsitePageVersion> WebsitePageVersion { get; set; }
         public DbSet<WebsiteSiteConfig> WebsiteSiteConfig { get; set; }
@@ -76,10 +76,6 @@ namespace CIMC.EntityFrameworkCore
         public DbSet<ContentProductCategory> ContentProductCategory { get; set; }
         public DbSet<ContentJob> ContentJob { get; set; }
 
-
         #endregion
-
-
-
     }
 }
