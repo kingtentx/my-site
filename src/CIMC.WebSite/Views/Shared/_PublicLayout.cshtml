@@ -12,22 +12,23 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@title</title>
-    @if (!string.IsNullOrEmpty(keywords))
-    {
-        <meta name="keywords" content="@keywords" />
-    }
-    @if (!string.IsNullOrEmpty(description))
-    {
-        <meta name="description" content="@description" />
-    }
+    @if (!string.IsNullOrEmpty(keywords)) { <meta name="keywords" content="@keywords" /> }
+    @if (!string.IsNullOrEmpty(description)) { <meta name="description" content="@description" /> }
     <link rel="stylesheet" href="~/site/css/site.css" />
+    <style>
+        .component-pagination{display:flex;justify-content:center;align-items:center;gap:7px;flex-wrap:wrap;margin:28px 0 8px}
+        .component-pagination a,.component-pagination span{min-width:34px;height:34px;line-height:34px;text-align:center;padding:0 10px;border:1px solid #e5e7eb;border-radius:4px;color:#4b5563;background:#fff;text-decoration:none}
+        .component-pagination a:hover,.component-pagination .active{border-color:#1677ff;background:#1677ff;color:#fff}
+        .generic-component{padding:20px 0}.site-component-button{display:inline-block;border-radius:5px;text-decoration:none;transition:.2s}.site-component-button.small{padding:7px 14px;font-size:13px}.site-component-button.medium{padding:10px 22px;font-size:15px}.site-component-button.large{padding:13px 30px;font-size:17px}
+        .site-component-button.primary{background:#1677ff;color:#fff}.site-component-button.outline{border:1px solid #1677ff;color:#1677ff;background:transparent}.site-component-button.text{color:#1677ff;background:transparent}.site-component-button:hover{opacity:.86;transform:translateY(-1px)}
+        .site-component-divider{border:0}.site-component-video{display:block;width:100%;max-width:100%;background:#000;object-fit:contain}.site-icon-text-card{padding:32px 24px;border:1px solid #edf0f3;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.04)}.site-icon-text-icon{font-size:38px;margin-bottom:12px}.site-icon-text-card h3{margin:0 0 10px;font-size:22px}.site-icon-text-card p{color:#6b7280;line-height:1.8}.job-table-wrap{overflow-x:auto}
+        @@media(max-width:768px){.component-pagination a,.component-pagination span{min-width:30px;height:30px;line-height:30px;padding:0 7px}.generic-component{padding:14px 0}}
+    </style>
 </head>
 <body>
     <div class="page-wrapper" data-current-path="@currentPath">
         @await Html.PartialAsync("~/Views/Home/Components/_Navigation.cshtml", siteConfig)
-        <main class="site-main">
-            @RenderBody()
-        </main>
+        <main class="site-main">@RenderBody()</main>
         @await Html.PartialAsync("~/Views/Home/Components/_Footer.cshtml", footer)
     </div>
     <script src="~/site/js/site.js" defer></script>
