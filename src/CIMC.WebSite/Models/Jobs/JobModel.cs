@@ -7,6 +7,9 @@ namespace MySite.Web.Models
     {
         public int Id { get; set; }
 
+        [Display(Name = "招聘分类")]
+        public int CategoryId { get; set; }
+
         [Display(Name = "岗位名称")]
         [Required(ErrorMessage = "请输入岗位名称")]
         public string JobTitle { get; set; }
@@ -42,19 +45,15 @@ namespace MySite.Web.Models
         public string ContactEmail { get; set; }
 
         [Display(Name = "排序")]
-        public int Sort { get; set; } = 0;
+        public int Sort { get; set; }
 
         [Display(Name = "是否发布")]
         public bool IsActive { get; set; } = true;
 
         public DateTime? PublishTime { get; set; }
-
         public DateTime? CreationTime { get; set; }
-
         public string CreationBy { get; set; }
-
         public DateTime? UpdateTime { get; set; }
-
         public string UpdateBy { get; set; }
     }
 }
