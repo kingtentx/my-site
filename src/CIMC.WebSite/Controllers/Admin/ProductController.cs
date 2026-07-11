@@ -38,17 +38,14 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_Product, PermissionType.Edit)]
         public IActionResult Edit(int id = 0)
         {
-            var model = new ProductModel { IsActive = true, Sort = 0, CategoryId = 0 };
+            var model = new ProductModel { IsActive = true };
             if (id > 0)
             {
                 var entity = _repository.GetOne(id);
-                if (entity == null || entity.IsDelete)
-                {
-                    return NotFound();
-                }
+                if (entity == null || entity.IsDelete) return NotFound();
                 model = ToModel(entity);
             }
-            ViewBag.Categories = _categoryRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true);
+            LoadCategories();
             return View(model);
         }
 
@@ -56,17 +53,17 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_Product, PermissionType.Edit)]
         public IActionResult Edit(int id, ProductModel input)
         {
-            var result = new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请填写产品名称" };
             if (input == null || string.IsNullOrWhiteSpace(input.ProductName))
-            {
-                return Json(result);
-            }
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请填写产品名称" });
+
+            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "product");
+            var allowedIds = ContentCategoryHelper.GetDescendantIds(_categoryRepository, rootId);
+            if (input.CategoryId > 0 && !allowedIds.Contains(input.CategoryId))
+                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择有效的产品分类" });
 
             var entity = id > 0 ? _repository.GetOne(id) : new ContentProduct { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
             if (entity == null || entity.IsDelete)
-            {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
-            }
 
             entity.ProductName = input.ProductName.Trim();
             entity.CategoryId = input.CategoryId;
@@ -82,19 +79,9 @@ namespace MySite.Web.Controllers
             entity.IsDelete = false;
             entity.UpdateBy = LoginUser.UserName;
             entity.UpdateTime = DateTime.Now;
+            if (id > 0) _repository.Update(entity); else _repository.Add(entity);
 
-            if (id > 0)
-            {
-                _repository.Update(entity);
-            }
-            else
-            {
-                _repository.Add(entity);
-            }
-
-            result.Code = (int)ResultCode.Success;
-            result.Message = "保存成功";
-            return Json(result);
+            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "保存成功" });
         }
 
         [HttpGet]
@@ -102,26 +89,21 @@ namespace MySite.Web.Controllers
         public JsonResult GetList(int pageIndex = 1, int pageSize = 10)
         {
             var keywords = HttpContext.Request.Query["keywords"].ToString().Trim();
-            _ = int.TryParse(HttpContext.Request.Query["categoryId"].ToString(), out var categoryId);
-
+            int.TryParse(HttpContext.Request.Query["categoryId"].ToString(), out var categoryId);
             var where = LambdaHelper.True<ContentProduct>().And(p => !p.IsDelete);
-            if (!string.IsNullOrWhiteSpace(keywords))
-            {
-                where = where.And(p => p.ProductName.Contains(keywords));
-            }
-            if (categoryId > 0)
-            {
-                where = where.And(p => p.CategoryId == categoryId);
-            }
+            if (!string.IsNullOrWhiteSpace(keywords)) where = where.And(p => p.ProductName.Contains(keywords));
+            if (categoryId > 0) where = where.And(p => p.CategoryId == categoryId);
 
-            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
+            pageIndex = Math.Max(1, pageIndex);
             pageSize = pageSize <= 0 ? 10 : pageSize;
             var query = _repository.GetList(where, p => p.Sort, pageIndex, pageSize, true);
+            var categories = _categoryRepository.GetList(p => !p.IsDelete).ToDictionary(p => p.Id, p => p.Name);
             var data = query.List.Select(p => new
             {
                 p.Id,
                 p.ProductName,
                 p.CategoryId,
+                CategoryName = categories.TryGetValue(p.CategoryId, out var name) ? name : "未分类",
                 p.CoverImage,
                 p.Summary,
                 p.Sort,
@@ -130,7 +112,6 @@ namespace MySite.Web.Controllers
                 p.ViewCount,
                 p.CreationTime
             }).ToList();
-
             return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Message = "成功", Count = query.Count, Data = data });
         }
 
@@ -140,10 +121,7 @@ namespace MySite.Web.Controllers
         {
             var entity = _repository.GetOne(id);
             if (entity == null || entity.IsDelete)
-            {
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
-            }
-
             entity.IsRecommend = isRecommend;
             entity.UpdateTime = DateTime.Now;
             entity.UpdateBy = LoginUser.UserName;
@@ -155,31 +133,28 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_Product, PermissionType.Delete)]
         public IActionResult Delete(int id, int[] ids = null, int isAll = 0)
         {
-            var deleteIds = (isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id })
-                .Where(p => p > 0)
-                .Distinct()
-                .ToList();
+            var deleteIds = (isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id }).Where(p => p > 0).Distinct().ToList();
             if (!deleteIds.Any())
-            {
                 return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择要删除的数据" });
-            }
-
             foreach (var deleteId in deleteIds)
             {
                 var entity = _repository.GetOne(deleteId);
-                if (entity != null && !entity.IsDelete)
-                {
-                    entity.IsDelete = true;
-                    entity.UpdateTime = DateTime.Now;
-                    entity.UpdateBy = LoginUser.UserName;
-                    _repository.Update(entity);
-                }
+                if (entity == null || entity.IsDelete) continue;
+                entity.IsDelete = true;
+                entity.UpdateTime = DateTime.Now;
+                entity.UpdateBy = LoginUser.UserName;
+                _repository.Update(entity);
             }
-
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "删除成功" });
         }
 
-        private ProductModel ToModel(ContentProduct entity)
+        private void LoadCategories()
+        {
+            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "product");
+            ViewBag.Categories = ContentCategoryHelper.GetDescendants(_categoryRepository, rootId, true);
+        }
+
+        private static ProductModel ToModel(ContentProduct entity)
         {
             return new ProductModel
             {
