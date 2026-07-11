@@ -20,6 +20,7 @@ namespace CIMC.EntityFramework.Migrations
             migrationBuilder.AddColumn<int>(name: "CategoryId", table: "ContentJob", type: "int", nullable: false, defaultValue: 0);
 
             migrationBuilder.CreateIndex(name: "IX_WebsitePage_ParentId", table: "WebsitePage", column: "ParentId");
+            migrationBuilder.CreateIndex(name: "IX_WebsitePage_ParentId_Sort", table: "WebsitePage", columns: new[] { "ParentId", "Sort" });
             migrationBuilder.CreateIndex(name: "IX_ContentJob_CategoryId", table: "ContentJob", column: "CategoryId");
 
             migrationBuilder.Sql(@"
@@ -40,6 +41,7 @@ SET childPage.`ParentId` = parentPage.`Id`;");
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(name: "IX_WebsitePage_ParentId", table: "WebsitePage");
+            migrationBuilder.DropIndex(name: "IX_WebsitePage_ParentId_Sort", table: "WebsitePage");
             migrationBuilder.DropIndex(name: "IX_ContentJob_CategoryId", table: "ContentJob");
             migrationBuilder.DropColumn(name: "ParentId", table: "WebsitePage");
             migrationBuilder.DropColumn(name: "ShowInNavigation", table: "WebsitePage");
