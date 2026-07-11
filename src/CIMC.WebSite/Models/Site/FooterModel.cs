@@ -4,7 +4,7 @@ namespace MySite.Web.Models
 {
     public class FooterModel
     {
-        public int Id { get; set; } = 1;
+        public int Id { get; set; }
 
         [Display(Name = "Logo")]
         public string Logo { get; set; }
