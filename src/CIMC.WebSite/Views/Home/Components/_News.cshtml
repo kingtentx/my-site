@@ -1,34 +1,61 @@
 @using CIMC.Data
+@using CIMC.EntityFramework
+@using System.Net
+@using System.Linq
 @model MySite.Web.Models.ComponentModel
+@inject IRepository<Article> ArticleRepository
+@inject IRepository<ContentProductCategory> CategoryRepository
 @{
-    var newsList = ViewBag.NewsList as List<Article> ?? new List<Article>();
-    int pageSize = 6;
-    bool showCover = true, showSummary = true, showDate = true;
+    int pageSize = 6, categoryId = 0;
+    bool showCover = true, showSummary = true, showDate = true, enablePagination = true;
     string moreLink = "/news";
-
     if (Model.Props != null)
     {
-        if (Model.Props.TryGetValue("pageSize", out var ps) && ps != null && int.TryParse(ps.ToString(), out var psp)) pageSize = psp;
-        if (Model.Props.TryGetValue("showCover", out var sc) && sc != null && bool.TryParse(sc.ToString(), out var scv)) showCover = scv;
-        if (Model.Props.TryGetValue("showSummary", out var ss) && ss != null && bool.TryParse(ss.ToString(), out var ssv)) showSummary = ssv;
-        if (Model.Props.TryGetValue("showDate", out var sd) && sd != null && bool.TryParse(sd.ToString(), out var sdv)) showDate = sdv;
+        if (Model.Props.TryGetValue("pageSize", out var ps) && int.TryParse(ps?.ToString(), out var n)) pageSize = Math.Max(1, Math.Min(100, n));
+        if (Model.Props.TryGetValue("categoryId", out var ci) && int.TryParse(ci?.ToString(), out var c)) categoryId = c;
+        if (Model.Props.TryGetValue("showCover", out var sc) && bool.TryParse(sc?.ToString(), out var b1)) showCover = b1;
+        if (Model.Props.TryGetValue("showSummary", out var ss) && bool.TryParse(ss?.ToString(), out var b2)) showSummary = b2;
+        if (Model.Props.TryGetValue("showDate", out var sd) && bool.TryParse(sd?.ToString(), out var b3)) showDate = b3;
+        if (Model.Props.TryGetValue("enablePagination", out var ep) && bool.TryParse(ep?.ToString(), out var b4)) enablePagination = b4;
         if (Model.Props.TryGetValue("moreLink", out var ml) && ml != null) moreLink = ml.ToString();
     }
 
-    var items = newsList.Take(pageSize).ToList();
+    var categoryIds = categoryId > 0
+        ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true)
+        : new List<int>();
+    var allItems = ArticleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false)
+        .Where(a => categoryId <= 0 || categoryIds.Contains(a.TagId))
+        .ToList();
+
+    var componentKey = new string((Model.Id ?? "news").Where(char.IsLetterOrDigit).ToArray());
+    var pageParam = "page_" + (string.IsNullOrEmpty(componentKey) ? "news" : componentKey);
+    var currentPage = 1;
+    if (enablePagination && int.TryParse(Context.Request.Query[pageParam], out var requestedPage)) currentPage = Math.Max(1, requestedPage);
+    var totalPages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
+    currentPage = Math.Min(currentPage, totalPages);
+    var items = enablePagination ? allItems.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList() : allItems.Take(pageSize).ToList();
+
+    string BuildPageUrl(int page)
+    {
+        var parts = new List<string>();
+        foreach (var pair in Context.Request.Query)
+        {
+            if (string.Equals(pair.Key, pageParam, StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
+        }
+        parts.Add(WebUtility.UrlEncode(pageParam) + "=" + page);
+        return Context.Request.PathBase + Context.Request.Path + "?" + string.Join("&", parts);
+    }
 }
-<section class="news-section">
+<section class="news-section content-component" data-component-id="@Model.Id">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">新闻动态</h2>
-            @if (!string.IsNullOrEmpty(moreLink))
-            {
-                <a href="@moreLink" class="more-link">查看更多 &rsaquo;</a>
-            }
+            <h2 class="section-title">@(string.IsNullOrWhiteSpace(Model.Name) ? "文章资讯" : Model.Name)</h2>
+            @if (!string.IsNullOrEmpty(moreLink)) { <a href="@moreLink" class="more-link">查看更多 &rsaquo;</a> }
         </div>
         @if (items.Count == 0)
         {
-            <p class="empty-tip">暂无新闻</p>
+            <p class="empty-tip">暂无文章</p>
         }
         else
         {
@@ -38,24 +65,27 @@
                     <article class="news-card">
                         @if (showCover && !string.IsNullOrEmpty(news.ImageUrl))
                         {
-                            <a href="/news/info-@(news.Id).html" class="news-cover">
-                                <img src="@news.ImageUrl" alt="@news.Title" loading="lazy" />
-                            </a>
+                            <a href="/news/info-@(news.Id).html" class="news-cover"><img src="@news.ImageUrl" alt="@news.Title" loading="lazy" /></a>
                         }
                         <div class="news-body">
                             <h3 class="news-title"><a href="/news/info-@(news.Id).html">@news.Title</a></h3>
-                            @if (showSummary && !string.IsNullOrEmpty(news.Description))
-                            {
-                                <p class="news-summary">@news.Description</p>
-                            }
-                            @if (showDate && news.CreationTime.HasValue)
-                            {
-                                <time class="news-date">@news.CreationTime.Value.ToString("yyyy-MM-dd")</time>
-                            }
+                            @if (showSummary && !string.IsNullOrEmpty(news.Description)) { <p class="news-summary">@news.Description</p> }
+                            @if (showDate && news.CreationTime.HasValue) { <time class="news-date">@news.CreationTime.Value.ToString("yyyy-MM-dd")</time> }
                         </div>
                     </article>
                 }
             </div>
+            @if (enablePagination && totalPages > 1)
+            {
+                <nav class="component-pagination" aria-label="文章分页">
+                    @if (currentPage > 1) { <a href="@BuildPageUrl(currentPage - 1)">上一页</a> }
+                    @for (var page = 1; page <= totalPages; page++)
+                    {
+                        if (page == currentPage) { <span class="active">@page</span> } else { <a href="@BuildPageUrl(page)">@page</a> }
+                    }
+                    @if (currentPage < totalPages) { <a href="@BuildPageUrl(currentPage + 1)">下一页</a> }
+                </nav>
+            }
         }
     </div>
 </section>
