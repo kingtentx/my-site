@@ -138,7 +138,7 @@ namespace MySite.Web.Controllers
                 {
                     return Json(new ResultModel
                     {
-                        Code = (int)ResultCode.Error,
+                        Code = (int)ResultCode.ServerError,
                         Message = "页脚设置保存失败，请稍后重试"
                     });
                 }
@@ -154,7 +154,7 @@ namespace MySite.Web.Controllers
             {
                 return Json(new ResultModel
                 {
-                    Code = (int)ResultCode.Error,
+                    Code = (int)ResultCode.ServerError,
                     Message = "保存失败：" + ex.GetBaseException().Message
                 });
             }
