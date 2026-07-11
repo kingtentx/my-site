@@ -24,24 +24,25 @@
     var allItems = ProductRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true)
         .Where(p => categoryId <= 0 || categoryIds.Contains(p.CategoryId)).ToList();
 
+    var request = ViewContext.HttpContext.Request;
     var componentKey = new string((Model.Id ?? "product").Where(char.IsLetterOrDigit).ToArray());
     var pageParam = "page_" + (string.IsNullOrEmpty(componentKey) ? "product" : componentKey);
     var currentPage = 1;
-    if (enablePagination && int.TryParse(Context.Request.Query[pageParam].ToString(), out var requestedPage)) currentPage = Math.Max(1, requestedPage);
+    if (enablePagination && int.TryParse(request.Query[pageParam].ToString(), out var requestedPage)) currentPage = Math.Max(1, requestedPage);
     var totalPages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
     currentPage = Math.Min(currentPage, totalPages);
     var items = enablePagination ? allItems.Skip((currentPage - 1) * pageSize).Take(pageSize).ToList() : allItems.Take(pageSize).ToList();
 
-    string BuildPageUrl(int page)
+    string BuildPageUrl(int pageNumber)
     {
         var parts = new List<string>();
-        foreach (var pair in Context.Request.Query)
+        foreach (var pair in request.Query)
         {
             if (string.Equals(pair.Key, pageParam, StringComparison.OrdinalIgnoreCase)) continue;
             foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
         }
-        parts.Add(WebUtility.UrlEncode(pageParam) + "=" + page);
-        return $"{Context.Request.PathBase}{Context.Request.Path}?{string.Join("&", parts)}";
+        parts.Add(WebUtility.UrlEncode(pageParam) + "=" + pageNumber);
+        return $"{request.PathBase}{request.Path}?{string.Join("&", parts)}";
     }
 }
 <section class="product-section content-component" data-component-id="@Model.Id">
@@ -77,9 +78,9 @@
             {
                 <nav class="component-pagination" aria-label="产品分页">
                     @if (currentPage > 1) { <a href="@BuildPageUrl(currentPage - 1)">上一页</a> }
-                    @for (var page = 1; page <= totalPages; page++)
+                    @for (var pageNumber = 1; pageNumber <= totalPages; pageNumber++)
                     {
-                        if (page == currentPage) { <span class="active">@page</span> } else { <a href="@BuildPageUrl(page)">@page</a> }
+                        if (pageNumber == currentPage) { <span class="active">@(pageNumber)</span> } else { <a href="@BuildPageUrl(pageNumber)">@(pageNumber)</a> }
                     }
                     @if (currentPage < totalPages) { <a href="@BuildPageUrl(currentPage + 1)">下一页</a> }
                 </nav>
