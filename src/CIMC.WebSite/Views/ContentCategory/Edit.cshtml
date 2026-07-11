@@ -1,0 +1,79 @@
+@{
+    Layout = null;
+    var isFixedRoot = ViewBag.IsFixedRoot is bool value && value;
+}
+@model MySite.Web.Models.ProductCategoryModel
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>内容分类编辑</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">@(Model.Id > 0 ? "修改内容分类" : "添加内容分类")</div>
+        <div class="layui-card-body" style="padding:15px;">
+            <form class="layui-form">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">父级分类</label>
+                    <div class="layui-input-block">
+                        <select name="Pid" id="selPid" @(isFixedRoot ? "disabled" : "")></select>
+                        @if (isFixedRoot) { <input type="hidden" name="Pid" value="0" /> }
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">分类名称</label>
+                    <div class="layui-input-block">
+                        <input type="text" name="Name" lay-verify="required" class="layui-input" value="@Html.Raw(Model.Name)" @(isFixedRoot ? "readonly" : "")>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">排序</label>
+                    <div class="layui-input-inline" style="width:120px;"><input type="number" name="Sort" class="layui-input" value="@Model.Sort"></div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">是否启用</label>
+                    <div class="layui-input-block">
+                        <input type="radio" name="IsActive" value="true" title="启用" @Html.Raw(Model.IsActive ? " checked" : "")>
+                        <input type="radio" name="IsActive" value="false" title="禁用" @Html.Raw(!Model.IsActive ? " checked" : "")>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <div class="layui-input-block">
+                        <button class="layui-btn" lay-submit lay-filter="save">保存</button>
+                        <a href="/ContentCategory/Index" class="layui-btn layui-btn-primary">返回列表</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script>
+layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','form'],function(){
+    var $=layui.$, form=layui.form, layer=layui.layer, currentId=@Model.Id, currentPid=@Model.Pid, fixedRoot=@(isFixedRoot ? "true" : "false");
+    $.get('/ContentCategory/GetList',function(res){
+        if(res.code!==200)return;
+        var list=res.data||[], html=fixedRoot?'<option value="0">系统大类</option>':'<option value="">-- 请选择文章、产品或招聘大类 --</option>';
+        list.forEach(function(item){
+            if(item.id===currentId)return;
+            var prefix=item.pid===0?'【大类】':'　';
+            html+='<option value="'+item.id+'"'+(Number(item.id)===Number(currentPid)?' selected':'')+'>'+prefix+item.name+'</option>';
+        });
+        $('#selPid').html(html);form.render('select');
+    },'json');
+    form.on('submit(save)',function(data){
+        $.post('/ContentCategory/Edit?id='+currentId,data.field,function(res){
+            if(res.code===200)layer.alert(res.message,function(){location.href='/ContentCategory/Index';});
+            else layer.msg(res.message,{icon:5});
+        },'json');
+        return false;
+    });
+});
+</script>
+</body>
+</html>
