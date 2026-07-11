@@ -63,12 +63,31 @@ layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib
         request:{pageName:'pageIndex',limitName:'pageSize'},page:true,limit:10,limits:[10,20,50]
     });
 
-    table.on('tool(app-table)',function(obj){var data=obj.data;
-        if(obj.event==='edit')location.href='/job/edit/'+data.id;
-        else if(obj.event==='del')layer.confirm('确认删除？',function(index){$.post('/Job/Delete',{id:data.id},function(res){layer.close(index);if(res.code===200){layer.msg(res.message);obj.del();}else layer.msg(res.message,{icon:5});},'json');
+    table.on('tool(app-table)',function(obj){
+        var data=obj.data;
+        if(obj.event==='edit'){
+            location.href='/job/edit/'+data.id;
+        }else if(obj.event==='del'){
+            layer.confirm('确认删除？',function(index){
+                $.post('/Job/Delete',{id:data.id},function(res){
+                    layer.close(index);
+                    if(res.code===200){layer.msg(res.message);obj.del();}
+                    else layer.msg(res.message,{icon:5});
+                },'json');
+            });
+        }
     });
 
-    $('#batchdel').on('click',function(){var rows=table.checkStatus('app-table').data;if(!rows.length){layer.msg('请至少选择一项');return;}layer.confirm('确认删除选中的 '+rows.length+' 条数据？',function(index){$.ajax({type:'post',url:'/job/delete?isAll=1',data:{ids:rows.map(function(x){return x.id;})},traditional:true,dataType:'json',success:function(res){layer.close(index);if(res.code===200){layer.msg(res.message);table.reload('app-table');}else layer.msg(res.message,{icon:5});}});});});
+    $('#batchdel').on('click',function(){
+        var rows=table.checkStatus('app-table').data;
+        if(!rows.length){layer.msg('请至少选择一项');return;}
+        layer.confirm('确认删除选中的 '+rows.length+' 条数据？',function(index){
+            $.ajax({
+                type:'post',url:'/job/delete?isAll=1',data:{ids:rows.map(function(x){return x.id;})},traditional:true,dataType:'json',
+                success:function(res){layer.close(index);if(res.code===200){layer.msg(res.message);table.reload('app-table');}else layer.msg(res.message,{icon:5});}
+            });
+        });
+    });
     form.on('submit(app-search)',function(data){table.reload('app-table',{page:{curr:1},where:data.field});return false;});
 });
 </script>
