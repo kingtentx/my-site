@@ -3,14 +3,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MySite.Web.Models
 {
-    /// <summary>
-    /// 页面编辑视图模型
-    /// </summary>
     public class PageModel
     {
         public int Id { get; set; }
-
         public int SiteId { get; set; } = 1;
+
+        [Display(Name = "父级页面")]
+        public int ParentId { get; set; }
 
         [Display(Name = "页面名称")]
         [Required(ErrorMessage = "请输入页面名称")]
@@ -32,6 +31,18 @@ namespace MySite.Web.Models
         [Display(Name = "SEO描述")]
         public string SeoDescription { get; set; }
 
+        [Display(Name = "显示在导航")]
+        public bool ShowInNavigation { get; set; } = true;
+
+        [Display(Name = "导航标题")]
+        public string NavigationTitle { get; set; }
+
+        [Display(Name = "导航图标")]
+        public string NavigationIcon { get; set; }
+
+        [Display(Name = "打开方式")]
+        public int NavigationTarget { get; set; }
+
         [Display(Name = "是否启用")]
         public bool IsActive { get; set; } = true;
 
@@ -39,26 +50,17 @@ namespace MySite.Web.Models
         public bool IsHome { get; set; }
 
         [Display(Name = "排序")]
-        public int Sort { get; set; } = 0;
+        public int Sort { get; set; }
 
-        public int Status { get; set; } = 0;
-
+        public int Status { get; set; }
         public string ComponentJson { get; set; }
-
         public System.DateTime? PublishTime { get; set; }
-
         public System.DateTime? CreationTime { get; set; }
-
         public string CreationBy { get; set; }
-
         public System.DateTime? UpdateTime { get; set; }
-
         public string UpdateBy { get; set; }
     }
 
-    /// <summary>
-    /// 设计器组件 JSON DTO
-    /// </summary>
     public class ComponentModel
     {
         public string Id { get; set; }
@@ -71,9 +73,6 @@ namespace MySite.Web.Models
         public Dictionary<string, object> Style { get; set; } = new Dictionary<string, object>();
     }
 
-    /// <summary>
-    /// 前台页面渲染模型
-    /// </summary>
     public class PageRenderModel
     {
         public int PageId { get; set; }
