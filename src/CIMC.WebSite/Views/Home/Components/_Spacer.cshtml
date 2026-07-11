@@ -1,0 +1,6 @@
+@model MySite.Web.Models.ComponentModel
+@{
+    var height = 40;
+    if (Model.Props != null && Model.Props.TryGetValue("height", out var h) && int.TryParse(h?.ToString(), out var value)) height = Math.Max(0, Math.Min(1000, value));
+}
+<div class="site-component-spacer" style="height:@(height)px" aria-hidden="true"></div>
