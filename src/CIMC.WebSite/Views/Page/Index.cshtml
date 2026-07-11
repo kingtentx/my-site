@@ -5,154 +5,162 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>页面管理</title>
+    <title>页面与导航管理</title>
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
     <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
 </head>
 <body>
-    <div class="layui-fluid">
-        <div class="layui-row layui-col-space15">
-            <div class="layui-col-md12">
-                <div class="layui-card">
-                    <div class="layui-form layui-card-header layuiadmin-card-header-auto">
-                        <div class="layui-form-item">
-                            <div class="layui-inline">
-                                <label class="layui-form-label">名称/路径</label>
-                                <div class="layui-input-block">
-                                    <input type="text" name="keywords" placeholder="请输入" autocomplete="off" class="layui-input">
-                                </div>
-                            </div>
-                            <div class="layui-inline">
-                                <button class="layui-btn layuiadmin-btn-admin" lay-submit="" lay-filter="app-search">
-                                    <i class="layui-icon layui-icon-search layuiadmin-button-btn"></i>
-                                </button>
-                            </div>
-                        </div>
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+            <div class="layui-form-item">
+                <div class="layui-inline">
+                    <label class="layui-form-label">名称/路径</label>
+                    <div class="layui-input-inline" style="width:260px;">
+                        <input type="text" name="keywords" placeholder="页面名称或路径" autocomplete="off" class="layui-input">
                     </div>
-                    <div class="layui-card-body">
-                        <div style="padding-bottom: 10px;">
-                            @if ((bool)ViewData[PageCode.PAGE_Button_Add])
-                            {
-                                <a class="layui-btn layuiadmin-btn-admin" href="/page/edit">新增页面</a>
-                            }
-                        </div>
-                        <table class="layui-hide" id="app-table" lay-filter="app-table"></table>
-                        <script type="text/html" id="status">
-                            {{# if(d.status === 1){ }}
-                            <span class="layui-btn layui-btn-primary layui-btn-xs">已发布</span>
-                            {{# } else { }}
-                            <span class="layui-btn layui-btn-warm layui-btn-xs">草稿</span>
-                            {{# } }}
-                        </script>
-                        <script type="text/html" id="isHome">
-                            {{# if(d.isHome){ }}
-                            <span class="layui-btn layui-btn-normal layui-btn-xs">首页</span>
-                            {{# } else { }}
-                            <span class="layui-btn layui-btn-primary layui-btn-xs">-</span>
-                            {{# } }}
-                        </script>
-                        <script type="text/html" id="active">
-                            {{# if(d.isActive){ }}
-                            <span class="layui-btn layui-btn-primary layui-btn-xs">启用</span>
-                            {{# } else { }}
-                            <span class="layui-btn layui-btn-warm layui-btn-xs">禁用</span>
-                            {{# } }}
-                        </script>
-                        <script type="text/html" id="app-table-bar">
-                            @if ((bool)ViewData[PageCode.PAGE_Button_Design])
-                            {
-                                <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="design"><i class="layui-icon layui-icon-template"></i>装修</a>
-                            }
-                            @if ((bool)ViewData[PageCode.PAGE_Button_Preview])
-                            {
-                                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="preview"><i class="layui-icon layui-icon-search"></i>预览</a>
-                            }
-                            @if ((bool)ViewData[PageCode.PAGE_Button_Publish])
-                            {
-                                <a class="layui-btn layui-btn layui-btn-xs" lay-event="publish"><i class="layui-icon layui-icon-release"></i>发布</a>
-                            }
-                            @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
-                            {
-                                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="edit"><i class="layui-icon layui-icon-edit"></i>编辑</a>
-                            }
-                            @if ((bool)ViewData[PageCode.PAGE_Button_Delete])
-                            {
-                                <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del"><i class="layui-icon layui-icon-delete"></i>删除</a>
-                            }
-                        </script>
-                    </div>
+                </div>
+                <div class="layui-inline">
+                    <button class="layui-btn" lay-submit lay-filter="app-search">
+                        <i class="layui-icon layui-icon-search"></i> 查询
+                    </button>
+                    <button type="button" class="layui-btn layui-btn-primary" id="btnReset">重置</button>
                 </div>
             </div>
         </div>
-    </div>
-    <script src="~/resource/layuiadmin/layui/layui.js"></script>
-    <script>
-        layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'table', 'form'], function () {
-            var $ = layui.$, form = layui.form, table = layui.table, layer = layui.layer;
-
-            table.render({
-                elem: '#app-table',
-                url: '@Url.Content("~")/Page/GetList',
-                response: { statusName: 'code', statusCode: 200, msgName: 'message', countName: 'count', dataName: 'data' },
-                cols: [[
-                    { type: 'checkbox' },
-                    { field: 'id', width: 60, title: 'ID' },
-                    { field: 'pageName', title: '页面名称', minWidth: 120 },
-                    { field: 'pagePath', width: 160, title: '路径' },
-                    { align: 'center', field: 'status', width: 90, title: '状态', templet: '#status' },
-                    { align: 'center', field: 'isHome', width: 80, title: '首页', templet: '#isHome' },
-                    { field: 'sort', width: 80, title: '排序' },
-                    { field: 'creationTime', width: 170, title: '创建时间' },
-                    { align: 'center', field: 'isActive', width: 80, title: '启用', templet: '#active' },
-                    { align: 'center', width: 320, toolbar: '#app-table-bar', title: '操作' }
-                ]],
-                request: { pageName: 'pageIndex', limitName: 'pageSize' },
-                page: true
-            });
-
-            table.on('tool(app-table)', function (obj) {
-                var data = obj.data;
-                if (obj.event === 'edit') {
-                    window.location.href = '/page/edit/' + data.id;
-                } else if (obj.event === 'design') {
-                    window.location.href = '/page/design/' + data.id;
-                } else if (obj.event === 'preview') {
-                    window.open('/page/preview/' + data.id);
-                } else if (obj.event === 'publish') {
-                    layer.confirm('确认发布该页面？发布后前台将更新。', function (index) {
-                        var loading = layer.load(1, { shade: 0.3 });
-                        $.ajax({
-                            type: 'post', url: '/Page/Publish?id=' + data.id, dataType: 'json',
-                            success: function (res) {
-                                layer.close(loading);
-                                if (res.code == 200) {
-                                    layer.msg(res.message, { icon: 1 });
-                                    table.reload('app-table');
-                                } else { layer.msg(res.message, { icon: 5 }); }
-                            },
-                            error: function () { layer.close(loading); layer.msg('发布失败', { icon: 5 }); }
-                        });
-                    });
-                } else if (obj.event === 'del') {
-                    layer.confirm('确认删除该页面？', function (index) {
-                        $.ajax({
-                            type: 'post', url: '/Page/Delete', data: { 'id': data.id }, dataType: 'json',
-                            success: function (res) {
-                                if (res.code == 200) { layer.msg(res.message); obj.del(); layer.close(index); }
-                                else { layer.msg(res.message, { icon: 5 }); }
-                            }
-                        });
-                    });
+        <div class="layui-card-body">
+            <div style="padding-bottom:10px;display:flex;align-items:center;gap:10px;">
+                @if ((bool)ViewData[PageCode.PAGE_Button_Add])
+                {
+                    <a class="layui-btn layuiadmin-btn-admin" href="/page/edit"><i class="layui-icon layui-icon-addition"></i>新增一级页面</a>
                 }
-            });
+                <span class="layui-word-aux">页面即导航：一级页面下可添加二级子导航；取消“显示在导航”后页面仍可通过路径访问。</span>
+            </div>
+            <table id="page-tree-table" class="layui-table" lay-filter="page-tree-table"></table>
 
-            form.on('submit(app-search)', function (data) {
-                table.reload('app-table', { page: { curr: 1 }, where: data.field });
-            });
+            <script type="text/html" id="statusTpl">
+                {{# if(d.status === 1){ }}
+                <span class="layui-badge layui-bg-green">已发布</span>
+                {{# } else { }}
+                <span class="layui-badge layui-bg-orange">草稿</span>
+                {{# } }}
+            </script>
+            <script type="text/html" id="navTpl">
+                {{# if(d.showInNavigation){ }}
+                <span class="layui-badge layui-bg-blue">显示</span>
+                {{# } else { }}
+                <span class="layui-badge layui-bg-gray">隐藏</span>
+                {{# } }}
+            </script>
+            <script type="text/html" id="homeTpl">
+                {{# if(d.isHome){ }}<span class="layui-badge">首页</span>{{# } else { }}-{{# } }}
+            </script>
+            <script type="text/html" id="activeTpl">
+                {{# if(d.isActive){ }}启用{{# } else { }}<span style="color:#ff5722;">禁用</span>{{# } }}
+            </script>
+            <script type="text/html" id="pageBar">
+                {{# if(d.pid === 0){ }}
+                @if ((bool)ViewData[PageCode.PAGE_Button_Add])
+                {
+                    <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="addchild"><i class="layui-icon layui-icon-addition"></i>添加二级导航</a>
+                }
+                {{# } }}
+                @if ((bool)ViewData[PageCode.PAGE_Button_Design])
+                {
+                    <a class="layui-btn layui-btn-warm layui-btn-xs" lay-event="design">装修</a>
+                }
+                @if ((bool)ViewData[PageCode.PAGE_Button_Preview])
+                {
+                    <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="preview">预览</a>
+                }
+                @if ((bool)ViewData[PageCode.PAGE_Button_Publish])
+                {
+                    <a class="layui-btn layui-btn-xs" lay-event="publish">发布</a>
+                }
+                @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
+                {
+                    <a class="layui-btn layui-btn-primary layui-btn-xs" lay-event="edit">编辑</a>
+                }
+                @if ((bool)ViewData[PageCode.PAGE_Button_Delete])
+                {
+                    <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+                }
+            </script>
+        </div>
+    </div>
+</div>
+<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script>
+    layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'table', 'treetable', 'form'], function () {
+        var $ = layui.$, table = layui.table, treetable = layui.treetable, form = layui.form, layer = layui.layer;
+
+        function loadTree(keywords) {
+            var loading = layer.load(2);
+            $.get('/PageEnhancement/GetTree', { keywords: keywords || '' }, function (res) {
+                layer.close(loading);
+                if (res.code !== 200) { layer.msg(res.message || '加载失败', { icon: 5 }); return; }
+                treetable.render({
+                    treeColIndex: 0,
+                    treeSpid: 0,
+                    treeIdName: 'id',
+                    treePidName: 'pid',
+                    treeDefaultClose: false,
+                    treeLinkage: false,
+                    elem: '#page-tree-table',
+                    data: res.data || [],
+                    page: false,
+                    cols: [[
+                        { field: 'pageName', minWidth: 210, title: '页面/导航名称' },
+                        { field: 'pagePath', width: 170, title: '页面路径' },
+                        { field: 'navigationTitle', width: 150, title: '导航标题' },
+                        { field: 'status', width: 85, align: 'center', title: '发布', templet: '#statusTpl' },
+                        { field: 'showInNavigation', width: 85, align: 'center', title: '导航', templet: '#navTpl' },
+                        { field: 'isHome', width: 70, align: 'center', title: '首页', templet: '#homeTpl' },
+                        { field: 'sort', width: 70, align: 'center', title: '排序' },
+                        { field: 'isActive', width: 70, align: 'center', title: '状态', templet: '#activeTpl' },
+                        { width: 440, align: 'center', title: '操作', toolbar: '#pageBar' }
+                    ]],
+                    done: function () { layer.closeAll('loading'); }
+                });
+            }, 'json').fail(function () { layer.close(loading); layer.msg('加载失败', { icon: 5 }); });
+        }
+
+        table.on('tool(page-tree-table)', function (obj) {
+            var data = obj.data;
+            if (obj.event === 'addchild') {
+                window.location.href = '/page/edit?parentId=' + data.id;
+            } else if (obj.event === 'edit') {
+                window.location.href = '/page/edit/' + data.id;
+            } else if (obj.event === 'design') {
+                window.location.href = '/page/design/' + data.id;
+            } else if (obj.event === 'preview') {
+                window.open('/page/preview/' + data.id);
+            } else if (obj.event === 'publish') {
+                layer.confirm('确认发布该页面？', function (index) {
+                    $.post('/Page/Publish?id=' + data.id, function (res) {
+                        layer.close(index);
+                        if (res.code === 200) { layer.msg(res.message, { icon: 1 }); loadTree(); }
+                        else layer.msg(res.message, { icon: 5 });
+                    }, 'json');
+                });
+            } else if (obj.event === 'del') {
+                layer.confirm('确认删除该页面？', function (index) {
+                    $.post('/PageEnhancement/Delete', { id: data.id }, function (res) {
+                        layer.close(index);
+                        if (res.code === 200) { layer.msg(res.message, { icon: 1 }); loadTree(); }
+                        else layer.msg(res.message, { icon: 5 });
+                    }, 'json');
+                });
+            }
         });
-    </script>
+
+        form.on('submit(app-search)', function (data) { loadTree(data.field.keywords); return false; });
+        $('#btnReset').on('click', function () { $('input[name="keywords"]').val(''); loadTree(); });
+        loadTree();
+    });
+</script>
 </body>
 </html>
