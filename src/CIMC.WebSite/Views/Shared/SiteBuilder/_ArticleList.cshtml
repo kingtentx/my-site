@@ -1,0 +1,57 @@
+@using CIMC.Data
+@using CIMC.EntityFramework
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using System.Net
+@model MySite.Web.Models.BuilderNodeRenderModel
+@inject IRepository<Article> ArticleRepository
+@inject IRepository<ContentProductCategory> CategoryRepository
+@{
+    var props = Model.Node.Props ?? new Dictionary<string, object>();
+    int GetInt(string key, int fallback) => props.TryGetValue(key, out var value) && value != null && int.TryParse(value.ToString(), out var number) ? number : fallback;
+    bool GetBool(string key, bool fallback) => props.TryGetValue(key, out var value) && value != null && bool.TryParse(value.ToString(), out var result) ? result : fallback;
+    var pageSize = Math.Max(1, Math.Min(100, GetInt("pageSize", 6)));
+    var columns = Math.Max(1, Math.Min(6, GetInt("columns", 3)));
+    var categoryId = GetInt("categoryId", 0);
+    var showSummary = GetBool("showSummary", true);
+    var showDate = GetBool("showDate", true);
+    var categoryIds = categoryId > 0 ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true) : new List<int>();
+    var allItems = ArticleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).Where(a => categoryId <= 0 || categoryIds.Contains(a.TagId)).ToList();
+    var request = ViewContext.HttpContext.Request;
+    var key = "page_" + new string((Model.Node.Id ?? "articles").Where(char.IsLetterOrDigit).ToArray());
+    var current = int.TryParse(request.Query[key].ToString(), out var requested) ? Math.Max(1, requested) : 1;
+    var pages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
+    current = Math.Min(current, pages);
+    var items = allItems.Skip((current - 1) * pageSize).Take(pageSize).ToList();
+    string PageUrl(int number)
+    {
+        var parts = new List<string>();
+        foreach (var pair in request.Query)
+        {
+            if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
+        }
+        parts.Add(WebUtility.UrlEncode(key) + "=" + number);
+        return $"{request.PathBase}{request.Path}?{string.Join("&", parts)}";
+    }
+}
+<div class="sb-content-list" data-builder-id="@Model.Node.Id">
+    @if (items.Count == 0) { <p class="sb-empty">暂无文章</p> }
+    else
+    {
+        <div class="sb-article-grid" style="--sb-cols:@columns">
+            @foreach (var item in items)
+            {
+                <article class="sb-content-card">
+                    @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <a href="/news/info-@(item.Id).html"><img src="@item.ImageUrl" alt="@item.Title" loading="lazy" /></a> }
+                    <div class="sb-content-card-body"><h3><a href="/news/info-@(item.Id).html">@item.Title</a></h3>@if(showSummary && !string.IsNullOrWhiteSpace(item.Description)){<p>@item.Description</p>}@if(showDate && item.CreationTime.HasValue){<time>@item.CreationTime.Value.ToString("yyyy-MM-dd")</time>}</div>
+                </article>
+            }
+        </div>
+        @if (pages > 1)
+        {
+            <nav class="component-pagination">@if(current > 1){<a href="@PageUrl(current - 1)">上一页</a>}@for(var i=1;i<=pages;i++){if(i==current){<span class="active">@i</span>}else{<a href="@PageUrl(i)">@i</a>}}@if(current < pages){<a href="@PageUrl(current + 1)">下一页</a>}</nav>
+        }
+    }
+</div>
