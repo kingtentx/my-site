@@ -1,0 +1,53 @@
+@using CIMC.Data
+@using CIMC.EntityFramework
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@using System.Net
+@model MySite.Web.Models.BuilderNodeRenderModel
+@inject IRepository<ContentJob> JobRepository
+@inject IRepository<ContentProductCategory> CategoryRepository
+@{
+    var props = Model.Node.Props ?? new Dictionary<string, object>();
+    int GetInt(string key, int fallback) => props.TryGetValue(key, out var value) && value != null && int.TryParse(value.ToString(), out var number) ? number : fallback;
+    bool GetBool(string key, bool fallback) => props.TryGetValue(key, out var value) && value != null && bool.TryParse(value.ToString(), out var result) ? result : fallback;
+    var pageSize = Math.Max(1, Math.Min(100, GetInt("pageSize", 10)));
+    var categoryId = GetInt("categoryId", 0);
+    var showLocation = GetBool("showLocation", true);
+    var showSalary = GetBool("showSalary", true);
+    var categoryIds = categoryId > 0 ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true) : new List<int>();
+    var allItems = JobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true).Where(j => categoryId <= 0 || categoryIds.Contains(j.CategoryId)).ToList();
+    var request = ViewContext.HttpContext.Request;
+    var key = "page_" + new string((Model.Node.Id ?? "jobs").Where(char.IsLetterOrDigit).ToArray());
+    var current = int.TryParse(request.Query[key].ToString(), out var requested) ? Math.Max(1, requested) : 1;
+    var pages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
+    current = Math.Min(current, pages);
+    var items = allItems.Skip((current - 1) * pageSize).Take(pageSize).ToList();
+    string PageUrl(int number)
+    {
+        var parts = new List<string>();
+        foreach (var pair in request.Query)
+        {
+            if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
+        }
+        parts.Add(WebUtility.UrlEncode(key) + "=" + number);
+        return $"{request.PathBase}{request.Path}?{string.Join("&", parts)}";
+    }
+}
+<div class="sb-content-list" data-builder-id="@Model.Node.Id">
+    @if (items.Count == 0) { <p class="sb-empty">暂无招聘职位</p> }
+    else
+    {
+        <div class="sb-job-list">
+            @foreach (var item in items)
+            {
+                <details class="sb-job-card"><summary><strong>@item.JobTitle</strong><span>@(item.Department ?? "-")</span>@if(showLocation){<span>@(item.WorkLocation ?? "-")</span>}@if(showSalary){<span>@(item.SalaryRange ?? "面议")</span>}</summary><div class="sb-job-detail"><h4>岗位职责</h4><div>@Html.Raw(string.IsNullOrWhiteSpace(item.Responsibilities) ? "<p>暂无岗位职责说明</p>" : item.Responsibilities)</div><h4>任职要求</h4><div>@Html.Raw(string.IsNullOrWhiteSpace(item.Requirements) ? "<p>暂无任职要求说明</p>" : item.Requirements)</div></div></details>
+            }
+        </div>
+        @if (pages > 1)
+        {
+            <nav class="component-pagination">@if(current > 1){<a href="@PageUrl(current - 1)">上一页</a>}@for(var i=1;i<=pages;i++){if(i==current){<span class="active">@i</span>}else{<a href="@PageUrl(i)">@i</a>}}@if(current < pages){<a href="@PageUrl(current + 1)">下一页</a>}</nav>
+        }
+    }
+</div>
