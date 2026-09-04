@@ -23,9 +23,8 @@ namespace MySite.Web.Controllers
         public IActionResult Index()
         {
             var entity = _repository.GetOne(1) ?? new WebsiteSiteConfig { Id = 1, SiteName = "企业官网", IsActive = true };
-            var model = ToModel(entity);
             ViewData[PageCode.PAGE_Button_Edit] = _permission.CheckPermission(LoginUser, MenuCode.Site_Info, PermissionType.Edit);
-            return View(model);
+            return View(ToModel(entity));
         }
 
         [HttpPost]
@@ -39,39 +38,32 @@ namespace MySite.Web.Controllers
             }
 
             var existed = _repository.GetOne(1);
-            var entity = existed ?? new WebsiteSiteConfig { Id = 1, CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
+            var entity = existed ?? new WebsiteSiteConfig
+            {
+                Id = 1,
+                CreationTime = DateTime.Now,
+                CreationBy = LoginUser.UserName
+            };
 
             entity.SiteName = input.SiteName.Trim();
             entity.Logo = input.Logo;
             entity.BrowserTitle = input.BrowserTitle;
             entity.Keywords = input.Keywords;
             entity.Description = input.Description;
-            entity.Theme = string.IsNullOrWhiteSpace(input.Theme) ? "default" : input.Theme;
-            entity.Language = string.IsNullOrWhiteSpace(input.Language) ? "zh-CN" : input.Language;
-            entity.HeaderBgColor = string.IsNullOrWhiteSpace(input.HeaderBgColor) ? "#ffffff" : input.HeaderBgColor;
-            entity.HeaderTextColor = string.IsNullOrWhiteSpace(input.HeaderTextColor) ? "#333333" : input.HeaderTextColor;
-            entity.HeaderActiveColor = string.IsNullOrWhiteSpace(input.HeaderActiveColor) ? "#1e9fff" : input.HeaderActiveColor;
-            entity.HeaderFixedTop = input.HeaderFixedTop;
             entity.IsActive = input.IsActive;
             entity.IsDelete = false;
             entity.UpdateBy = LoginUser.UserName;
             entity.UpdateTime = DateTime.Now;
 
-            if (existed != null)
-            {
-                _repository.Update(entity);
-            }
-            else
-            {
-                _repository.Add(entity);
-            }
+            if (existed != null) _repository.Update(entity);
+            else _repository.Add(entity);
 
             result.Code = (int)ResultCode.Success;
             result.Message = "保存成功";
             return Json(result);
         }
 
-        private SiteConfigModel ToModel(WebsiteSiteConfig entity)
+        private static SiteConfigModel ToModel(WebsiteSiteConfig entity)
         {
             return new SiteConfigModel
             {
@@ -81,12 +73,6 @@ namespace MySite.Web.Controllers
                 BrowserTitle = entity.BrowserTitle,
                 Keywords = entity.Keywords,
                 Description = entity.Description,
-                Theme = entity.Theme,
-                Language = entity.Language,
-                HeaderBgColor = string.IsNullOrWhiteSpace(entity.HeaderBgColor) ? "#ffffff" : entity.HeaderBgColor,
-                HeaderTextColor = string.IsNullOrWhiteSpace(entity.HeaderTextColor) ? "#333333" : entity.HeaderTextColor,
-                HeaderActiveColor = string.IsNullOrWhiteSpace(entity.HeaderActiveColor) ? "#1e9fff" : entity.HeaderActiveColor,
-                HeaderFixedTop = entity.HeaderFixedTop,
                 IsActive = entity.IsActive
             };
         }
