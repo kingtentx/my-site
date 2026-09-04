@@ -124,7 +124,7 @@ namespace MySite.Web
                         ValidateAudience = true,
                         ValidateIssuerSigningKey = true,
                         //是否验证Token有效期，使用当前时间与Token的Claims中的NotBefore和Expires对比
-                        ValidateLifetime = true,                           
+                        ValidateLifetime = true,
                         //允许的服务器时间偏移量
                         ClockSkew = TimeSpan.Zero,
 
@@ -232,7 +232,6 @@ namespace MySite.Web
 
             #endregion
 
-          
 
             services.AddLocalization(options => options.ResourcesPath = "Resources");
 
@@ -278,7 +277,7 @@ namespace MySite.Web
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-  
+
             app.UseStaticFiles();
             app.UseRouting();
             app.UseRequestLocalization();
@@ -287,7 +286,7 @@ namespace MySite.Web
             app.UseAuthorization();
             //app.UseHttpsRedirection();
             // 设置配置  
-            AppSettingsReader.SetConfiguration(Configuration);          
+            AppSettingsReader.SetConfiguration(Configuration);
 
             app.UseEndpoints(endpoints =>
             {
@@ -307,7 +306,7 @@ namespace MySite.Web
                     {
                         controller = "Home",
                         action = "About"
-                    });                  
+                    });
 
                 endpoints.MapControllerRoute(
                     name: "ProductDetail",
@@ -326,7 +325,7 @@ namespace MySite.Web
                         controller = "Home",
                         action = "Products"
                     });
-               
+
 
                 endpoints.MapControllerRoute(
                     name: "ArticlePreview",
@@ -360,7 +359,7 @@ namespace MySite.Web
                     {
                         controller = "Home",
                         action = "Jobs"
-                    });                
+                    });
 
                 endpoints.MapControllerRoute(
                     name: "Contact",
@@ -370,7 +369,7 @@ namespace MySite.Web
                         controller = "Home",
                         action = "Contact"
                     });
-              
+
 
                 endpoints.MapControllerRoute(
                     name: "default",
@@ -385,6 +384,7 @@ namespace MySite.Web
             {
                 dbContext.Database.Migrate();
                 new DataInitializer().Create(dbContext);//注册默认超级管理员和前台内容
+                new SiteBuilderUpgradeInitializer().Apply(dbContext);//清理旧版数组页面/旧Footer并同步新版菜单
             }
             #endregion
         }
