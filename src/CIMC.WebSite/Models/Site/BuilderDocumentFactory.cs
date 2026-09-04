@@ -23,11 +23,11 @@ namespace MySite.Web.Models
                 Name = "Header",
                 Nodes = new List<BuilderNodeModel>
                 {
-                    Node("section", null, Style("paddingTop","16px","paddingBottom","16px","backgroundColor","#ffffff"),
+                    Node("section", null, Style("paddingTop","16px","paddingBottom","16px","backgroundColor","#ffffff","position","sticky","top","0px","zIndex",1000,"boxShadow","0 2px 8px rgba(0,0,0,.06)"),
                         Node("container", null, null,
                             Node("grid", Props("columns",3), Style("gap","20px"),
                                 Node("column", null, null, Node("logo", Props("text","企业名称","href","/"), null)),
-                                Node("column", null, Style("textAlign","center"), Node("navigation", Props("menuKey","main"), null)),
+                                Node("column", null, Style("textAlign","center"), Node("navigation", Props("direction","horizontal"), null)),
                                 Node("column", null, Style("textAlign","right"), Node("button", Props("text","联系我们","href","/contact","variant","outline"), null)))))
                 }
             };
@@ -44,7 +44,7 @@ namespace MySite.Web.Models
                         Node("container", null, null,
                             Node("grid", Props("columns",3), Style("gap","36px"),
                                 Node("column", null, null, Node("logo", Props("text","企业名称","href","/"), null)),
-                                Node("column", null, null, Node("navigation", Props("menuKey","footer","direction","vertical"), null)),
+                                Node("column", null, null, Node("navigation", Props("direction","vertical"), null)),
                                 Node("column", null, null, Node("contact", new Dictionary<string, object>(), null))),
                             Node("divider", null, null),
                             Node("copyright", Props("text","© 2026 企业名称 版权所有"), Style("textAlign","center"))))
