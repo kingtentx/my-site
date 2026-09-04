@@ -14,8 +14,8 @@ namespace CIMC.Data
     /// 2. 后台系统/网站/内容管理菜单；
     /// 3. 站点基础配置。
     ///
-    /// 不再初始化文章、产品、招聘、素材、旧 WebsiteFooter、旧前台导航、
-    /// 旧数组格式页面、演示角色和演示权限。业务数据由后台人工维护。
+    /// 页面树同时承担前台网站导航，不再初始化独立 WebsiteNavigation、
+    /// 旧 WebsiteFooter、旧数组格式页面、文章/产品/招聘/素材演示数据和演示角色权限。
     /// </summary>
     public class DataInitializer
     {
@@ -48,7 +48,7 @@ namespace CIMC.Data
 
         private static void InitMenus(AppDbContext context)
         {
-            var home = EnsureMenu(
+            EnsureMenu(
                 context, "首页", "/admin/main", "layui-icon-home",
                 2, 0, true, null, null, 0);
 
@@ -75,8 +75,6 @@ namespace CIMC.Data
                 "Website_Page", "Add,Edit,Delete,Design,Publish", 12);
             EnsureMenu(context, "全局区域设计", "/globalregion/index", "layui-icon-component", 2, website.Id, false,
                 "Website_Page", "Design,Publish", 13);
-            EnsureMenu(context, "菜单管理", "/navigation/index", "layui-icon-nav", 2, website.Id, false,
-                "Site_Navigation", "Add,Edit,Delete", 14);
 
             var content = EnsureMenu(
                 context, "内容管理", null, "layui-icon-read",
@@ -93,11 +91,13 @@ namespace CIMC.Data
             EnsureMenu(context, "素材管理", "/images/index", "layui-icon-picture", 2, content.Id, false,
                 "Content_Images", "Add,Edit,Delete", 35);
 
-            // 明确清除 Site Builder 重写前已经废弃的后台菜单。
+            // 页面树已承担网站导航；旧导航管理和旧 Footer 设置都不再存在。
             var obsoleteMenus = context.Menu
                 .Where(p => p.PermissionKey == "Site_Footer"
+                            || p.PermissionKey == "Site_Navigation"
                             || p.Path == "/footer/index"
-                            || (p.Pid == website.Id && (p.Title == "页脚设置" || p.Title == "导航管理")))
+                            || p.Path == "/navigation/index"
+                            || (p.Pid == website.Id && (p.Title == "页脚设置" || p.Title == "导航管理" || p.Title == "菜单管理")))
                 .ToList();
             if (obsoleteMenus.Count > 0)
             {
@@ -106,7 +106,8 @@ namespace CIMC.Data
 
             var obsoletePermissions = context.RoleMenu
                 .Where(p => p.Permission == "Site_Footer"
-                            || (p.Permission != null && p.Permission.StartsWith("Site_Footer_")))
+                            || p.Permission == "Site_Navigation"
+                            || (p.Permission != null && (p.Permission.StartsWith("Site_Footer_") || p.Permission.StartsWith("Site_Navigation_"))))
                 .ToList();
             if (obsoletePermissions.Count > 0)
             {
@@ -130,7 +131,6 @@ namespace CIMC.Data
         {
             Menu menu = null;
 
-            // 页面菜单以 Path 作为最稳定的唯一标识；模块菜单以 PermissionKey 标识。
             if (!string.IsNullOrWhiteSpace(path))
             {
                 menu = context.Menu.FirstOrDefault(p => p.Path == path);
@@ -164,7 +164,6 @@ namespace CIMC.Data
             menu.UpdateBy = "system";
             menu.UpdateTime = DateTime.Now;
 
-            // 父菜单 ID 需要立即生成，后续子菜单才能使用。
             context.SaveChanges();
             return menu;
         }
@@ -183,8 +182,6 @@ namespace CIMC.Data
                 BrowserTitle = "企业官网",
                 Keywords = string.Empty,
                 Description = string.Empty,
-                Theme = "default",
-                Language = "zh-CN",
                 IsActive = true,
                 IsDelete = false,
                 CreationBy = "system",
