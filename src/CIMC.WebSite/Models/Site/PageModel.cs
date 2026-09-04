@@ -61,16 +61,40 @@ namespace MySite.Web.Models
         public string UpdateBy { get; set; }
     }
 
-    public class ComponentModel
+    /// <summary>
+    /// Site Builder 唯一页面文档格式。旧版根数组 ComponentJson 不再支持。
+    /// </summary>
+    public class BuilderDocumentModel
+    {
+        public int SchemaVersion { get; set; } = 1;
+        public string Name { get; set; }
+        public List<BuilderNodeModel> Nodes { get; set; } = new List<BuilderNodeModel>();
+        public Dictionary<string, object> Settings { get; set; } = new Dictionary<string, object>();
+    }
+
+    /// <summary>
+    /// 可递归嵌套的页面节点。Children 用于默认子节点；Slots 为复杂组件预留命名插槽。
+    /// </summary>
+    public class BuilderNodeModel
     {
         public string Id { get; set; }
         public string Type { get; set; }
+        public int Version { get; set; } = 1;
         public string Name { get; set; }
-        public int Sort { get; set; }
         public bool Visible { get; set; } = true;
         public bool Locked { get; set; }
         public Dictionary<string, object> Props { get; set; } = new Dictionary<string, object>();
         public Dictionary<string, object> Style { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Bindings { get; set; } = new Dictionary<string, object>();
+        public Dictionary<string, object> Actions { get; set; } = new Dictionary<string, object>();
+        public List<BuilderNodeModel> Children { get; set; } = new List<BuilderNodeModel>();
+        public Dictionary<string, List<BuilderNodeModel>> Slots { get; set; } = new Dictionary<string, List<BuilderNodeModel>>();
+    }
+
+    public class BuilderNodeRenderModel
+    {
+        public BuilderNodeModel Node { get; set; }
+        public PageRenderModel Page { get; set; }
     }
 
     public class PageRenderModel
@@ -81,7 +105,7 @@ namespace MySite.Web.Models
         public string PageTitle { get; set; }
         public string SeoKeywords { get; set; }
         public string SeoDescription { get; set; }
-        public List<ComponentModel> Components { get; set; } = new List<ComponentModel>();
+        public BuilderDocumentModel Document { get; set; } = new BuilderDocumentModel();
         public SiteConfigModel SiteConfig { get; set; }
         public List<NavigationModel> Navigation { get; set; } = new List<NavigationModel>();
         public FooterModel Footer { get; set; }
