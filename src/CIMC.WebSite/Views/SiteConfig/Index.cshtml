@@ -21,10 +21,8 @@
         .upload-preview .mask { position: absolute; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity .2s; }
         .upload-preview:hover .mask { opacity: 1; }
         .mask .mask-btn { width: 28px; height: 28px; line-height: 28px; text-align: center; background: rgba(255,255,255,.9); border-radius: 50%; cursor: pointer; border: 0; }
-        .layui-form-color { width: 120px; height: 38px; padding: 2px; }
         .setting-title { margin: 20px 0 12px; padding-left: 10px; border-left: 4px solid #1e9fff; font-weight: 600; color: #333; }
-        .nav-style-preview { margin-top: 8px; padding: 12px 18px; border: 1px solid #e6e6e6; border-radius: 4px; display: inline-flex; align-items: center; gap: 26px; }
-        .nav-style-preview strong { margin-right: 14px; }
+        .setting-tip { margin: 12px 0 18px; padding: 10px 14px; border: 1px solid #e6e6e6; background: #f8fafc; color: #666; line-height: 1.8; }
     </style>
 </head>
 <body>
@@ -32,6 +30,7 @@
         <div class="layui-card">
             <div class="layui-card-header">站点设置</div>
             <div class="layui-card-body" style="padding: 15px;">
+                <div class="setting-tip">Header / Footer 的背景、文字颜色、布局、固定定位以及语言入口统一在【全局区域设计】中装修；站点设置只保留整站基础信息和启用状态。</div>
                 <form class="layui-form" lay-filter="form-group">
                     <div class="setting-title">基础信息</div>
                     <div class="layui-form-item">
@@ -62,7 +61,7 @@
                     <div class="layui-form-item">
                         <label class="layui-form-label">浏览器标题</label>
                         <div class="layui-input-block">
-                            <input type="text" name="BrowserTitle" autocomplete="off" placeholder="浏览器标签页标题" class="layui-input" value="@Html.Raw(Model.BrowserTitle)">
+                            <input type="text" name="BrowserTitle" autocomplete="off" placeholder="浏览器标签页默认标题" class="layui-input" value="@Html.Raw(Model.BrowserTitle)">
                         </div>
                     </div>
                     <div class="layui-form-item">
@@ -78,53 +77,7 @@
                         </div>
                     </div>
 
-                    <div class="setting-title">顶部导航样式</div>
-                    <div class="layui-form-item">
-                        <label class="layui-form-label">背景色</label>
-                        <div class="layui-input-inline" style="width:140px;">
-                            <input type="color" name="HeaderBgColor" class="layui-input layui-form-color" value="@(string.IsNullOrWhiteSpace(Model.HeaderBgColor) ? "#ffffff" : Model.HeaderBgColor)">
-                        </div>
-                        <label class="layui-form-label">文字色</label>
-                        <div class="layui-input-inline" style="width:140px;">
-                            <input type="color" name="HeaderTextColor" class="layui-input layui-form-color" value="@(string.IsNullOrWhiteSpace(Model.HeaderTextColor) ? "#333333" : Model.HeaderTextColor)">
-                        </div>
-                        <label class="layui-form-label">高亮色</label>
-                        <div class="layui-input-inline" style="width:140px;">
-                            <input type="color" name="HeaderActiveColor" class="layui-input layui-form-color" value="@(string.IsNullOrWhiteSpace(Model.HeaderActiveColor) ? "#1e9fff" : Model.HeaderActiveColor)">
-                        </div>
-                    </div>
-                    <div class="layui-form-item">
-                        <label class="layui-form-label">固定顶部</label>
-                        <div class="layui-input-block">
-                            <input type="radio" name="HeaderFixedTop" value="true" title="固定" @Html.Raw(Model.HeaderFixedTop ? " checked" : "")>
-                            <input type="radio" name="HeaderFixedTop" value="false" title="不固定" @Html.Raw(!Model.HeaderFixedTop ? " checked" : "")>
-                            <div class="nav-style-preview" id="navStylePreview">
-                                <strong>企业官网</strong>
-                                <span>首页</span>
-                                <span>产品中心</span>
-                                <span>新闻中心</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="setting-title">主题与状态</div>
-                    <div class="layui-form-item">
-                        <label class="layui-form-label">主题</label>
-                        <div class="layui-input-inline" style="width:200px;">
-                            <select name="Theme">
-                                <option value="default" @Html.Raw(Model.Theme == "default" ? "selected" : "")>默认蓝</option>
-                                <option value="green" @Html.Raw(Model.Theme == "green" ? "selected" : "")>商务绿</option>
-                                <option value="dark" @Html.Raw(Model.Theme == "dark" ? "selected" : "")>深邃黑</option>
-                            </select>
-                        </div>
-                        <label class="layui-form-label">语言</label>
-                        <div class="layui-input-inline" style="width:200px;">
-                            <select name="Language">
-                                <option value="zh-CN" @Html.Raw(Model.Language == "zh-CN" ? "selected" : "")>简体中文</option>
-                                <option value="en-US" @Html.Raw(Model.Language == "en-US" ? "selected" : "")>English</option>
-                            </select>
-                        </div>
-                    </div>
+                    <div class="setting-title">站点状态</div>
                     <div class="layui-form-item">
                         <label class="layui-form-label">是否启用</label>
                         <div class="layui-input-block">
@@ -132,10 +85,14 @@
                             <input type="radio" name="IsActive" value="false" title="禁用" @Html.Raw(!Model.IsActive ? " checked" : "")>
                         </div>
                     </div>
+
                     <div class="layui-form-item layui-layout-admin">
                         <div class="layui-input-block">
                             <div class="layui-footer" style="left: 0; z-index: 20000">
-                                <button class="layui-btn" lay-submit="" lay-filter="form-page">立即保存</button>
+                                @if ((bool)ViewData[PageCode.PAGE_Button_Edit])
+                                {
+                                    <button class="layui-btn" lay-submit="" lay-filter="form-page">立即保存</button>
+                                }
                             </div>
                         </div>
                     </div>
@@ -148,17 +105,6 @@
         layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index', 'form'], function () {
             var $ = layui.$, form = layui.form, layer = layui.layer;
 
-            function refreshNavPreview() {
-                var bg = $('input[name="HeaderBgColor"]').val() || '#ffffff';
-                var text = $('input[name="HeaderTextColor"]').val() || '#333333';
-                var active = $('input[name="HeaderActiveColor"]').val() || '#1e9fff';
-                $('#navStylePreview').css({ backgroundColor: bg, color: text });
-                $('#navStylePreview span:first').css('color', active);
-                $('#navStylePreview span:not(:first)').css('color', text);
-            }
-            refreshNavPreview();
-            $('input[name="HeaderBgColor"],input[name="HeaderTextColor"],input[name="HeaderActiveColor"]').on('change input', refreshNavPreview);
-
             function openImageSelector(wrapId, inputId) {
                 window._imgSelectorWrap = wrapId;
                 window._imgSelectorInput = inputId;
@@ -169,7 +115,7 @@
                 if ($(e.target).closest('[data-action="remove"]').length) return;
                 openImageSelector('logoWrap', 'txtLogo');
             }).on('click', '[data-action="remove"]', function () {
-                layer.confirm("确认删除吗？", function (i) {
+                layer.confirm('确认删除吗？', function (i) {
                     $('#logoWrap').html('<div class="upload-card"><i class="layui-icon layui-icon-upload-drag"></i><span>点击选择 Logo</span></div>');
                     $('#txtLogo').val('');
                     layer.close(i);
@@ -186,20 +132,15 @@
 
             form.on('submit(form-page)', function (data) {
                 $.ajax({
-                    type: "post",
+                    type: 'post',
                     url: '/siteconfig/edit?id=@Model.Id',
                     data: data.field,
-                    dataType: "json",
+                    dataType: 'json',
                     success: function (res) {
-                        if (res.code == 200) {
-                            layer.msg(res.message, { icon: 1 });
-                        } else {
-                            layer.msg(res.message, { icon: 5 });
-                        }
+                        if (res.code == 200) layer.msg(res.message, { icon: 1 });
+                        else layer.msg(res.message, { icon: 5 });
                     },
-                    error: function () {
-                        layer.msg('保存失败', { icon: 5 });
-                    }
+                    error: function () { layer.msg('保存失败', { icon: 5 }); }
                 });
                 return false;
             });
