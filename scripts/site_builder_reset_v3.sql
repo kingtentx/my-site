@@ -3,11 +3,11 @@
 -- Branch: agent/site-builder-enhancements
 -- Database: MySQL 8.x
 --
--- 作用：
---   1. 彻底删除 Menu 表历史记录并按当前项目菜单重新插入；
---   2. 清理旧 Site_Footer 角色权限；
---   3. 清空重写前的页面装修、页面版本、前台导航、旧 Footer 配置；
---   4. 保留文章、产品、招聘、素材、用户、角色、站点基础配置。
+-- 当前架构：
+--   1. WebsitePage 页面树同时承担网站导航；
+--   2. 不再使用独立 WebsiteNavigation；
+--   3. Header/Footer 的布局、颜色、定位等统一由全局区域设计维护；
+--   4. SiteConfig 只保留站点基础信息和整站启用状态。
 --
 -- 执行前：停止 Web 应用并备份数据库。
 -- ============================================================================
@@ -15,33 +15,77 @@
 SET NAMES utf8mb4;
 SELECT DATABASE() AS CurrentDatabase;
 SET FOREIGN_KEY_CHECKS = 0;
-START TRANSACTION;
 
 -- ============================================================================
--- 1. 清理 Site Builder 重写前数据
+-- 1. 清理 Site Builder 重写前页面/页脚数据
 -- ============================================================================
 DELETE FROM `WebsitePageVersion`;
 DELETE FROM `WebsitePage`;
-DELETE FROM `WebsiteNavigation`;
 DELETE FROM `WebsiteFooter`;
 
--- 重置自增，方便确认脚本确实执行到了当前数据库。
 ALTER TABLE `WebsitePageVersion` AUTO_INCREMENT = 1;
 ALTER TABLE `WebsitePage` AUTO_INCREMENT = 1;
-ALTER TABLE `WebsiteNavigation` AUTO_INCREMENT = 1;
 ALTER TABLE `WebsiteFooter` AUTO_INCREMENT = 1;
 
+-- 页面树已经取代 WebsiteNavigation，直接删除旧表。
+DROP TABLE IF EXISTS `WebsiteNavigation`;
+
 -- ============================================================================
--- 2. 清理废弃权限
--- RoleMenu 存的是 Permission 字符串，不是 MenuId。
+-- 2. 删除站点设置中已经迁移到 Header Builder 的旧字段
+-- Theme/Language 旧配置当前也不再参与前台渲染。
+-- 使用 information_schema 判断字段是否存在，脚本可重复执行。
+-- ============================================================================
+SET @db = DATABASE();
+
+SET @sql = IF(
+    EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsiteSiteConfig' AND COLUMN_NAME='HeaderBgColor'),
+    'ALTER TABLE `WebsiteSiteConfig` DROP COLUMN `HeaderBgColor`',
+    'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsiteSiteConfig' AND COLUMN_NAME='HeaderTextColor'),
+    'ALTER TABLE `WebsiteSiteConfig` DROP COLUMN `HeaderTextColor`',
+    'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsiteSiteConfig' AND COLUMN_NAME='HeaderActiveColor'),
+    'ALTER TABLE `WebsiteSiteConfig` DROP COLUMN `HeaderActiveColor`',
+    'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsiteSiteConfig' AND COLUMN_NAME='HeaderFixedTop'),
+    'ALTER TABLE `WebsiteSiteConfig` DROP COLUMN `HeaderFixedTop`',
+    'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsiteSiteConfig' AND COLUMN_NAME='Theme'),
+    'ALTER TABLE `WebsiteSiteConfig` DROP COLUMN `Theme`',
+    'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @sql = IF(
+    EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsiteSiteConfig' AND COLUMN_NAME='Language'),
+    'ALTER TABLE `WebsiteSiteConfig` DROP COLUMN `Language`',
+    'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ============================================================================
+-- 3. 清理已经废弃的角色权限
 -- ============================================================================
 DELETE FROM `RoleMenu`
 WHERE `Permission` = 'Site_Footer'
-   OR `Permission` LIKE 'Site_Footer\_%';
+   OR `Permission` LIKE 'Site_Footer\_%'
+   OR `Permission` = 'Site_Navigation'
+   OR `Permission` LIKE 'Site_Navigation\_%';
 
 -- ============================================================================
--- 3. 彻底重建 Menu 表
--- 这里不是按条件删除，而是删除 Menu 全表后重新插入当前版本的 17 条菜单。
+-- 4. 彻底重建 Menu 表
+-- 网站管理只保留：站点设置、页面管理、全局区域设计。
+-- 页面管理同时负责网站导航树。
 -- ============================================================================
 DELETE FROM `Menu`;
 ALTER TABLE `Menu` AUTO_INCREMENT = 1;
@@ -81,8 +125,7 @@ INSERT INTO `Menu`
 VALUES
 ('站点设置','/siteconfig/index','layui-icon-set',2,@site_id,0,'Site_Info','Edit',11,1,0,NOW(),NOW(),@seed_by,@seed_by),
 ('页面管理','/page/index','layui-icon-template',2,@site_id,0,'Website_Page','Add,Edit,Delete,Design,Publish',12,1,0,NOW(),NOW(),@seed_by,@seed_by),
-('全局区域设计','/globalregion/index','layui-icon-component',2,@site_id,0,'Website_Page','Design,Publish',13,1,0,NOW(),NOW(),@seed_by,@seed_by),
-('菜单管理','/navigation/index','layui-icon-nav',2,@site_id,0,'Site_Navigation','Add,Edit,Delete',14,1,0,NOW(),NOW(),@seed_by,@seed_by);
+('全局区域设计','/globalregion/index','layui-icon-component',2,@site_id,0,'Website_Page','Design,Publish',13,1,0,NOW(),NOW(),@seed_by,@seed_by);
 
 -- 内容管理
 INSERT INTO `Menu`
@@ -100,11 +143,10 @@ VALUES
 ('招聘管理','/job/index','layui-icon-friends',2,@content_id,0,'Content_Job','Add,Edit,Delete',34,1,0,NOW(),NOW(),@seed_by,@seed_by),
 ('素材管理','/images/index','layui-icon-picture',2,@content_id,0,'Content_Images','Add,Edit,Delete',35,1,0,NOW(),NOW(),@seed_by,@seed_by);
 
-COMMIT;
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================================
--- 4. 执行结果验证
+-- 5. 执行结果验证
 -- ============================================================================
 SELECT COUNT(*) AS MenuCount FROM `Menu`;
 
@@ -115,19 +157,23 @@ ORDER BY `Id`;
 
 SELECT COUNT(*) AS WebsitePageCount FROM `WebsitePage`;
 SELECT COUNT(*) AS WebsitePageVersionCount FROM `WebsitePageVersion`;
-SELECT COUNT(*) AS WebsiteNavigationCount FROM `WebsiteNavigation`;
 SELECT COUNT(*) AS WebsiteFooterCount FROM `WebsiteFooter`;
+SELECT COUNT(*) AS LegacyNavigationTableCount
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'WebsiteNavigation';
 
 SELECT `Id`,`RoleId`,`Permission`
 FROM `RoleMenu`
 WHERE `Permission` = 'Site_Footer'
-   OR `Permission` LIKE 'Site_Footer\_%';
+   OR `Permission` LIKE 'Site_Footer\_%'
+   OR `Permission` = 'Site_Navigation'
+   OR `Permission` LIKE 'Site_Navigation\_%';
 
 -- 预期：
--- MenuCount = 17
+-- MenuCount = 16
 -- WebsitePageCount = 0
 -- WebsitePageVersionCount = 0
--- WebsiteNavigationCount = 0
 -- WebsiteFooterCount = 0
--- Site_Footer 权限查询 = 0 行
+-- LegacyNavigationTableCount = 0
+-- Site_Footer / Site_Navigation 权限查询 = 0 行
 -- ============================================================================
