@@ -138,6 +138,7 @@ namespace MySite.Web.Controllers
 
         /// <summary>
         /// 支持页面管理中新建的任意自定义路径，例如 /about/company。
+        /// MapFallbackToController 会将匹配到的 path 路由值传入该参数。
         /// </summary>
         public IActionResult DynamicPage(string path)
         {
@@ -207,13 +208,30 @@ namespace MySite.Web.Controllers
 
         private List<NavigationModel> BuildNavigationTree(string currentPath)
         {
-            var pages = _pageRepository
-                .GetList(p => !p.IsDelete && p.IsActive && p.ShowInNavigation, p => p.Sort, true)
+            // 只有已经发布、启用、允许显示并且所有祖先都允许显示的页面才进入公开导航。
+            var allPages = _pageRepository
+                .GetList(p => !p.IsDelete && p.IsActive && p.Status == 1, p => p.Sort, true)
                 .Where(p => !IsGlobalPage(p))
                 .OrderBy(p => p.Sort)
                 .ThenBy(p => p.Id)
                 .ToList();
 
+            var byId = allPages.ToDictionary(p => p.Id);
+            bool IsVisible(WebsitePage page)
+            {
+                if (!page.ShowInNavigation) return false;
+                var current = page;
+                var guard = 0;
+                while (current.ParentId > 0 && guard++ < 100)
+                {
+                    if (!byId.TryGetValue(current.ParentId, out var parent)) break;
+                    if (!parent.ShowInNavigation) return false;
+                    current = parent;
+                }
+                return true;
+            }
+
+            var pages = allPages.Where(IsVisible).ToList();
             var ids = pages.Select(p => p.Id).ToHashSet();
             var nodes = pages.ToDictionary(
                 p => p.Id,
@@ -226,8 +244,8 @@ namespace MySite.Web.Controllers
                     Icon = p.NavigationIcon,
                     Target = p.NavigationTarget,
                     Sort = p.Sort,
-                    IsShow = p.ShowInNavigation,
-                    IsActive = p.IsActive,
+                    IsShow = true,
+                    IsActive = true,
                     IsCurrent = string.Equals(NormalizePath(currentPath), NormalizePath(p.PagePath), StringComparison.OrdinalIgnoreCase)
                 });
 
