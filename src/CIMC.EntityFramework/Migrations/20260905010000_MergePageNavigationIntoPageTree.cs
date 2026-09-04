@@ -16,6 +16,9 @@ namespace CIMC.EntityFramework.Migrations
             migrationBuilder.Sql("DROP TABLE IF EXISTS `WebsiteNavigation`;");
             migrationBuilder.Sql("DROP TABLE IF EXISTS `WebsiteFooter`;");
 
+            // BuilderDocument 已同时承载布局和组件，不再保留旧 LayoutJson。
+            DropColumnIfExists(migrationBuilder, "WebsitePage", "LayoutJson");
+
             // 这些字段已经迁移到全局 Header/Footer Builder；Theme/Language 旧配置也不再参与渲染。
             DropColumnIfExists(migrationBuilder, "WebsiteSiteConfig", "HeaderBgColor");
             DropColumnIfExists(migrationBuilder, "WebsiteSiteConfig", "HeaderTextColor");
@@ -40,7 +43,7 @@ WHERE `PermissionKey` IN ('Site_Footer', 'Site_Navigation')
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             // 本项目明确不兼容旧版 Site Builder。Down 不恢复已经废弃的数据结构，
-            // 避免回滚时重新引入两套导航与 Footer 配置来源。
+            // 避免回滚时重新引入两套导航、Footer 和旧装修配置来源。
         }
 
         private static void DropColumnIfExists(MigrationBuilder migrationBuilder, string table, string column)
