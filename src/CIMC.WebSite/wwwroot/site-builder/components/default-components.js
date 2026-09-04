@@ -25,7 +25,7 @@
     reg({ type: 'jobList', name: '招聘列表', group: 'data', icon: 'layui-icon-friends', defaults: { categoryId: 0, pageSize: 10, showSalary: true, showLocation: true }, inspector: [f('categoryId','分类ID','number',{min:0}), f('pageSize','显示数量','number',{min:1,max:50}), f('showSalary','显示薪资','checkbox'), f('showLocation','显示地点','checkbox')] });
 
     reg({ type: 'logo', name: 'Logo', group: 'global', icon: 'layui-icon-picture-fine', defaults: { src: '', text: '企业名称', href: '/' }, inspector: [f('src','Logo地址'), f('text','站点名称'), f('href','首页链接')] });
-    reg({ type: 'navigation', name: '导航菜单', group: 'global', icon: 'layui-icon-menu-fill', defaults: { menuKey: 'main', direction: 'horizontal' }, inspector: [f('menuKey','菜单标识'), f('direction','排列方式','select',{options:[{value:'horizontal',text:'横向'},{value:'vertical',text:'纵向'}]})] });
+    reg({ type: 'navigation', name: '导航菜单', group: 'global', icon: 'layui-icon-menu-fill', defaults: { direction: 'horizontal' }, inspector: [f('direction','排列方式','select',{options:[{value:'horizontal',text:'横向'},{value:'vertical',text:'纵向'}]})] });
     reg({ type: 'search', name: '搜索', group: 'global', icon: 'layui-icon-search', defaults: { placeholder: '搜索', action: '/search' }, inspector: [f('placeholder','提示文字'), f('action','搜索地址')] });
     reg({ type: 'language', name: '语言切换', group: 'global', icon: 'layui-icon-website', defaults: { text: '中文 / EN' }, inspector: [f('text','显示文字')] });
     reg({ type: 'contact', name: '联系方式', group: 'global', icon: 'layui-icon-cellphone', defaults: { phone: '', email: '', address: '' }, inspector: [f('phone','电话'),f('email','邮箱'),f('address','地址')] });
