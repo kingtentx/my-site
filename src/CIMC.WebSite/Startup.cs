@@ -376,15 +376,18 @@ namespace MySite.Web
                     pattern: "{controller=Admin}/{action=Index}/{id?}");
             });
 
-            #region 初始化数据
+            #region 数据库迁移与 Site Builder V2 升级
             var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
-            var serviceScope = serviceScopeFactory.CreateScope();
-
-            using (var dbContext = serviceScope.ServiceProvider.GetService<AppDbContext>())
+            using (var serviceScope = serviceScopeFactory.CreateScope())
+            using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>())
             {
                 dbContext.Database.Migrate();
-                new DataInitializer().Create(dbContext);//注册默认超级管理员和前台内容
-                new SiteBuilderUpgradeInitializer().Apply(dbContext);//清理旧版数组页面/旧Footer并同步新版菜单
+
+                // 不再在每次启动时执行旧 DataInitializer.Create()。
+                // 旧初始化器会创建 WebsiteFooter、旧导航以及数组格式页面，
+                // 与 Site Builder V2 的 BuilderDocument 数据结构冲突，并可能因旧表结构产生 DbUpdateException。
+                // 当前数据库已有的用户/角色/内容数据继续保留；这里只执行幂等的 V2 清理和菜单升级。
+                new SiteBuilderUpgradeInitializer().Apply(dbContext);
             }
             #endregion
         }
