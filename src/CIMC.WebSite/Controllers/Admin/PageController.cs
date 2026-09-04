@@ -1,6 +1,5 @@
 using CIMC.Data;
 using CIMC.EntityFramework;
-using CIMC.Helper;
 using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -50,15 +49,34 @@ namespace MySite.Web.Controllers
         }
 
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Edit)]
-        public IActionResult Edit(int id = 0)
+        public IActionResult Edit(int id = 0, int parentId = 0)
         {
-            var model = new PageModel { IsActive = true, PagePath = "/", Sort = 0 };
+            var model = new PageModel
+            {
+                IsActive = true,
+                ShowInNavigation = true,
+                PagePath = "/",
+                ParentId = Math.Max(0, parentId),
+                Sort = 0
+            };
+
             if (id > 0)
             {
                 var page = _pageRepository.GetOne(id);
-                if (page == null || page.IsDelete) return NotFound();
+                if (page == null || page.IsDelete || IsGlobalPage(page)) return NotFound();
                 model = ToModel(page);
             }
+
+            var allPages = GetManagedPages();
+            var blockedIds = id > 0 ? GetDescendantIds(id, allPages) : new HashSet<int>();
+            if (id > 0) blockedIds.Add(id);
+            ViewBag.ParentPages = allPages
+                .Where(p => !blockedIds.Contains(p.Id))
+                .OrderBy(p => p.Sort)
+                .ThenBy(p => p.Id)
+                .Select(ToModel)
+                .ToList();
+
             return View(model);
         }
 
@@ -73,16 +91,41 @@ namespace MySite.Web.Controllers
             var pathExists = _pageRepository.GetList(p => p.PagePath == normalizedPath && p.Id != id && !p.IsDelete);
             if (pathExists.Any()) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "页面路径已存在" });
 
-            var page = id > 0 ? _pageRepository.GetOne(id) : new WebsitePage { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (page == null || page.IsDelete) return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
+            var allPages = GetManagedPages();
+            if (input.ParentId > 0)
+            {
+                var parent = allPages.FirstOrDefault(p => p.Id == input.ParentId);
+                if (parent == null)
+                {
+                    return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "父级页面不存在" });
+                }
+
+                if (id > 0 && (input.ParentId == id || GetDescendantIds(id, allPages).Contains(input.ParentId)))
+                {
+                    return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "不能将页面移动到自身或其子页面下面" });
+                }
+            }
+
+            var page = id > 0
+                ? _pageRepository.GetOne(id)
+                : new WebsitePage { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
+            if (page == null || page.IsDelete || IsGlobalPage(page))
+            {
+                return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
+            }
 
             page.SiteId = input.SiteId <= 0 ? 1 : input.SiteId;
+            page.ParentId = input.IsHome ? 0 : Math.Max(0, input.ParentId);
             page.PageName = input.PageName.Trim();
-            page.PageCode = input.PageCode == null ? null : input.PageCode.Trim();
+            page.PageCode = string.IsNullOrWhiteSpace(input.PageCode) ? null : input.PageCode.Trim();
             page.PagePath = normalizedPath;
             page.PageTitle = input.PageTitle;
             page.SeoKeywords = input.SeoKeywords;
             page.SeoDescription = input.SeoDescription;
+            page.ShowInNavigation = input.ShowInNavigation;
+            page.NavigationTitle = string.IsNullOrWhiteSpace(input.NavigationTitle) ? null : input.NavigationTitle.Trim();
+            page.NavigationIcon = string.IsNullOrWhiteSpace(input.NavigationIcon) ? null : input.NavigationIcon.Trim();
+            page.NavigationTarget = input.NavigationTarget == 1 ? 1 : 0;
             page.IsActive = input.IsActive;
             page.Sort = input.Sort;
             page.IsDelete = false;
@@ -101,32 +144,58 @@ namespace MySite.Web.Controllers
                 }
                 page.IsHome = true;
             }
-            else page.IsHome = false;
+            else
+            {
+                page.IsHome = false;
+            }
 
             if (id > 0) _pageRepository.Update(page);
             else _pageRepository.Add(page);
 
             result.Code = (int)ResultCode.Success;
-            result.Message = "保存成功";
+            result.Message = "保存成功，页面层级与导航配置已同步";
             return Json(result);
         }
 
         [HttpGet]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.View)]
-        public JsonResult GetList(int pageIndex = 1, int pageSize = 10)
+        public JsonResult GetList()
         {
             var keywords = HttpContext.Request.Query["keywords"].ToString().Trim();
-            var where = LambdaHelper.True<WebsitePage>().And(p => !p.IsDelete);
-            if (!string.IsNullOrWhiteSpace(keywords)) where = where.And(p => p.PageName.Contains(keywords) || p.PagePath.Contains(keywords));
+            var pages = GetManagedPages();
 
-            pageIndex = pageIndex <= 0 ? 1 : pageIndex;
-            pageSize = pageSize <= 0 ? 10 : pageSize;
-            var query = _pageRepository.GetList(where, p => p.Sort, pageIndex, pageSize, true);
-            var data = query.List.Select(p => new
+            if (!string.IsNullOrWhiteSpace(keywords))
             {
-                p.Id, p.PageName, p.PagePath, p.PageTitle, p.Status, p.IsHome, p.IsActive, p.Sort, p.CreationTime, p.PublishTime
-            }).ToList();
-            return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Message = "成功", Count = query.Count, Data = data });
+                var matchedIds = pages
+                    .Where(p => (p.PageName ?? string.Empty).Contains(keywords, StringComparison.OrdinalIgnoreCase)
+                                || (p.PagePath ?? string.Empty).Contains(keywords, StringComparison.OrdinalIgnoreCase)
+                                || (p.NavigationTitle ?? string.Empty).Contains(keywords, StringComparison.OrdinalIgnoreCase))
+                    .Select(p => p.Id)
+                    .ToHashSet();
+
+                var byId = pages.ToDictionary(p => p.Id);
+                foreach (var id in matchedIds.ToList())
+                {
+                    var current = byId.TryGetValue(id, out var item) ? item : null;
+                    var guard = 0;
+                    while (current != null && current.ParentId > 0 && guard++ < 100)
+                    {
+                        if (!byId.TryGetValue(current.ParentId, out var parent)) break;
+                        matchedIds.Add(parent.Id);
+                        current = parent;
+                    }
+                }
+                pages = pages.Where(p => matchedIds.Contains(p.Id)).ToList();
+            }
+
+            var data = FlattenPages(pages);
+            return Json(new ResultModel<object>
+            {
+                Code = (int)ResultCode.Success,
+                Message = "成功",
+                Count = data.Count,
+                Data = data
+            });
         }
 
         [HttpPost]
@@ -136,11 +205,22 @@ namespace MySite.Web.Controllers
             var deleteIds = ResolveIds(id, ids, isAll);
             if (!deleteIds.Any()) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择要删除的数据" });
 
+            var allPages = GetManagedPages();
+            foreach (var deleteId in deleteIds)
+            {
+                var page = allPages.FirstOrDefault(p => p.Id == deleteId);
+                if (page == null) continue;
+                if (page.IsHome) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "首页不能直接删除，请先设置其他页面为首页" });
+                if (allPages.Any(p => p.ParentId == deleteId && !deleteIds.Contains(p.Id)))
+                {
+                    return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = $"页面“{page.PageName}”下面还有子页面，请先移动或删除子页面" });
+                }
+            }
+
             foreach (var deleteId in deleteIds)
             {
                 var page = _pageRepository.GetOne(deleteId);
-                if (page == null || page.IsDelete) continue;
-                if (page.IsHome) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "首页不能直接删除，请先设置其他页面为首页" });
+                if (page == null || page.IsDelete || IsGlobalPage(page)) continue;
                 page.IsDelete = true;
                 page.UpdateTime = DateTime.Now;
                 page.UpdateBy = LoginUser.UserName;
@@ -154,7 +234,7 @@ namespace MySite.Web.Controllers
         public IActionResult SetHome(int id)
         {
             var page = _pageRepository.GetOne(id);
-            if (page == null || page.IsDelete) return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
+            if (page == null || page.IsDelete || IsGlobalPage(page)) return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
             if (!page.IsActive) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "禁用页面不能设为首页" });
 
             var oldHomes = _pageRepository.GetList(p => p.IsHome && p.Id != id && !p.IsDelete);
@@ -166,6 +246,7 @@ namespace MySite.Web.Controllers
                 _pageRepository.Update(oldHome);
             }
             page.IsHome = true;
+            page.ParentId = 0;
             page.UpdateTime = DateTime.Now;
             page.UpdateBy = LoginUser.UserName;
             _pageRepository.Update(page);
@@ -312,18 +393,122 @@ namespace MySite.Web.Controllers
             return View();
         }
 
-        private PageModel ToModel(WebsitePage page)
+        private List<WebsitePage> GetManagedPages()
+        {
+            return _pageRepository
+                .GetList(p => !p.IsDelete, p => p.Sort, true)
+                .Where(p => !IsGlobalPage(p))
+                .OrderBy(p => p.Sort)
+                .ThenBy(p => p.Id)
+                .ToList();
+        }
+
+        private static bool IsGlobalPage(WebsitePage page)
+        {
+            if (page == null) return false;
+            return (!string.IsNullOrWhiteSpace(page.PageCode) && page.PageCode.StartsWith("__GLOBAL_", StringComparison.OrdinalIgnoreCase))
+                   || (!string.IsNullOrWhiteSpace(page.PagePath) && page.PagePath.StartsWith("/__global/", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static HashSet<int> GetDescendantIds(int pageId, List<WebsitePage> pages)
+        {
+            var result = new HashSet<int>();
+            var queue = new Queue<int>();
+            queue.Enqueue(pageId);
+            while (queue.Count > 0)
+            {
+                var current = queue.Dequeue();
+                foreach (var child in pages.Where(p => p.ParentId == current))
+                {
+                    if (result.Add(child.Id)) queue.Enqueue(child.Id);
+                }
+            }
+            return result;
+        }
+
+        private static List<object> FlattenPages(List<WebsitePage> pages)
+        {
+            var result = new List<object>();
+            var visited = new HashSet<int>();
+            var ids = pages.Select(p => p.Id).ToHashSet();
+            var groups = pages
+                .GroupBy(p => ids.Contains(p.ParentId) ? p.ParentId : 0)
+                .ToDictionary(g => g.Key, g => g.OrderBy(p => p.Sort).ThenBy(p => p.Id).ToList());
+
+            void Walk(int parentId, int level)
+            {
+                if (!groups.TryGetValue(parentId, out var children)) return;
+                foreach (var page in children)
+                {
+                    if (!visited.Add(page.Id)) continue;
+                    result.Add(new
+                    {
+                        page.Id,
+                        page.ParentId,
+                        Level = level,
+                        page.PageName,
+                        page.PagePath,
+                        page.PageTitle,
+                        NavigationTitle = string.IsNullOrWhiteSpace(page.NavigationTitle) ? page.PageName : page.NavigationTitle,
+                        page.NavigationIcon,
+                        page.NavigationTarget,
+                        page.ShowInNavigation,
+                        page.Status,
+                        page.IsHome,
+                        page.IsActive,
+                        page.Sort,
+                        page.CreationTime,
+                        page.PublishTime,
+                        HasChildren = pages.Any(p => p.ParentId == page.Id)
+                    });
+                    Walk(page.Id, level + 1);
+                }
+            }
+
+            Walk(0, 0);
+            foreach (var page in pages.Where(p => !visited.Contains(p.Id)).OrderBy(p => p.Sort).ThenBy(p => p.Id))
+            {
+                result.Add(new
+                {
+                    page.Id,
+                    page.ParentId,
+                    Level = 0,
+                    page.PageName,
+                    page.PagePath,
+                    page.PageTitle,
+                    NavigationTitle = string.IsNullOrWhiteSpace(page.NavigationTitle) ? page.PageName : page.NavigationTitle,
+                    page.NavigationIcon,
+                    page.NavigationTarget,
+                    page.ShowInNavigation,
+                    page.Status,
+                    page.IsHome,
+                    page.IsActive,
+                    page.Sort,
+                    page.CreationTime,
+                    page.PublishTime,
+                    HasChildren = false
+                });
+            }
+            return result;
+        }
+
+        private static PageModel ToModel(WebsitePage page)
         {
             return new PageModel
             {
                 Id = page.Id,
                 SiteId = page.SiteId,
+                ParentId = page.ParentId,
                 PageName = page.PageName,
                 PageCode = page.PageCode,
                 PagePath = page.PagePath,
                 PageTitle = page.PageTitle,
                 SeoKeywords = page.SeoKeywords,
                 SeoDescription = page.SeoDescription,
+                ShowInNavigation = page.ShowInNavigation,
+                NavigationTitle = page.NavigationTitle,
+                NavigationIcon = page.NavigationIcon,
+                NavigationTarget = page.NavigationTarget,
                 IsActive = page.IsActive,
                 IsHome = page.IsHome,
                 Sort = page.Sort,
