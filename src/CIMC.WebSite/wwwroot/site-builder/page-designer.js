@@ -1,12 +1,20 @@
 (function (window, document, $) {
     'use strict';
-    if (!$ || !window.pageDesignerConfig || !window.SiteBuilder) return;
+
+    var libraryElement = document.getElementById('componentLibrary');
+    if (!$ || !window.pageDesignerConfig || !window.SiteBuilder) {
+        if (libraryElement) {
+            libraryElement.innerHTML = '<div class="lib-tip" style="color:#d4380d">装修器基础脚本加载失败，请刷新页面并检查浏览器控制台。</div>';
+        }
+        return;
+    }
 
     var SB = window.SiteBuilder;
     var config = window.pageDesignerConfig;
     var store = new SB.Store(config.pageName || '');
     var layer = null;
     var renderPending = false;
+    var initialized = false;
 
     function ok(res) { var code = res ? Number(res.code) : -1; return code === 200 || code === 0; }
     function message(text, icon) {
@@ -16,20 +24,39 @@
     function groupName(key) { return { layout:'布局组件', basic:'基础组件', data:'内容组件', global:'全局组件' }[key] || key; }
 
     function renderLibrary() {
+        if (!SB.Registry || typeof SB.Registry.groups !== 'function') {
+            $('#componentLibrary').html('<div class="lib-tip" style="color:#d4380d">组件注册器加载失败，请检查 registry.js。</div>');
+            return;
+        }
+
         var groups = SB.Registry.groups(), order = ['layout','basic','data','global'];
         var html = '<div class="lib-tip">新版装修器使用树形结构。先添加区段/容器/网格/列，再把内容组件放入布局；Header 与 Footer 也使用同一套组件模型。</div>';
+        var componentCount = 0;
+
         order.forEach(function (key) {
             var items = groups[key] || [];
             if (!items.length) return;
+            componentCount += items.length;
             html += '<div class="lib-title">' + groupName(key) + '</div>';
             items.forEach(function (def) {
                 html += '<button type="button" class="lib-item" data-type="' + SB.DesignerRenderer.escapeHtml(def.type) + '"><i class="layui-icon ' + (def.icon || 'layui-icon-component') + '"></i><span>' + SB.DesignerRenderer.escapeHtml(def.name) + '</span></button>';
             });
         });
-        html += '<div class="lib-title">组合预设</div>';
-        SB.Presets.all().forEach(function (preset) {
-            html += '<button type="button" class="lib-item lib-preset" data-preset="' + preset.key + '"><i class="layui-icon layui-icon-template"></i><span>' + SB.DesignerRenderer.escapeHtml(preset.name) + '</span></button>';
-        });
+
+        if (SB.Presets && typeof SB.Presets.all === 'function') {
+            var presets = SB.Presets.all();
+            if (presets.length) {
+                html += '<div class="lib-title">组合预设</div>';
+                presets.forEach(function (preset) {
+                    html += '<button type="button" class="lib-item lib-preset" data-preset="' + preset.key + '"><i class="layui-icon layui-icon-template"></i><span>' + SB.DesignerRenderer.escapeHtml(preset.name) + '</span></button>';
+                });
+            }
+        }
+
+        if (!componentCount) {
+            html += '<div class="lib-tip" style="margin-top:12px;color:#d4380d">没有加载到任何组件定义，请检查 default-components.js 是否成功加载。</div>';
+        }
+
         $('#componentLibrary').html(html);
     }
 
@@ -56,10 +83,12 @@
     }
 
     function setupSortable() {
+        if (!window.Sortable || typeof window.Sortable.create !== 'function') return;
+
         $('.sb-children').each(function () {
             var container = this;
             if (container._siteBuilderSortable) return;
-            container._siteBuilderSortable = Sortable.create(container, {
+            container._siteBuilderSortable = window.Sortable.create(container, {
                 group: { name: 'site-builder-tree', pull: true, put: true },
                 animation: 120,
                 handle: '.sb-drag',
@@ -139,6 +168,24 @@
         });
     }
 
-    if (window.layui) layui.use(['layer','form'], function () { layer=layui.layer; bindEvents(); renderLibrary(); store.subscribe(render); render(); load(); });
-    else { bindEvents(); renderLibrary(); store.subscribe(render); render(); load(); }
+    function initDesigner() {
+        if (initialized) return;
+        initialized = true;
+        bindEvents();
+        renderLibrary();
+        store.subscribe(render);
+        render();
+        load();
+    }
+
+    // 组件库和画布必须立即初始化，不再依赖 layui.use 回调。
+    initDesigner();
+
+    // Layui 仅负责增强提示层和表单渲染；即使 Layui 模块加载失败，也不影响左侧组件库。
+    if (window.layui && typeof layui.use === 'function') {
+        layui.use(['layer','form'], function () {
+            layer = layui.layer || null;
+            if (layui.form) layui.form.render();
+        });
+    }
 })(window, document, window.jQuery);
