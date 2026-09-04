@@ -32,20 +32,24 @@ namespace MySite.Web.Models
         [Display(Name = "SEO描述")]
         public string SeoDescription { get; set; }
 
-        // 页面与菜单已解耦；以下字段仅保留到页面管理界面完成下一步清理，不参与新版 Builder 渲染。
-        [Display(Name = "显示在导航")]
+        [Display(Name = "显示在网站导航")]
         public bool ShowInNavigation { get; set; } = true;
+
         [Display(Name = "导航标题")]
         public string NavigationTitle { get; set; }
+
         [Display(Name = "导航图标")]
         public string NavigationIcon { get; set; }
+
         [Display(Name = "打开方式")]
         public int NavigationTarget { get; set; }
 
         [Display(Name = "是否启用")]
         public bool IsActive { get; set; } = true;
+
         [Display(Name = "是否首页")]
         public bool IsHome { get; set; }
+
         [Display(Name = "排序")]
         public int Sort { get; set; }
 
@@ -103,7 +107,6 @@ namespace MySite.Web.Models
         public List<NavigationModel> Navigation { get; set; } = new List<NavigationModel>();
     }
 
-    // 仅用于尚未删除的旧 Razor 文件通过编译；新版控制器、保存、预览和发布均不再读取该结构。
     [Obsolete("旧版平铺组件模型已废弃，请使用 BuilderNodeModel。")]
     public class ComponentModel
     {
