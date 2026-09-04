@@ -303,13 +303,13 @@ namespace MySite.Web
                 endpoints.MapFallbackToController("DynamicPage", "Home");
             });
 
-            #region 数据库迁移与基础初始化
+            #region 数据库迁移与基础数据初始化
             var serviceScopeFactory = app.ApplicationServices.GetRequiredService<IServiceScopeFactory>();
             using (var serviceScope = serviceScopeFactory.CreateScope())
             using (var dbContext = serviceScope.ServiceProvider.GetRequiredService<AppDbContext>())
             {
                 dbContext.Database.Migrate();
-                new SiteBuilderUpgradeInitializer().Apply(dbContext);
+                new DataInitializer().Create(dbContext);
             }
             #endregion
         }
