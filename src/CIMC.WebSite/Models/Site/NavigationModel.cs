@@ -1,32 +1,22 @@
-using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace MySite.Web.Models
 {
+    /// <summary>
+    /// WebsitePage 导航投影。导航数据不再使用独立 WebsiteNavigation 表。
+    /// </summary>
     public class NavigationModel
     {
         public int Id { get; set; }
-
         public int Pid { get; set; }
-
-        [Display(Name = "标题")]
-        [Required(ErrorMessage = "请输入标题")]
         public string Title { get; set; }
-
-        [Display(Name = "路径")]
         public string Path { get; set; }
-
-        [Display(Name = "图标")]
         public string Icon { get; set; }
-
-        [Display(Name = "跳转方式")]
-        public int Target { get; set; } = 0;
-
-        [Display(Name = "排序")]
-        public int Sort { get; set; } = 0;
-
-        [Display(Name = "是否显示")]
+        public int Target { get; set; }
+        public int Sort { get; set; }
         public bool IsShow { get; set; } = true;
-
         public bool IsActive { get; set; } = true;
+        public bool IsCurrent { get; set; }
+        public List<NavigationModel> Children { get; set; } = new List<NavigationModel>();
     }
 }
