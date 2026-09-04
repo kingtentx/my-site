@@ -1,161 +1,61 @@
 @{
     Layout = null;
-    var requestedParentId = 0;
-    int.TryParse(Context.Request.Query["parentId"].ToString(), out requestedParentId);
 }
 @model MySite.Web.Models.PageModel
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    <title>页面与导航编辑</title>
-    <meta name="renderer" content="webkit">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>页面编辑</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
     <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
-    <style>.form-tip{color:#999;font-size:12px;line-height:1.8}.section-title{font-weight:600;border-left:3px solid #1e9fff;padding-left:10px;margin:18px 0 14px}</style>
+    <style>.form-tip{color:#999;font-size:12px;line-height:1.8}.section-title{font-weight:600;border-left:3px solid #1e9fff;padding-left:10px;margin:18px 0 14px}.notice{padding:10px 12px;background:#f8fafc;border:1px solid #e2e8f0;color:#475569;border-radius:5px;margin-bottom:15px}</style>
 </head>
 <body>
 <div class="layui-fluid">
     <div class="layui-card">
-        <div class="layui-card-header">@(Model.Id > 0 ? "修改页面" : (requestedParentId > 0 ? "添加二级子导航" : "添加一级页面"))</div>
+        <div class="layui-card-header">@(Model.Id > 0 ? "修改页面" : "新增页面")</div>
         <div class="layui-card-body" style="padding:15px;">
+            <div class="notice">页面只负责 URL、SEO 和页面内容；站点菜单已独立到【菜单管理】，Header/Footer 已独立到【全局区域设计】。</div>
             <form class="layui-form" lay-filter="page-form">
                 <div class="section-title">页面信息</div>
                 <div class="layui-form-item">
                     <label class="layui-form-label">页面名称</label>
-                    <div class="layui-input-inline" style="width:300px;">
-                        <input type="text" name="PageName" lay-verify="required" placeholder="如：首页" class="layui-input" value="@Html.Raw(Model.PageName)">
-                    </div>
+                    <div class="layui-input-inline" style="width:300px;"><input type="text" name="PageName" lay-verify="required" placeholder="如：首页" class="layui-input" value="@Html.Raw(Model.PageName)"></div>
                     <label class="layui-form-label">页面编码</label>
-                    <div class="layui-input-inline" style="width:220px;">
-                        <input type="text" name="PageCode" placeholder="如：home" class="layui-input" value="@Html.Raw(Model.PageCode)">
-                    </div>
+                    <div class="layui-input-inline" style="width:220px;"><input type="text" name="PageCode" placeholder="如：home" class="layui-input" value="@Html.Raw(Model.PageCode)"></div>
                 </div>
                 <div class="layui-form-item">
                     <label class="layui-form-label">页面路径</label>
-                    <div class="layui-input-block">
-                        <input type="text" name="PagePath" lay-verify="required" placeholder="/、/about 或 /products/service" class="layui-input" value="@Html.Raw(Model.PagePath)">
-                        <div class="form-tip">路径必须唯一。二级导航也对应一个独立页面，可以单独装修和发布。</div>
-                    </div>
+                    <div class="layui-input-block"><input type="text" name="PagePath" lay-verify="required" placeholder="/、/about、/products" class="layui-input" value="@Html.Raw(Model.PagePath)"><div class="form-tip">路径必须唯一；页面与菜单项不再自动同步。</div></div>
                 </div>
-                <div class="layui-form-item">
-                    <label class="layui-form-label">浏览器标题</label>
-                    <div class="layui-input-block"><input type="text" name="PageTitle" placeholder="SEO 浏览器标题" class="layui-input" value="@Html.Raw(Model.PageTitle)"></div>
-                </div>
-                <div class="layui-form-item">
-                    <label class="layui-form-label">SEO关键词</label>
-                    <div class="layui-input-block"><input type="text" name="SeoKeywords" placeholder="多个关键词用逗号分隔" class="layui-input" value="@Html.Raw(Model.SeoKeywords)"></div>
-                </div>
-                <div class="layui-form-item layui-form-text">
-                    <label class="layui-form-label">SEO描述</label>
-                    <div class="layui-input-block"><textarea name="SeoDescription" class="layui-textarea">@Html.Raw(Model.SeoDescription)</textarea></div>
-                </div>
+                <div class="layui-form-item"><label class="layui-form-label">浏览器标题</label><div class="layui-input-block"><input type="text" name="PageTitle" placeholder="SEO 浏览器标题" class="layui-input" value="@Html.Raw(Model.PageTitle)"></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">SEO关键词</label><div class="layui-input-block"><input type="text" name="SeoKeywords" placeholder="多个关键词用逗号分隔" class="layui-input" value="@Html.Raw(Model.SeoKeywords)"></div></div>
+                <div class="layui-form-item layui-form-text"><label class="layui-form-label">SEO描述</label><div class="layui-input-block"><textarea name="SeoDescription" class="layui-textarea">@Html.Raw(Model.SeoDescription)</textarea></div></div>
 
-                <div class="section-title">导航设置</div>
+                <div class="section-title">状态</div>
                 <div class="layui-form-item">
-                    <label class="layui-form-label">父级页面</label>
-                    <div class="layui-input-inline" style="width:300px;">
-                        <select name="ParentId" id="selParent"><option value="0">-- 一级页面/导航 --</option></select>
-                    </div>
-                    <div class="layui-form-mid layui-word-aux">选择一级页面后，本页面作为二级子导航显示。</div>
+                    <label class="layui-form-label">排序</label><div class="layui-input-inline" style="width:120px;"><input type="number" name="Sort" class="layui-input" value="@Model.Sort"></div>
+                    <label class="layui-form-label">是否首页</label><div class="layui-input-inline" style="width:160px;"><input type="checkbox" name="IsHome" value="true" lay-skin="switch" lay-text="是|否" @Html.Raw(Model.IsHome ? " checked" : "")></div>
+                    <label class="layui-form-label">是否启用</label><div class="layui-input-inline" style="width:220px;"><input type="radio" name="IsActive" value="true" title="启用" @Html.Raw(Model.IsActive ? " checked" : "")><input type="radio" name="IsActive" value="false" title="禁用" @Html.Raw(!Model.IsActive ? " checked" : "")></div>
                 </div>
-                <div class="layui-form-item">
-                    <label class="layui-form-label">导航标题</label>
-                    <div class="layui-input-inline" style="width:300px;"><input type="text" name="NavigationTitle" id="txtNavigationTitle" placeholder="为空时使用页面名称" class="layui-input"></div>
-                    <label class="layui-form-label">导航图标</label>
-                    <div class="layui-input-inline" style="width:220px;"><input type="text" name="NavigationIcon" id="txtNavigationIcon" placeholder="可选图标 class" class="layui-input"></div>
-                </div>
-                <div class="layui-form-item">
-                    <label class="layui-form-label">导航显示</label>
-                    <div class="layui-input-inline" style="width:180px;"><input type="checkbox" name="ShowInNavigation" id="chkShowNavigation" value="true" lay-skin="switch" lay-text="显示|隐藏" checked></div>
-                    <label class="layui-form-label">打开方式</label>
-                    <div class="layui-input-inline" style="width:200px;">
-                        <select name="NavigationTarget" id="selNavigationTarget"><option value="0">当前窗口</option><option value="1">新窗口</option></select>
-                    </div>
-                </div>
-
-                <div class="section-title">状态与排序</div>
-                <div class="layui-form-item">
-                    <label class="layui-form-label">排序</label>
-                    <div class="layui-input-inline" style="width:120px;"><input type="number" name="Sort" class="layui-input" value="@Model.Sort"></div>
-                    <label class="layui-form-label">是否首页</label>
-                    <div class="layui-input-inline" style="width:160px;"><input type="checkbox" name="IsHome" value="true" lay-skin="switch" lay-text="是|否" @Html.Raw(Model.IsHome ? " checked" : "")></div>
-                    <label class="layui-form-label">是否启用</label>
-                    <div class="layui-input-inline" style="width:220px;">
-                        <input type="radio" name="IsActive" value="true" title="启用" @Html.Raw(Model.IsActive ? " checked" : "")>
-                        <input type="radio" name="IsActive" value="false" title="禁用" @Html.Raw(!Model.IsActive ? " checked" : "")>
-                    </div>
-                </div>
-                <div class="layui-form-item layui-layout-admin">
-                    <div class="layui-input-block">
-                        <div class="layui-footer" style="left:0;z-index:20000">
-                            <button class="layui-btn" lay-submit lay-filter="form-page">保存页面</button>
-                            <a href="/page/index" class="layui-btn layui-btn-primary">返回列表</a>
-                        </div>
-                    </div>
-                </div>
+                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="form-page">保存页面</button><a href="/page/index" class="layui-btn layui-btn-primary">返回列表</a></div></div></div>
             </form>
         </div>
     </div>
 </div>
 <script src="~/resource/layuiadmin/layui/layui.js"></script>
 <script>
-layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index: 'lib/index' }).use(['index','form'], function () {
-    var $ = layui.$, form = layui.form, layer = layui.layer;
-    var pageId = @Model.Id, requestedParentId = @requestedParentId;
-
-    function loadNavigationSettings() {
-        $.get('/PageEnhancement/GetNavigationSettings', { id: pageId, parentId: requestedParentId }, function (res) {
-            if (res.code !== 200 || !res.data) return;
-            var data = res.data, html = '<option value="0">-- 一级页面/导航 --</option>';
-            (data.parents || []).forEach(function (item) {
-                html += '<option value="' + item.id + '"' + (Number(item.id) === Number(data.parentId) ? ' selected' : '') + '>' + item.pageName + '（' + item.pagePath + '）</option>';
-            });
-            $('#selParent').html(html);
-            $('#txtNavigationTitle').val(data.navigationTitle || '');
-            $('#txtNavigationIcon').val(data.navigationIcon || '');
-            $('#selNavigationTarget').val(String(data.navigationTarget || 0));
-            $('#chkShowNavigation').prop('checked', data.showInNavigation !== false);
-            form.render();
-        }, 'json');
-    }
-
+layui.config({ base: '@Url.Content("~")/resource/layuiadmin/' }).extend({ index:'lib/index' }).use(['index','form'], function () {
+    var $=layui.$, form=layui.form, layer=layui.layer, pageId=@Model.Id;
     form.on('submit(form-page)', function (data) {
-        var loading = layer.load(1, { shade: 0.25 });
-        var baseData = $.extend({}, data.field);
-        baseData.IsHome = $('input[name="IsHome"]').prop('checked');
-        baseData.IsActive = $('input[name="IsActive"]:checked').val() === 'true';
-        $.ajax({
-            type: 'post', url: '/page/edit?id=' + pageId, data: baseData, dataType: 'json',
-            success: function (res) {
-                if (res.code !== 200) { layer.close(loading); layer.msg(res.message, { icon: 5 }); return; }
-                $.ajax({
-                    type: 'post', url: '/PageEnhancement/SaveNavigationSettings', dataType: 'json',
-                    data: {
-                        id: pageId,
-                        pagePath: baseData.PagePath,
-                        parentId: $('#selParent').val() || 0,
-                        showInNavigation: $('#chkShowNavigation').prop('checked'),
-                        navigationTitle: $('#txtNavigationTitle').val(),
-                        navigationIcon: $('#txtNavigationIcon').val(),
-                        navigationTarget: $('#selNavigationTarget').val() || 0
-                    },
-                    success: function (navRes) {
-                        layer.close(loading);
-                        if (navRes.code === 200) layer.alert(navRes.message, function () { window.location.href = '/page/index'; });
-                        else layer.msg(navRes.message, { icon: 5 });
-                    },
-                    error: function () { layer.close(loading); layer.msg('导航设置保存失败', { icon: 5 }); }
-                });
-            },
-            error: function () { layer.close(loading); layer.msg('页面保存失败', { icon: 5 }); }
-        });
+        var loading=layer.load(1,{shade:.25}), payload=$.extend({},data.field);
+        payload.IsHome=$('input[name="IsHome"]').prop('checked');
+        payload.IsActive=$('input[name="IsActive"]:checked').val()==='true';
+        $.ajax({type:'post',url:'/page/edit?id='+pageId,data:payload,dataType:'json',success:function(res){layer.close(loading);if(res.code===200)layer.alert(res.message,function(){location.href='/page/index';});else layer.msg(res.message||'保存失败',{icon:5});},error:function(){layer.close(loading);layer.msg('页面保存失败',{icon:5});}});
         return false;
     });
-
-    loadNavigationSettings();
 });
 </script>
 </body>
