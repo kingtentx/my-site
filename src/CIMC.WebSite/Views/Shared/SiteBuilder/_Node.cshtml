@@ -32,7 +32,8 @@
             {"marginTop","margin-top"},{"marginRight","margin-right"},{"marginBottom","margin-bottom"},{"marginLeft","margin-left"},
             {"backgroundColor","background-color"},{"color","color"},{"maxWidth","max-width"},{"width","width"},{"minHeight","min-height"},
             {"gap","gap"},{"borderRadius","border-radius"},{"textAlign","text-align"},{"borderTopWidth","border-top-width"},
-            {"borderTopStyle","border-top-style"},{"borderTopColor","border-top-color"}
+            {"borderTopStyle","border-top-style"},{"borderTopColor","border-top-color"},{"position","position"},{"top","top"},
+            {"zIndex","z-index"},{"boxShadow","box-shadow"}
         };
         return string.Join(";", map.Where(pair => style.ContainsKey(pair.Key) && style[pair.Key] != null && !string.IsNullOrWhiteSpace(style[pair.Key].ToString())).Select(pair => pair.Value + ":" + style[pair.Key]));
     }
@@ -101,8 +102,12 @@ else if (node.Type == "icon")
 }
 else if (node.Type == "video")
 {
-    var src = SafeUrl(Prop("src")); var poster = SafeUrl(Prop("poster"));
-    if (!string.IsNullOrWhiteSpace(src)) { <video class="sb-public-video" style="@css" src="@src" poster="@poster" controls="@BoolProp("controls",true)"></video> }
+    var src = SafeUrl(Prop("src")); var poster = SafeUrl(Prop("poster")); var controls = BoolProp("controls", true);
+    if (!string.IsNullOrWhiteSpace(src))
+    {
+        if (controls) { <video class="sb-public-video" style="@css" src="@src" poster="@poster" controls></video> }
+        else { <video class="sb-public-video" style="@css" src="@src" poster="@poster"></video> }
+    }
 }
 else if (node.Type == "divider")
 {
@@ -120,20 +125,9 @@ else if (node.Type == "logo")
 else if (node.Type == "navigation")
 {
     var nav = Model.Page?.Navigation ?? new List<MySite.Web.Models.NavigationModel>();
-    var roots = nav.Where(item => item.Pid <= 0 && item.IsActive && item.IsShow).OrderBy(item => item.Sort).ToList();
     var vertical = Prop("direction", "horizontal") == "vertical";
     <nav class="sb-public-nav @(vertical ? "is-vertical" : "is-horizontal")" style="@css">
-        @foreach (var item in roots)
-        {
-            var sub = nav.Where(child => child.Pid == item.Id && child.IsActive && child.IsShow).OrderBy(child => child.Sort).ToList();
-            <div class="sb-public-nav-item">
-                <a href="@SafeUrl(item.Path ?? "#")" target="@(item.Target == 1 ? "_blank" : "_self")">@item.Title</a>
-                @if (sub.Count > 0)
-                {
-                    <div class="sb-public-subnav">@foreach (var child in sub) { <a href="@SafeUrl(child.Path ?? "#")" target="@(child.Target == 1 ? "_blank" : "_self")">@child.Title</a> }</div>
-                }
-            </div>
-        }
+        @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_NavigationItems.cshtml", nav)
     </nav>
 }
 else if (node.Type == "search")
