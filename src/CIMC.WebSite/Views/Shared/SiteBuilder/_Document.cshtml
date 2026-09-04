@@ -1,0 +1,9 @@
+@model MySite.Web.Models.PageRenderModel
+@if (Model?.Document?.Nodes != null)
+{
+    foreach (var node in Model.Document.Nodes)
+    {
+        if (node == null || !node.Visible) { continue; }
+        @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = node, Page = Model })
+    }
+}
