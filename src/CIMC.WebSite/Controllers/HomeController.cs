@@ -12,13 +12,9 @@ namespace MySite.Web.Controllers
 {
     public class HomeController : Controller
     {
-        public const string GlobalHeaderCode = "__GLOBAL_HEADER__";
-        public const string GlobalFooterCode = "__GLOBAL_FOOTER__";
-
         private readonly IRepository<WebsitePage> _pageRepository;
         private readonly IRepository<WebsitePageVersion> _versionRepository;
         private readonly IRepository<WebsiteSiteConfig> _siteConfigRepository;
-        private readonly IRepository<WebsiteNavigation> _navigationRepository;
         private readonly IRepository<Article> _articleRepository;
         private readonly IRepository<ContentProduct> _productRepository;
         private readonly IRepository<ContentProductCategory> _productCategoryRepository;
@@ -28,7 +24,6 @@ namespace MySite.Web.Controllers
             IRepository<WebsitePage> pageRepository,
             IRepository<WebsitePageVersion> versionRepository,
             IRepository<WebsiteSiteConfig> siteConfigRepository,
-            IRepository<WebsiteNavigation> navigationRepository,
             IRepository<Article> articleRepository,
             IRepository<ContentProduct> productRepository,
             IRepository<ContentProductCategory> productCategoryRepository,
@@ -37,7 +32,6 @@ namespace MySite.Web.Controllers
             _pageRepository = pageRepository;
             _versionRepository = versionRepository;
             _siteConfigRepository = siteConfigRepository;
-            _navigationRepository = navigationRepository;
             _articleRepository = articleRepository;
             _productRepository = productRepository;
             _productCategoryRepository = productCategoryRepository;
@@ -69,7 +63,10 @@ namespace MySite.Web.Controllers
                     ? new List<ContentProduct>()
                     : _productRepository.GetList(p => !p.IsDelete && p.IsActive && p.CategoryId == categoryEntity.Id, p => p.Sort, true);
             }
-            else products = _productRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true);
+            else
+            {
+                products = _productRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true);
+            }
 
             ViewBag.ProductList = products.Take(20).ToList();
             ViewBag.Categories = _productCategoryRepository.GetList(c => !c.IsDelete && c.IsActive && c.Pid == 0, c => c.Sort, true);
@@ -79,9 +76,10 @@ namespace MySite.Web.Controllers
 
         public IActionResult ProductDetail(int id)
         {
+            if (!SiteEnabled()) return View("NotFound");
             var product = _productRepository.GetOne(id);
             if (product == null || product.IsDelete || !product.IsActive) return NotFound();
-            LoadCommonViewBag();
+            LoadCommonViewBag(Request.Path.Value);
 
             if (!string.IsNullOrEmpty(product.ImageList))
             {
@@ -107,9 +105,10 @@ namespace MySite.Web.Controllers
 
         public IActionResult Article(int id)
         {
+            if (!SiteEnabled()) return View("NotFound");
             var article = _articleRepository.GetOne(id);
             if (article == null || article.IsDelete || !article.IsActive) return NotFound();
-            LoadCommonViewBag();
+            LoadCommonViewBag(Request.Path.Value);
             article.ViewCount = article.ViewCount + 1;
             _articleRepository.Update(article);
             return View(article);
@@ -119,7 +118,7 @@ namespace MySite.Web.Controllers
         {
             var article = _articleRepository.GetOne(id);
             if (article == null || article.IsDelete) return NotFound();
-            LoadCommonViewBag();
+            LoadCommonViewBag(Request.Path.Value);
             return View("Article", article);
         }
 
@@ -137,16 +136,28 @@ namespace MySite.Web.Controllers
             return model == null ? View("NotFound") : View("Index", model);
         }
 
+        /// <summary>
+        /// 支持页面管理中新建的任意自定义路径，例如 /about/company。
+        /// </summary>
+        public IActionResult DynamicPage(string path)
+        {
+            var normalized = NormalizePath(path);
+            var model = BuildPage(p => p.PagePath == normalized && !p.IsDelete);
+            return model == null ? View("NotFound") : View("Index", model);
+        }
+
         private PageRenderModel BuildPage(Expression<Func<WebsitePage, bool>> predicate)
         {
+            var siteConfig = _siteConfigRepository.GetOne(1);
+            if (siteConfig != null && (!siteConfig.IsActive || siteConfig.IsDelete)) return null;
+
             var page = _pageRepository.GetOne(predicate);
-            if (page == null || page.Status != 1 || !page.IsActive) return null;
+            if (page == null || page.Status != 1 || !page.IsActive || IsGlobalPage(page)) return null;
 
             var document = LoadPublishedDocument(page);
             if (document == null) return null;
 
-            var siteConfig = _siteConfigRepository.GetOne(1);
-            var navigations = _navigationRepository.GetList(n => !n.IsDelete && n.IsActive && n.IsShow, n => n.Sort, true);
+            var navigation = BuildNavigationTree(page.PagePath);
             var model = new PageRenderModel
             {
                 PageId = page.Id,
@@ -156,15 +167,15 @@ namespace MySite.Web.Controllers
                 SeoKeywords = page.SeoKeywords,
                 SeoDescription = page.SeoDescription,
                 Document = document,
-                HeaderDocument = LoadGlobalDocument(GlobalHeaderCode, CreateDefaultHeaderDocument()),
-                FooterDocument = LoadGlobalDocument(GlobalFooterCode, CreateDefaultFooterDocument()),
+                HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode, BuilderDocumentFactory.CreateDefaultHeader()),
+                FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode, BuilderDocumentFactory.CreateDefaultFooter()),
                 SiteConfig = ToSiteConfigModel(siteConfig),
-                Navigation = navigations.Select(ToNavigationModel).ToList()
+                Navigation = navigation
             };
 
-            ViewData["Title"] = page.PageTitle ?? (siteConfig == null ? null : siteConfig.BrowserTitle) ?? (siteConfig == null ? null : siteConfig.SiteName) ?? "企业官网";
-            ViewData["Keywords"] = page.SeoKeywords ?? (siteConfig == null ? null : siteConfig.Keywords);
-            ViewData["Description"] = page.SeoDescription ?? (siteConfig == null ? null : siteConfig.Description);
+            ViewData["Title"] = page.PageTitle ?? siteConfig?.BrowserTitle ?? siteConfig?.SiteName ?? "企业官网";
+            ViewData["Keywords"] = page.SeoKeywords ?? siteConfig?.Keywords;
+            ViewData["Description"] = page.SeoDescription ?? siteConfig?.Description;
             ViewBag.SiteConfig = model.SiteConfig;
             ViewBag.NavigationList = model.Navigation;
             ViewBag.HeaderDocument = model.HeaderDocument;
@@ -175,18 +186,72 @@ namespace MySite.Web.Controllers
             return model;
         }
 
-        private void LoadCommonViewBag()
+        private void LoadCommonViewBag(string currentPath)
         {
             var siteConfig = _siteConfigRepository.GetOne(1);
-            var navigations = _navigationRepository.GetList(n => !n.IsDelete && n.IsActive && n.IsShow, n => n.Sort, true);
-            var navList = navigations.Select(ToNavigationModel).ToList();
-            ViewData["Title"] = siteConfig == null ? "企业官网" : (siteConfig.BrowserTitle ?? siteConfig.SiteName ?? "企业官网");
-            ViewData["Keywords"] = siteConfig == null ? null : siteConfig.Keywords;
-            ViewData["Description"] = siteConfig == null ? null : siteConfig.Description;
+            var navList = BuildNavigationTree(currentPath);
+            ViewData["Title"] = siteConfig?.BrowserTitle ?? siteConfig?.SiteName ?? "企业官网";
+            ViewData["Keywords"] = siteConfig?.Keywords;
+            ViewData["Description"] = siteConfig?.Description;
             ViewBag.SiteConfig = ToSiteConfigModel(siteConfig);
             ViewBag.NavigationList = navList;
-            ViewBag.HeaderDocument = LoadGlobalDocument(GlobalHeaderCode, CreateDefaultHeaderDocument());
-            ViewBag.FooterDocument = LoadGlobalDocument(GlobalFooterCode, CreateDefaultFooterDocument());
+            ViewBag.HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode, BuilderDocumentFactory.CreateDefaultHeader());
+            ViewBag.FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode, BuilderDocumentFactory.CreateDefaultFooter());
+        }
+
+        private bool SiteEnabled()
+        {
+            var siteConfig = _siteConfigRepository.GetOne(1);
+            return siteConfig == null || (siteConfig.IsActive && !siteConfig.IsDelete);
+        }
+
+        private List<NavigationModel> BuildNavigationTree(string currentPath)
+        {
+            var pages = _pageRepository
+                .GetList(p => !p.IsDelete && p.IsActive && p.ShowInNavigation, p => p.Sort, true)
+                .Where(p => !IsGlobalPage(p))
+                .OrderBy(p => p.Sort)
+                .ThenBy(p => p.Id)
+                .ToList();
+
+            var ids = pages.Select(p => p.Id).ToHashSet();
+            var nodes = pages.ToDictionary(
+                p => p.Id,
+                p => new NavigationModel
+                {
+                    Id = p.Id,
+                    Pid = ids.Contains(p.ParentId) ? p.ParentId : 0,
+                    Title = string.IsNullOrWhiteSpace(p.NavigationTitle) ? p.PageName : p.NavigationTitle,
+                    Path = p.PagePath,
+                    Icon = p.NavigationIcon,
+                    Target = p.NavigationTarget,
+                    Sort = p.Sort,
+                    IsShow = p.ShowInNavigation,
+                    IsActive = p.IsActive,
+                    IsCurrent = string.Equals(NormalizePath(currentPath), NormalizePath(p.PagePath), StringComparison.OrdinalIgnoreCase)
+                });
+
+            var roots = new List<NavigationModel>();
+            foreach (var node in nodes.Values.OrderBy(n => n.Sort).ThenBy(n => n.Id))
+            {
+                if (node.Pid > 0 && nodes.TryGetValue(node.Pid, out var parent) && parent.Id != node.Id)
+                {
+                    parent.Children.Add(node);
+                }
+                else
+                {
+                    roots.Add(node);
+                }
+            }
+
+            SortNavigation(roots);
+            return roots;
+        }
+
+        private static void SortNavigation(List<NavigationModel> items)
+        {
+            items.Sort((a, b) => a.Sort != b.Sort ? a.Sort.CompareTo(b.Sort) : a.Id.CompareTo(b.Id));
+            foreach (var item in items) SortNavigation(item.Children);
         }
 
         private BuilderDocumentModel LoadPublishedDocument(WebsitePage page)
@@ -211,55 +276,6 @@ namespace MySite.Web.Controllers
             return LoadPublishedDocument(page) ?? fallback;
         }
 
-        private static BuilderDocumentModel CreateDefaultHeaderDocument()
-        {
-            return new BuilderDocumentModel
-            {
-                Name = "Header",
-                Nodes = new List<BuilderNodeModel>
-                {
-                    Node("section", null, new Dictionary<string, object>{{"paddingTop","16px"},{"paddingBottom","16px"},{"backgroundColor","#ffffff"}},
-                        Node("container", null, null,
-                            Node("grid", new Dictionary<string, object>{{"columns",3}}, new Dictionary<string, object>{{"gap","20px"}},
-                                Node("column", null, null, Node("logo", new Dictionary<string, object>{{"text","企业名称"},{"href","/"}}, null)),
-                                Node("column", null, new Dictionary<string, object>{{"textAlign","center"}}, Node("navigation", new Dictionary<string, object>{{"menuKey","main"}}, null)),
-                                Node("column", null, new Dictionary<string, object>{{"textAlign","right"}}, Node("button", new Dictionary<string, object>{{"text","联系我们"},{"href","/contact"},{"variant","outline"}}, null)))))
-                }
-            };
-        }
-
-        private static BuilderDocumentModel CreateDefaultFooterDocument()
-        {
-            return new BuilderDocumentModel
-            {
-                Name = "Footer",
-                Nodes = new List<BuilderNodeModel>
-                {
-                    Node("section", null, new Dictionary<string, object>{{"paddingTop","48px"},{"paddingBottom","24px"},{"backgroundColor","#111827"},{"color","#ffffff"}},
-                        Node("container", null, null,
-                            Node("grid", new Dictionary<string, object>{{"columns",3}}, new Dictionary<string, object>{{"gap","36px"}},
-                                Node("column", null, null, Node("logo", new Dictionary<string, object>{{"text","企业名称"},{"href","/"}}, null)),
-                                Node("column", null, null, Node("navigation", new Dictionary<string, object>{{"menuKey","footer"},{"direction","vertical"}}, null)),
-                                Node("column", null, null, Node("contact", new Dictionary<string, object>(), null))),
-                            Node("divider", null, null),
-                            Node("copyright", new Dictionary<string, object>{{"text","© 2026 企业名称 版权所有"}}, new Dictionary<string, object>{{"textAlign","center"}})))
-                }
-            };
-        }
-
-        private static BuilderNodeModel Node(string type, Dictionary<string, object> props, Dictionary<string, object> style, params BuilderNodeModel[] children)
-        {
-            return new BuilderNodeModel
-            {
-                Id = type + "_" + Guid.NewGuid().ToString("N").Substring(0, 10),
-                Type = type,
-                Name = type,
-                Props = props ?? new Dictionary<string, object>(),
-                Style = style ?? new Dictionary<string, object>(),
-                Children = children == null ? new List<BuilderNodeModel>() : children.ToList()
-            };
-        }
-
         private static SiteConfigModel ToSiteConfigModel(WebsiteSiteConfig entity)
         {
             if (entity == null) return new SiteConfigModel();
@@ -271,27 +287,26 @@ namespace MySite.Web.Controllers
                 BrowserTitle = entity.BrowserTitle,
                 Keywords = entity.Keywords,
                 Description = entity.Description,
-                Theme = entity.Theme,
-                Language = entity.Language,
                 IsActive = entity.IsActive
             };
         }
 
-        private static NavigationModel ToNavigationModel(WebsiteNavigation entity)
+        private static bool IsGlobalPage(WebsitePage page)
         {
-            if (entity == null) return new NavigationModel();
-            return new NavigationModel
-            {
-                Id = entity.Id,
-                Pid = entity.Pid,
-                Title = entity.Title,
-                Path = entity.Path,
-                Icon = entity.Icon,
-                Target = entity.Target,
-                Sort = entity.Sort,
-                IsShow = entity.IsShow,
-                IsActive = entity.IsActive
-            };
+            if (page == null) return false;
+            return (!string.IsNullOrWhiteSpace(page.PageCode) && page.PageCode.StartsWith("__GLOBAL_", StringComparison.OrdinalIgnoreCase))
+                   || (!string.IsNullOrWhiteSpace(page.PagePath) && page.PagePath.StartsWith("/__global/", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static string NormalizePath(string path)
+        {
+            var value = (path ?? string.Empty).Trim();
+            if (string.IsNullOrEmpty(value)) return "/";
+            value = value.Replace("\\", "/");
+            if (!value.StartsWith("/")) value = "/" + value;
+            while (value.Contains("//")) value = value.Replace("//", "/");
+            if (value.Length > 1) value = value.TrimEnd('/');
+            return value;
         }
     }
 }
