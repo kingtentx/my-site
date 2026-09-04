@@ -20,7 +20,8 @@
             marginTop:'margin-top', marginRight:'margin-right', marginBottom:'margin-bottom', marginLeft:'margin-left',
             backgroundColor:'background-color', color:'color', maxWidth:'max-width', width:'width', minHeight:'min-height',
             gap:'gap', borderRadius:'border-radius', textAlign:'text-align', borderTopWidth:'border-top-width',
-            borderTopStyle:'border-top-style', borderTopColor:'border-top-color'
+            borderTopStyle:'border-top-style', borderTopColor:'border-top-color', position:'position', top:'top',
+            zIndex:'z-index', boxShadow:'box-shadow'
         };
         var parts = [];
         Object.keys(map).forEach(function (key) { if (style[key] !== undefined && style[key] !== null && style[key] !== '') parts.push(map[key] + ':' + style[key]); });
