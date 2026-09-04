@@ -5,7 +5,8 @@ using CIMC.Data.ExtModel;
 namespace CIMC.Data
 {
     /// <summary>
-    /// 网站页面，同时承载前台导航配置。
+    /// 网站页面。页面层级、排序与导航属性共同构成网站导航树，
+    /// 页面装修统一存储为新版 BuilderDocument JSON。
     /// </summary>
     public class WebsitePage : ExtFullModifyModel, IActiveModel, ISortModel, IModifyModel
     {
@@ -18,7 +19,7 @@ namespace CIMC.Data
         public int SiteId { get; set; } = 1;
 
         /// <summary>
-        /// 父页面 ID，0 表示一级页面。当前前台导航最多展示两级。
+        /// 父页面 ID，0 表示一级页面。导航按该字段递归形成层级。
         /// </summary>
         public int ParentId { get; set; } = 0;
 
@@ -30,7 +31,7 @@ namespace CIMC.Data
         public string PageCode { get; set; }
 
         /// <summary>
-        /// 页面路径（唯一，如 /、/about、/news）。
+        /// 页面路径（唯一，如 /、/about、/about/company）。
         /// </summary>
         [Required]
         [StringLength(ModelUnits.Len_200)]
@@ -46,7 +47,7 @@ namespace CIMC.Data
         public string SeoDescription { get; set; }
 
         /// <summary>
-        /// 是否在前台导航显示。
+        /// 页面是否作为网站导航节点显示。隐藏后页面仍可通过 URL 访问。
         /// </summary>
         public bool ShowInNavigation { get; set; } = true;
 
@@ -64,10 +65,8 @@ namespace CIMC.Data
         /// </summary>
         public int NavigationTarget { get; set; } = 0;
 
-        public string LayoutJson { get; set; }
-
         /// <summary>
-        /// 组件配置 JSON（草稿）。
+        /// 新版 Site Builder BuilderDocument JSON（草稿）。布局也包含在该树结构中。
         /// </summary>
         public string ComponentJson { get; set; }
 
@@ -77,13 +76,9 @@ namespace CIMC.Data
         public int Status { get; set; } = 0;
 
         public bool IsHome { get; set; }
-
         public int Sort { get; set; } = 0;
-
         public bool IsActive { get; set; } = true;
-
         public DateTime? PublishTime { get; set; }
-
         public bool IsDelete { get; set; } = false;
     }
 }
