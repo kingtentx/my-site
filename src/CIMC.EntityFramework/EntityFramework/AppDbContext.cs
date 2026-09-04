@@ -36,11 +36,6 @@ namespace CIMC.EntityFrameworkCore
                 entity.HasIndex(e => new { e.PageId, e.VersionNo });
             });
 
-            modelBuilder.Entity<WebsiteNavigation>(entity =>
-            {
-                entity.HasIndex(e => e.Pid);
-            });
-
             modelBuilder.Entity<ContentProduct>(entity =>
             {
                 entity.HasIndex(e => e.CategoryId);
@@ -70,7 +65,6 @@ namespace CIMC.EntityFrameworkCore
         public DbSet<WebsitePage> WebsitePage { get; set; }
         public DbSet<WebsitePageVersion> WebsitePageVersion { get; set; }
         public DbSet<WebsiteSiteConfig> WebsiteSiteConfig { get; set; }
-        public DbSet<WebsiteNavigation> WebsiteNavigation { get; set; }
         public DbSet<WebsiteFooter> WebsiteFooter { get; set; }
         public DbSet<ContentProduct> ContentProduct { get; set; }
         public DbSet<ContentProductCategory> ContentProductCategory { get; set; }
