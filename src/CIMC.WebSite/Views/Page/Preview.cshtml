@@ -1,8 +1,18 @@
+@using Newtonsoft.Json
+@using MySite.Web.Models
 @{
     Layout = null;
-    var componentJson = ViewBag.ComponentJson as string;
-    if (string.IsNullOrWhiteSpace(componentJson)) componentJson = "[]";
-    var safeComponentJson = componentJson.Replace("</", "<\\/");
+    var documentJson = ViewBag.DocumentJson as string;
+    var document = string.IsNullOrWhiteSpace(documentJson)
+        ? new BuilderDocumentModel { Name = ViewBag.PageName as string }
+        : JsonConvert.DeserializeObject<BuilderDocumentModel>(documentJson) ?? new BuilderDocumentModel();
+    var renderModel = new PageRenderModel
+    {
+        PageId = ViewBag.PageId,
+        PageName = ViewBag.PageName,
+        PagePath = ViewBag.PagePath,
+        Document = document
+    };
 }
 <!DOCTYPE html>
 <html>
@@ -10,45 +20,17 @@
     <meta charset="utf-8">
     <title>页面预览 - @ViewBag.PageName</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css">
+    <link rel="stylesheet" href="~/site/css/site.css" />
     <style>
-        *{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#f4f6f8;color:#333}.preview-toolbar{position:fixed;top:0;left:0;right:0;height:48px;background:#1677ff;color:#fff;display:flex;align-items:center;padding:0 16px;z-index:9999}.preview-toolbar .title{flex:1}.preview-toolbar button{border:0;background:rgba(255,255,255,.2);color:#fff;padding:6px 14px;border-radius:4px;cursor:pointer}.preview-canvas{margin:48px auto 0;max-width:1200px;min-height:calc(100vh - 48px);background:#fff}.comp-block{padding:20px;border-bottom:1px dashed #eee}.comp-label{font-size:11px;color:#aaa;margin-bottom:10px}.empty{padding:40px;text-align:center;color:#999}.banner{display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff;background:#e8edf3 center/cover no-repeat;text-align:center}.banner h2{font-size:34px;text-shadow:0 2px 4px rgba(0,0,0,.35)}.banner p{margin-top:8px}.grid{display:grid;gap:12px}.grid-item{height:90px;background:#f0f2f5;border-radius:5px}.mock-list{border:1px solid #eee;padding:13px;margin-bottom:8px}.preview-button{display:inline-block;padding:10px 22px;background:#1677ff;color:#fff;border-radius:5px}.icon-card{padding:30px;border:1px solid #eee;border-radius:8px}.icon-card .icon{font-size:36px}.pager{display:flex;gap:6px;justify-content:center;margin-top:15px}.pager span{border:1px solid #ddd;padding:5px 10px;border-radius:3px}.pager .active{background:#1677ff;color:#fff}.video{background:#222;color:#fff;display:flex;align-items:center;justify-content:center}.rich{line-height:1.8}
+        *{box-sizing:border-box}body{margin:0;font-family:-apple-system,"Microsoft YaHei",sans-serif;background:#eef1f5;color:#1f2937}.preview-toolbar{position:fixed;top:0;left:0;right:0;height:48px;background:#111827;color:#fff;display:flex;align-items:center;padding:0 16px;z-index:9999}.preview-toolbar .title{flex:1}.preview-toolbar button{border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;padding:6px 14px;border-radius:4px;cursor:pointer}.preview-canvas{margin:68px auto 20px;max-width:1280px;min-height:calc(100vh - 88px);background:#fff;box-shadow:0 2px 14px rgba(15,23,42,.08)}
+        .sb-public-section{width:100%}.sb-public-container{width:100%;max-width:1200px;margin-left:auto;margin-right:auto;padding-left:20px;padding-right:20px}.sb-public-grid{display:grid;align-items:stretch}.sb-public-column{min-width:0}.sb-heading{line-height:1.25}.sb-text{line-height:1.8;white-space:pre-line}.sb-image{display:block;max-width:100%;height:auto}.sb-public-button{display:inline-block;padding:10px 20px;border-radius:5px;text-decoration:none}.sb-public-button-primary{background:#1677ff;color:#fff}.sb-public-button-outline{border:1px solid #1677ff;color:#1677ff}.sb-public-button-text{color:#1677ff}.sb-public-video{display:block;width:100%;background:#000}.sb-public-logo img{max-width:200px;max-height:56px}.sb-public-nav{display:flex;gap:24px}.sb-public-nav.is-vertical{flex-direction:column}.sb-article-grid,.sb-product-grid{display:grid;grid-template-columns:repeat(var(--sb-cols,3),minmax(0,1fr));gap:24px}.sb-content-card{border:1px solid #edf0f3;border-radius:8px;overflow:hidden}.sb-content-card img{width:100%;display:block}.sb-content-card-body{padding:18px}.sb-job-card{border:1px solid #e5e7eb;border-radius:7px;margin:10px 0;padding:4px 14px}.component-pagination{display:flex;justify-content:center;gap:7px;margin:28px 0}.component-pagination a,.component-pagination span{padding:7px 11px;border:1px solid #e5e7eb;border-radius:4px;text-decoration:none}.component-pagination .active{background:#1677ff;color:#fff}
+        @@media(max-width:900px){.sb-public-grid{grid-template-columns:1fr!important}.sb-article-grid,.sb-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}@@media(max-width:560px){.sb-article-grid,.sb-product-grid{grid-template-columns:1fr}}
     </style>
 </head>
 <body>
 <div class="preview-toolbar"><div class="title">预览：@ViewBag.PageName（@ViewBag.PagePath）</div><button onclick="history.back()">返回装修</button></div>
-<div class="preview-canvas" id="canvas"><div class="empty">正在加载预览...</div></div>
-<script type="application/json" id="componentJson">@Html.Raw(safeComponentJson)</script>
-<script>
-(function(){
-    function esc(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
-    function attr(v){return esc(v).replace(/`/g,'&#96;');}
-    function prop(c,k,d){var v=c&&c.props?c.props[k]:undefined;return v===undefined||v===null?d:v;}
-    function safeUrl(v){v=String(v||'').trim();return /^(javascript|vbscript|data):/i.test(v)?'':v;}
-    function pager(enabled){return enabled===false?'':'<div class="pager"><span class="active">1</span><span>2</span><span>下一页</span></div>';}
-    function contentRange(c,type){var id=Number(prop(c,'categoryId',0));return id>0?'指定分类 #'+id:'全部'+type;}
-    function render(c){
-        if(!c||c.visible===false)return'';var type=String(c.type||''),html='<div class="comp-block"><div class="comp-label">['+esc(type)+'] '+esc(c.name||'')+'</div>';
-        if(type==='banner'){
-            var items=prop(c,'items',[])||[],it=items[0]||{},height=Math.min(Number(prop(c,'height',360))||360,500),image=safeUrl(it.image||'');
-            html+='<div class="banner" style="height:'+height+'px;background-image:url(\''+attr(image)+'\')"><h2>'+esc(it.title||'Banner 标题')+'</h2><p>'+esc(it.subtitle||'')+'</p></div>';
-        }else if(type==='richText')html+='<div class="rich">'+String(prop(c,'html','')||'<div class="empty">暂无富文本内容</div>')+'</div>';
-        else if(type==='image'){var src=safeUrl(prop(c,'src',''));html+=src?'<div style="text-align:'+attr(prop(c,'align','center'))+'"><img src="'+attr(src)+'" style="max-width:100%"></div>':'<div class="empty">未选择图片</div>';}
-        else if(type==='title')html+='<div style="text-align:'+attr(prop(c,'align','center'))+';color:'+attr(prop(c,'color','#333'))+'"><h2>'+esc(prop(c,'text','标题'))+'</h2><p>'+esc(prop(c,'subtitle',''))+'</p></div>';
-        else if(type==='button')html+='<div style="text-align:'+attr(prop(c,'align','center'))+'"><span class="preview-button">'+esc(prop(c,'text','按钮'))+'</span></div>';
-        else if(type==='divider')html+='<hr style="border:0;border-top:'+Number(prop(c,'width',1))+'px '+attr(prop(c,'lineStyle','solid'))+' '+attr(prop(c,'color','#eee'))+'">';
-        else if(type==='spacer')html+='<div style="height:'+Number(prop(c,'height',40))+'px;background:#fafafa"></div>';
-        else if(type==='video')html+='<div class="video" style="height:'+Math.min(Number(prop(c,'height',480)),400)+'px"><span>视频：'+esc(prop(c,'src','尚未配置'))+'</span></div>';
-        else if(type==='iconText')html+='<div class="icon-card" style="text-align:'+attr(prop(c,'align','center'))+';background:'+attr(prop(c,'backgroundColor','#fff'))+'"><div class="icon">'+esc(prop(c,'icon','★'))+'</div><h3>'+esc(prop(c,'title','卡片标题'))+'</h3><p>'+esc(prop(c,'text',''))+'</p></div>';
-        else if(type==='news'){html+='<p>'+esc(contentRange(c,'文章'))+'，每页 '+Number(prop(c,'pageSize',6))+' 条</p><div class="mock-list"><strong>文章标题示例</strong><p>文章摘要示例</p></div>'+pager(prop(c,'enablePagination',true));}
-        else if(type==='product'){var cols=Math.max(1,Number(prop(c,'colsPerRow',4))||4);html+='<p>'+esc(contentRange(c,'产品'))+'，每页 '+Number(prop(c,'pageSize',8))+' 条</p><div class="grid" style="grid-template-columns:repeat('+cols+',1fr)">';for(var i=0;i<Math.min(cols*2,8);i++)html+='<div class="grid-item"></div>';html+='</div>'+pager(prop(c,'enablePagination',true));}
-        else if(type==='job'){html+='<p>'+esc(contentRange(c,'招聘'))+'，每页 '+Number(prop(c,'pageSize',10))+' 条</p><div class="mock-list"><strong>岗位名称示例</strong>　部门　地点　薪资</div>'+pager(prop(c,'enablePagination',true));}
-        else html+='<div class="empty">未知组件类型：'+esc(type)+'</div>';
-        return html+'</div>';
-    }
-    var components=[];try{components=JSON.parse(document.getElementById('componentJson').textContent||'[]')||[];}catch(e){}
-    var html='';components.forEach(function(c){html+=render(c);});document.getElementById('canvas').innerHTML=html||'<div class="empty">暂无组件</div>';
-})();
-</script>
+<div class="preview-canvas">
+    @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Document.cshtml", renderModel)
+</div>
 </body>
 </html>
