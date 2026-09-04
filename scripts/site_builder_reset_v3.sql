@@ -17,18 +17,16 @@ SELECT DATABASE() AS CurrentDatabase;
 SET FOREIGN_KEY_CHECKS = 0;
 
 -- ============================================================================
--- 1. 清理 Site Builder 重写前页面/页脚数据
+-- 1. 清理 Site Builder 重写前页面/版本数据
 -- ============================================================================
 DELETE FROM `WebsitePageVersion`;
 DELETE FROM `WebsitePage`;
-DELETE FROM `WebsiteFooter`;
-
 ALTER TABLE `WebsitePageVersion` AUTO_INCREMENT = 1;
 ALTER TABLE `WebsitePage` AUTO_INCREMENT = 1;
-ALTER TABLE `WebsiteFooter` AUTO_INCREMENT = 1;
 
--- 页面树已经取代 WebsiteNavigation，直接删除旧表。
+-- 页面树已经取代 WebsiteNavigation，全局 Footer Builder 已经取代 WebsiteFooter。
 DROP TABLE IF EXISTS `WebsiteNavigation`;
+DROP TABLE IF EXISTS `WebsiteFooter`;
 
 -- ============================================================================
 -- 2. 删除站点设置中已经迁移到 Header Builder 的旧字段
@@ -157,10 +155,12 @@ ORDER BY `Id`;
 
 SELECT COUNT(*) AS WebsitePageCount FROM `WebsitePage`;
 SELECT COUNT(*) AS WebsitePageVersionCount FROM `WebsitePageVersion`;
-SELECT COUNT(*) AS WebsiteFooterCount FROM `WebsiteFooter`;
 SELECT COUNT(*) AS LegacyNavigationTableCount
 FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'WebsiteNavigation';
+SELECT COUNT(*) AS LegacyFooterTableCount
+FROM information_schema.TABLES
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'WebsiteFooter';
 
 SELECT `Id`,`RoleId`,`Permission`
 FROM `RoleMenu`
@@ -173,7 +173,7 @@ WHERE `Permission` = 'Site_Footer'
 -- MenuCount = 16
 -- WebsitePageCount = 0
 -- WebsitePageVersionCount = 0
--- WebsiteFooterCount = 0
 -- LegacyNavigationTableCount = 0
+-- LegacyFooterTableCount = 0
 -- Site_Footer / Site_Navigation 权限查询 = 0 行
 -- ============================================================================
