@@ -4,81 +4,32 @@ using CIMC.Data.ExtModel;
 namespace CIMC.Data
 {
     /// <summary>
-    /// 站点配置（单例，Id=1）
+    /// 站点基础配置（单例，Id=1）。
+    /// Header/Footer 的布局、颜色、定位与语言入口统一在全局区域设计中维护。
     /// </summary>
     public class WebsiteSiteConfig : ExtFullModifyModel, IActiveModel, IModifyModel
     {
         [Key]
         public int Id { get; set; } = 1;
 
-        /// <summary>
-        /// 站点名称
-        /// </summary>
         [Required]
         [StringLength(ModelUnits.Len_100)]
         public string SiteName { get; set; }
 
-        /// <summary>
-        /// 站点 Logo
-        /// </summary>
         [StringLength(ModelUnits.Len_500)]
         public string Logo { get; set; }
 
-        /// <summary>
-        /// 浏览器标题
-        /// </summary>
         [StringLength(ModelUnits.Len_250)]
         public string BrowserTitle { get; set; }
 
-        /// <summary>
-        /// 网站关键词
-        /// </summary>
         [StringLength(ModelUnits.Len_500)]
         public string Keywords { get; set; }
 
-        /// <summary>
-        /// 网站描述
-        /// </summary>
         [StringLength(ModelUnits.Len_500)]
         public string Description { get; set; }
 
         /// <summary>
-        /// 默认主题
-        /// </summary>
-        [StringLength(ModelUnits.Len_50)]
-        public string Theme { get; set; }
-
-        /// <summary>
-        /// 默认语言
-        /// </summary>
-        [StringLength(ModelUnits.Len_20)]
-        public string Language { get; set; }
-
-        /// <summary>
-        /// 顶部导航背景色
-        /// </summary>
-        [StringLength(ModelUnits.Len_20)]
-        public string HeaderBgColor { get; set; } = "#ffffff";
-
-        /// <summary>
-        /// 顶部导航文字色
-        /// </summary>
-        [StringLength(ModelUnits.Len_20)]
-        public string HeaderTextColor { get; set; } = "#333333";
-
-        /// <summary>
-        /// 顶部导航高亮色
-        /// </summary>
-        [StringLength(ModelUnits.Len_20)]
-        public string HeaderActiveColor { get; set; } = "#1e9fff";
-
-        /// <summary>
-        /// 顶部导航是否固定在顶部
-        /// </summary>
-        public bool HeaderFixedTop { get; set; } = false;
-
-        /// <summary>
-        /// 网站状态：true=启用，false=停用
+        /// 整站是否启用。该状态属于站点级配置，不属于 Header。
         /// </summary>
         public bool IsActive { get; set; } = true;
 
