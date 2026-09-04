@@ -7,7 +7,8 @@
 --   1. WebsitePage 页面树同时承担网站导航；
 --   2. 不再使用独立 WebsiteNavigation；
 --   3. Header/Footer 的布局、颜色、定位等统一由全局区域设计维护；
---   4. SiteConfig 只保留站点基础信息和整站启用状态。
+--   4. SiteConfig 只保留站点基础信息和整站启用状态；
+--   5. 页面布局与组件统一存储在 ComponentJson 的 BuilderDocument 中。
 --
 -- 执行前：停止 Web 应用并备份数据库。
 -- ============================================================================
@@ -29,11 +30,16 @@ DROP TABLE IF EXISTS `WebsiteNavigation`;
 DROP TABLE IF EXISTS `WebsiteFooter`;
 
 -- ============================================================================
--- 2. 删除站点设置中已经迁移到 Header Builder 的旧字段
--- Theme/Language 旧配置当前也不再参与前台渲染。
+-- 2. 删除旧装修字段及已经迁移到 Header Builder 的站点字段
 -- 使用 information_schema 判断字段是否存在，脚本可重复执行。
 -- ============================================================================
 SET @db = DATABASE();
+
+SET @sql = IF(
+    EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsitePage' AND COLUMN_NAME='LayoutJson'),
+    'ALTER TABLE `WebsitePage` DROP COLUMN `LayoutJson`',
+    'SELECT 1'
+); PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 SET @sql = IF(
     EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=@db AND TABLE_NAME='WebsiteSiteConfig' AND COLUMN_NAME='HeaderBgColor'),
@@ -161,6 +167,9 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'WebsiteNavigation';
 SELECT COUNT(*) AS LegacyFooterTableCount
 FROM information_schema.TABLES
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'WebsiteFooter';
+SELECT COUNT(*) AS LegacyLayoutJsonColumnCount
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'WebsitePage' AND COLUMN_NAME = 'LayoutJson';
 
 SELECT `Id`,`RoleId`,`Permission`
 FROM `RoleMenu`
@@ -175,5 +184,6 @@ WHERE `Permission` = 'Site_Footer'
 -- WebsitePageVersionCount = 0
 -- LegacyNavigationTableCount = 0
 -- LegacyFooterTableCount = 0
+-- LegacyLayoutJsonColumnCount = 0
 -- Site_Footer / Site_Navigation 权限查询 = 0 行
 -- ============================================================================
