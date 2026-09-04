@@ -57,9 +57,7 @@ namespace CIMC.Data
             {
                 new Menu { Pid = websiteMenuId, Title = "站点设置", Icon = "layui-icon-set", Path = "/siteconfig/index", PermissionKey = "Site_Info", Buttons = "Edit", MenuType = 2, Spread = false, IsShow = true, Sort = 11 },
                 new Menu { Pid = websiteMenuId, Title = "页面管理", Icon = "layui-icon-template", Path = "/page/index", PermissionKey = "Website_Page", Buttons = "Add,Edit,Delete,Design,Publish", MenuType = 2, Spread = false, IsShow = true, Sort = 12 },
-                // GlobalRegionController 复用 Website_Page + Design 权限。
-                new Menu { Pid = websiteMenuId, Title = "全局区域设计", Icon = "layui-icon-component", Path = "/globalregion/index", PermissionKey = "Website_Page", Buttons = "Design,Publish", MenuType = 2, Spread = false, IsShow = true, Sort = 13 },
-                new Menu { Pid = websiteMenuId, Title = "菜单管理", Icon = "layui-icon-nav", Path = "/navigation/index", PermissionKey = "Site_Navigation", Buttons = "Add,Edit,Delete", MenuType = 2, Spread = false, IsShow = true, Sort = 14 }
+                new Menu { Pid = websiteMenuId, Title = "全局区域设计", Icon = "layui-icon-component", Path = "/globalregion/index", PermissionKey = "Website_Page", Buttons = "Design,Publish", MenuType = 2, Spread = false, IsShow = true, Sort = 13 }
             };
         }
     }
