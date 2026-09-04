@@ -65,7 +65,6 @@ namespace CIMC.EntityFrameworkCore
         public DbSet<WebsitePage> WebsitePage { get; set; }
         public DbSet<WebsitePageVersion> WebsitePageVersion { get; set; }
         public DbSet<WebsiteSiteConfig> WebsiteSiteConfig { get; set; }
-        public DbSet<WebsiteFooter> WebsiteFooter { get; set; }
         public DbSet<ContentProduct> ContentProduct { get; set; }
         public DbSet<ContentProductCategory> ContentProductCategory { get; set; }
         public DbSet<ContentJob> ContentJob { get; set; }
