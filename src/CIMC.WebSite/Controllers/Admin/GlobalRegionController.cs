@@ -50,6 +50,8 @@ namespace MySite.Web.Controllers
 
             var document = isHeader ? BuilderDocumentFactory.CreateDefaultHeader() : BuilderDocumentFactory.CreateDefaultFooter();
             page.ComponentJson = JsonConvert.SerializeObject(document);
+            page.ParentId = 0;
+            page.ShowInNavigation = false;
             page.Status = 0;
             page.PublishTime = null;
             page.UpdateBy = LoginUser.UserName;
@@ -61,15 +63,28 @@ namespace MySite.Web.Controllers
         private WebsitePage EnsureRegion(string code, string path, string name, BuilderDocumentModel defaultDocument)
         {
             var page = _pageRepository.GetOne(p => p.PageCode == code && !p.IsDelete);
-            if (page != null) return page;
+            if (page != null)
+            {
+                if (page.ParentId != 0 || page.ShowInNavigation)
+                {
+                    page.ParentId = 0;
+                    page.ShowInNavigation = false;
+                    page.UpdateTime = DateTime.Now;
+                    page.UpdateBy = LoginUser.UserName;
+                    _pageRepository.Update(page);
+                }
+                return page;
+            }
 
             page = new WebsitePage
             {
                 SiteId = 1,
+                ParentId = 0,
                 PageName = name,
                 PageCode = code,
                 PagePath = path,
                 PageTitle = name,
+                ShowInNavigation = false,
                 IsActive = true,
                 IsHome = false,
                 Sort = -100,
