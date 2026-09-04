@@ -1,0 +1,170 @@
+@using System
+@using System.Collections.Generic
+@using System.Linq
+@model MySite.Web.Models.BuilderNodeRenderModel
+@{
+    var node = Model.Node;
+    var props = node.Props ?? new Dictionary<string, object>();
+    var style = node.Style ?? new Dictionary<string, object>();
+
+    string Prop(string key, string fallback = "")
+    {
+        return props.TryGetValue(key, out var value) && value != null ? value.ToString() : fallback;
+    }
+    int IntProp(string key, int fallback)
+    {
+        return props.TryGetValue(key, out var value) && value != null && int.TryParse(value.ToString(), out var number) ? number : fallback;
+    }
+    bool BoolProp(string key, bool fallback)
+    {
+        return props.TryGetValue(key, out var value) && value != null && bool.TryParse(value.ToString(), out var result) ? result : fallback;
+    }
+    string SafeUrl(string value)
+    {
+        value = (value ?? "").Trim();
+        return value.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) || value.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase) || value.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ? "" : value;
+    }
+    string StyleText()
+    {
+        var map = new Dictionary<string,string>
+        {
+            {"paddingTop","padding-top"},{"paddingRight","padding-right"},{"paddingBottom","padding-bottom"},{"paddingLeft","padding-left"},
+            {"marginTop","margin-top"},{"marginRight","margin-right"},{"marginBottom","margin-bottom"},{"marginLeft","margin-left"},
+            {"backgroundColor","background-color"},{"color","color"},{"maxWidth","max-width"},{"width","width"},{"minHeight","min-height"},
+            {"gap","gap"},{"borderRadius","border-radius"},{"textAlign","text-align"},{"borderTopWidth","border-top-width"},
+            {"borderTopStyle","border-top-style"},{"borderTopColor","border-top-color"}
+        };
+        return string.Join(";", map.Where(pair => style.ContainsKey(pair.Key) && style[pair.Key] != null && !string.IsNullOrWhiteSpace(style[pair.Key].ToString())).Select(pair => pair.Value + ":" + style[pair.Key]));
+    }
+    var css = StyleText();
+    var children = node.Children ?? new List<MySite.Web.Models.BuilderNodeModel>();
+}
+@if (!node.Visible)
+{
+    return;
+}
+
+@if (node.Type == "section")
+{
+    <section class="sb-public-section" style="@css" data-builder-id="@node.Id">
+        @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
+    </section>
+}
+else if (node.Type == "container")
+{
+    <div class="sb-public-container" style="@css" data-builder-id="@node.Id">
+        @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
+    </div>
+}
+else if (node.Type == "grid")
+{
+    var columns = Math.Max(1, Math.Min(6, IntProp("columns", 2)));
+    <div class="sb-public-grid" style="grid-template-columns:repeat(@columns,minmax(0,1fr));@css" data-builder-id="@node.Id">
+        @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
+    </div>
+}
+else if (node.Type == "column")
+{
+    <div class="sb-public-column" style="@css" data-builder-id="@node.Id">
+        @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
+    </div>
+}
+else if (node.Type == "heading")
+{
+    var text = Prop("text", "标题"); var level = Math.Max(1, Math.Min(4, IntProp("level", 2)));
+    if (level == 1) { <h1 class="sb-heading" style="@css">@text</h1> }
+    else if (level == 2) { <h2 class="sb-heading" style="@css">@text</h2> }
+    else if (level == 3) { <h3 class="sb-heading" style="@css">@text</h3> }
+    else { <h4 class="sb-heading" style="@css">@text</h4> }
+}
+else if (node.Type == "text")
+{
+    <p class="sb-text" style="@css">@Prop("text", "文本内容")</p>
+}
+else if (node.Type == "image")
+{
+    var src = SafeUrl(Prop("src")); var link = SafeUrl(Prop("link"));
+    if (!string.IsNullOrWhiteSpace(src))
+    {
+        if (!string.IsNullOrWhiteSpace(link)) { <a href="@link"><img class="sb-image" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /></a> }
+        else { <img class="sb-image" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /> }
+    }
+}
+else if (node.Type == "button")
+{
+    var href = SafeUrl(Prop("href", "#")); var target = Prop("target", "_self") == "_blank" ? "_blank" : "_self"; var variant = Prop("variant", "primary");
+    <a class="sb-public-button sb-public-button-@variant" href="@href" target="@target" style="@css">@Prop("text", "按钮")</a>
+}
+else if (node.Type == "icon")
+{
+    <span class="sb-public-icon" style="font-size:@(Math.Max(12, Math.Min(160, IntProp("size",32))))px;@css">@Prop("text", "★")</span>
+}
+else if (node.Type == "video")
+{
+    var src = SafeUrl(Prop("src")); var poster = SafeUrl(Prop("poster"));
+    if (!string.IsNullOrWhiteSpace(src)) { <video class="sb-public-video" style="@css" src="@src" poster="@poster" controls="@BoolProp("controls",true)"></video> }
+}
+else if (node.Type == "divider")
+{
+    <hr class="sb-public-divider" style="@css" />
+}
+else if (node.Type == "spacer")
+{
+    <div aria-hidden="true" style="height:@(Math.Max(4, Math.Min(400, IntProp("height",40))))px;@css"></div>
+}
+else if (node.Type == "logo")
+{
+    var src = SafeUrl(Prop("src")); var href = SafeUrl(Prop("href", "/"));
+    <a class="sb-public-logo" href="@href" style="@css">@if (!string.IsNullOrWhiteSpace(src)) { <img src="@src" alt="@Prop("text","Logo")" /> } else { <strong>@Prop("text","企业名称")</strong> }</a>
+}
+else if (node.Type == "navigation")
+{
+    var nav = Model.Page?.Navigation ?? new List<MySite.Web.Models.NavigationModel>();
+    var roots = nav.Where(item => item.Pid <= 0 && item.IsActive && item.IsShow).OrderBy(item => item.Sort).ToList();
+    var vertical = Prop("direction", "horizontal") == "vertical";
+    <nav class="sb-public-nav @(vertical ? "is-vertical" : "is-horizontal")" style="@css">
+        @foreach (var item in roots)
+        {
+            var sub = nav.Where(child => child.Pid == item.Id && child.IsActive && child.IsShow).OrderBy(child => child.Sort).ToList();
+            <div class="sb-public-nav-item">
+                <a href="@SafeUrl(item.Path ?? "#")" target="@(item.Target == 1 ? "_blank" : "_self")">@item.Title</a>
+                @if (sub.Count > 0)
+                {
+                    <div class="sb-public-subnav">@foreach (var child in sub) { <a href="@SafeUrl(child.Path ?? "#")" target="@(child.Target == 1 ? "_blank" : "_self")">@child.Title</a> }</div>
+                }
+            </div>
+        }
+    </nav>
+}
+else if (node.Type == "search")
+{
+    <form class="sb-public-search" action="@SafeUrl(Prop("action","/search"))" method="get" style="@css"><input name="q" placeholder="@Prop("placeholder","搜索")" /><button type="submit" aria-label="搜索">⌕</button></form>
+}
+else if (node.Type == "language")
+{
+    <span class="sb-public-language" style="@css">@Prop("text","中文 / EN")</span>
+}
+else if (node.Type == "contact")
+{
+    <div class="sb-public-contact" style="@css">@if(!string.IsNullOrWhiteSpace(Prop("phone"))){<div>@Prop("phone")</div>}@if(!string.IsNullOrWhiteSpace(Prop("email"))){<div>@Prop("email")</div>}@if(!string.IsNullOrWhiteSpace(Prop("address"))){<div>@Prop("address")</div>}</div>
+}
+else if (node.Type == "social")
+{
+    <div class="sb-public-social" style="@css"><strong>@Prop("text","关注我们")</strong><div>@Prop("links")</div></div>
+}
+else if (node.Type == "copyright")
+{
+    <div class="sb-public-copyright" style="@css">@Prop("text","版权信息")</div>
+}
+else if (node.Type == "articleList")
+{
+    @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_ArticleList.cshtml", Model)
+}
+else if (node.Type == "productList")
+{
+    @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_ProductList.cshtml", Model)
+}
+else if (node.Type == "jobList")
+{
+    @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_JobList.cshtml", Model)
+}
