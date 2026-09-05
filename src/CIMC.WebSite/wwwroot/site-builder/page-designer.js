@@ -32,7 +32,18 @@
     var layer = null;
     var renderPending = false;
     var initialized = false;
-    var materialState = { pageIndex: 1, pageSize: 24, keywords: '', target: null, count: 0 };
+    var materialState = {
+        pageIndex: 1,
+        pageSize: 24,
+        keywords: '',
+        target: null,
+        count: 0,
+        mode: 'single',
+        nodeId: null,
+        area: 'props',
+        key: null,
+        selectedUrls: []
+    };
 
     function ok(res) { var code = res ? Number(res.code) : -1; return code === 200 || code === 0; }
     function message(text, icon) {
@@ -41,6 +52,11 @@
     }
     function groupName(key) { return { layout:'布局组件', basic:'基础组件', data:'内容组件', global:'全局组件' }[key] || key; }
     function esc(value) { return SB.DesignerRenderer.escapeHtml(value == null ? '' : value); }
+    function normalizeImageList(value) {
+        return SB.Inspector && typeof SB.Inspector.normalizeImageList === 'function'
+            ? SB.Inspector.normalizeImageList(value)
+            : (Array.isArray(value) ? value.filter(Boolean) : []);
+    }
 
     function renderLibrary() {
         if (!SB.Registry || typeof SB.Registry.groups !== 'function') {
@@ -164,18 +180,42 @@
         $('body').append(
             '<div class="sb-material-mask" id="sbMaterialDialog" style="display:none">' +
                 '<div class="sb-material-dialog">' +
-                    '<div class="sb-material-head"><strong>选择图片素材</strong><button type="button" data-material-close>×</button></div>' +
+                    '<div class="sb-material-head"><strong id="sbMaterialTitle">选择图片素材</strong><button type="button" data-material-close>×</button></div>' +
                     '<div class="sb-material-tools"><input type="text" id="sbMaterialKeywords" placeholder="搜索文件名"><button type="button" id="sbMaterialSearch">搜索</button></div>' +
                     '<div class="sb-material-body" id="sbMaterialBody"></div>' +
-                    '<div class="sb-material-foot"><span id="sbMaterialCount"></span><div><button type="button" id="sbMaterialPrev">上一页</button><span id="sbMaterialPage"></span><button type="button" id="sbMaterialNext">下一页</button></div></div>' +
+                    '<div class="sb-material-foot"><span id="sbMaterialCount"></span><div><span id="sbMaterialSelected" class="sb-material-selected"></span><button type="button" id="sbMaterialPrev">上一页</button><span id="sbMaterialPage"></span><button type="button" id="sbMaterialNext">下一页</button><button type="button" id="sbMaterialConfirm" class="sb-material-confirm" style="display:none">确定</button></div></div>' +
                 '</div>' +
             '</div>');
         return $('#sbMaterialDialog');
     }
 
-    function closeImagePicker() {
+    function resetMaterialState() {
         materialState.target = null;
+        materialState.mode = 'single';
+        materialState.nodeId = null;
+        materialState.area = 'props';
+        materialState.key = null;
+        materialState.selectedUrls = [];
+    }
+
+    function closeImagePicker() {
         $('#sbMaterialDialog').hide();
+        resetMaterialState();
+    }
+
+    function isMaterialSelected(url) {
+        return materialState.selectedUrls.indexOf(url) >= 0;
+    }
+
+    function updateMaterialSelectionUi() {
+        var multi = materialState.mode === 'multiple';
+        $('#sbMaterialSelected').text(multi ? ('已选 ' + materialState.selectedUrls.length + ' 张') : '');
+        $('#sbMaterialConfirm').toggle(multi).prop('disabled', !multi || materialState.selectedUrls.length === 0);
+        if (multi) {
+            $('#sbMaterialBody .sb-material-item').each(function () {
+                $(this).toggleClass('is-selected', isMaterialSelected($(this).attr('data-url') || ''));
+            });
+        }
     }
 
     function renderMaterialItems(items) {
@@ -184,13 +224,16 @@
             var url = item.url || item.Url || '';
             var fileName = item.fileName || item.FileName || '';
             if (!url) return;
-            html += '<button type="button" class="sb-material-item" data-url="' + esc(url) + '" title="' + esc(fileName) + '">' +
+            var selectedClass = materialState.mode === 'multiple' && isMaterialSelected(url) ? ' is-selected' : '';
+            html += '<button type="button" class="sb-material-item' + selectedClass + '" data-url="' + esc(url) + '" title="' + esc(fileName) + '">' +
+                '<span class="sb-material-check">✓</span>' +
                 '<span class="sb-material-thumb"><img src="' + esc(url) + '" alt="' + esc(fileName) + '"></span>' +
                 '<span class="sb-material-name">' + esc(fileName || url) + '</span>' +
                 '</button>';
         });
         if (!html) html = '<div class="sb-material-empty">暂无图片素材，请先到“内容管理 → 素材管理”上传图片。</div>';
         $('#sbMaterialBody').html(html);
+        updateMaterialSelectionUi();
     }
 
     function loadImageMaterials() {
@@ -218,12 +261,61 @@
     }
 
     function openImagePicker(input) {
+        resetMaterialState();
+        materialState.mode = 'single';
         materialState.target = input;
         materialState.pageIndex = 1;
         materialState.keywords = '';
         ensureMaterialDialog().show();
+        $('#sbMaterialTitle').text('选择图片素材');
         $('#sbMaterialKeywords').val('');
+        $('#sbMaterialConfirm').hide();
+        $('#sbMaterialSelected').text('');
         loadImageMaterials();
+    }
+
+    function openImageListPicker(nodeId, area, key, images) {
+        resetMaterialState();
+        materialState.mode = 'multiple';
+        materialState.nodeId = nodeId;
+        materialState.area = area || 'props';
+        materialState.key = key;
+        materialState.selectedUrls = normalizeImageList(images).slice();
+        materialState.pageIndex = 1;
+        materialState.keywords = '';
+        ensureMaterialDialog().show();
+        $('#sbMaterialTitle').text('选择 Banner 图片（可多选）');
+        $('#sbMaterialKeywords').val('');
+        updateMaterialSelectionUi();
+        loadImageMaterials();
+    }
+
+    function confirmImageListPicker() {
+        if (materialState.mode !== 'multiple' || !materialState.nodeId || !materialState.key) return;
+        var nodeId = materialState.nodeId;
+        var area = materialState.area;
+        var key = materialState.key;
+        var values = materialState.selectedUrls.slice();
+        store.change(function (doc) {
+            var node = SB.Tree.find(doc.nodes, nodeId);
+            if (!node) return;
+            node[area] = node[area] || {};
+            node[area][key] = values;
+        });
+        store.select(nodeId);
+        closeImagePicker();
+    }
+
+    function updateImageList(nodeId, area, key, updater) {
+        store.change(function (doc) {
+            var node = SB.Tree.find(doc.nodes, nodeId);
+            if (!node) return;
+            node[area] = node[area] || {};
+            var list = normalizeImageList(node[area][key]).slice();
+            updater(list);
+            node[area][key] = list;
+        });
+        store.select(nodeId);
     }
 
     function render() {
@@ -288,16 +380,64 @@
             var input = $(this).siblings('input[data-area][data-key]')[0];
             if (input) openImagePicker(input);
         });
+        $('#propsPanel').on('click.siteBuilder', '[data-action="pick-images"]', function (e) {
+            e.preventDefault();
+            var node = store.selected();
+            if (!node) return;
+            var area = $(this).attr('data-area') || 'props';
+            var key = $(this).attr('data-key');
+            var current = node[area] && key ? node[area][key] : [];
+            openImageListPicker(node.id, area, key, current);
+        });
+        $('#propsPanel').on('click.siteBuilder', '[data-action="remove-list-image"]', function (e) {
+            e.preventDefault();
+            var node = store.selected(); if (!node) return;
+            var index = Number($(this).attr('data-index'));
+            var area = $(this).attr('data-area') || 'props';
+            var key = $(this).attr('data-key');
+            updateImageList(node.id, area, key, function (list) { if (index >= 0 && index < list.length) list.splice(index, 1); });
+        });
+        $('#propsPanel').on('click.siteBuilder', '[data-action="clear-list-images"]', function (e) {
+            e.preventDefault();
+            var node = store.selected(); if (!node) return;
+            var area = $(this).attr('data-area') || 'props';
+            var key = $(this).attr('data-key');
+            updateImageList(node.id, area, key, function (list) { list.splice(0, list.length); });
+        });
+        $('#propsPanel').on('click.siteBuilder', '[data-action="move-list-image"]', function (e) {
+            e.preventDefault();
+            if ($(this).prop('disabled')) return;
+            var node = store.selected(); if (!node) return;
+            var index = Number($(this).attr('data-index'));
+            var direction = $(this).attr('data-direction');
+            var area = $(this).attr('data-area') || 'props';
+            var key = $(this).attr('data-key');
+            updateImageList(node.id, area, key, function (list) {
+                var target = direction === 'up' ? index - 1 : index + 1;
+                if (index < 0 || index >= list.length || target < 0 || target >= list.length) return;
+                var item = list.splice(index, 1)[0];
+                list.splice(target, 0, item);
+            });
+        });
 
         $(document).off('.siteBuilderMaterial')
             .on('click.siteBuilderMaterial', '[data-material-close]', function () { closeImagePicker(); })
             .on('click.siteBuilderMaterial', '#sbMaterialDialog', function (e) { if (e.target === this) closeImagePicker(); })
             .on('click.siteBuilderMaterial', '.sb-material-item', function () {
                 var url = $(this).attr('data-url') || '';
-                if (!materialState.target || !url) return;
+                if (!url) return;
+                if (materialState.mode === 'multiple') {
+                    var index = materialState.selectedUrls.indexOf(url);
+                    if (index >= 0) materialState.selectedUrls.splice(index, 1);
+                    else materialState.selectedUrls.push(url);
+                    updateMaterialSelectionUi();
+                    return;
+                }
+                if (!materialState.target) return;
                 $(materialState.target).val(url).trigger('change');
                 closeImagePicker();
             })
+            .on('click.siteBuilderMaterial', '#sbMaterialConfirm', function () { confirmImageListPicker(); })
             .on('click.siteBuilderMaterial', '#sbMaterialSearch', function () {
                 materialState.keywords = $('#sbMaterialKeywords').val() || '';
                 materialState.pageIndex = 1;
