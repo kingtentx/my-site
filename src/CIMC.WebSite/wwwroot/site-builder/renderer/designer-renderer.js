@@ -57,12 +57,13 @@
         return html;
     }
 
-    function toolbar(node, def) {
-        return '<div class="sb-node-toolbar">'
-            + '<span class="sb-drag"><i class="layui-icon ' + esc(def.icon || 'layui-icon-component') + '"></i> ' + esc(node.name || def.name) + '</span>'
-            + '<span class="sb-node-type">' + esc(node.type) + '</span>'
-            + '<span class="sb-node-actions"><button data-action="duplicate">复制</button><button data-action="toggle">' + (node.visible === false ? '显示' : '隐藏') + '</button><button data-action="delete">删除</button></span>'
-            + '</div>';
+    var navigation = [];
+    function navigationHtml(items) {
+        return (items || []).map(function (item) {
+            return '<div class="sb-public-nav-item' + (item.isCurrent ? ' is-current' : '') + '"><a href="' + esc(safeUrl(item.path || '#')) + '">'
+                + (item.icon ? '<i class="layui-icon ' + esc(item.icon) + '"></i>' : '') + '<span>' + esc(item.title) + '</span></a>'
+                + (item.children && item.children.length ? '<div class="sb-public-subnav">' + navigationHtml(item.children) + '</div>' : '') + '</div>';
+        }).join('');
     }
 
     function bannerPreview(p, css) {
@@ -96,7 +97,7 @@
                 return '<h' + level + ' class="sb-heading" style="' + styleAttr + '">' + esc(p.text || '标题') + '</h' + level + '>';
             }
             case 'text':
-                return '<p class="sb-text" style="' + styleAttr + '">' + esc(p.text || '文本内容').replace(/\n/g,'<br>') + '</p>';
+                return '<p class="sb-text" style="' + styleAttr + '">' + esc(p.text == null ? '文本内容' : p.text) + '</p>';
             case 'image': {
                 var src = safeUrl(p.src);
                 if (!src) return '<div class="sb-placeholder" style="' + styleAttr + '">请选择图片</div>';
@@ -131,16 +132,16 @@
             }
             case 'navigation': {
                 var vertical = p.direction === 'vertical';
-                return '<nav class="sb-public-nav ' + (vertical ? 'is-vertical' : 'is-horizontal') + '" style="' + styleAttr + '"><span>首页</span><span>关于我们</span><span>产品中心</span><span>新闻中心</span></nav>';
+                return '<nav class="sb-public-nav ' + (vertical ? 'is-vertical' : 'is-horizontal') + '" style="' + styleAttr + '">' + navigationHtml(navigation) + '</nav>';
             }
             case 'search':
                 return '<form class="sb-public-search" style="' + styleAttr + '"><input placeholder="' + esc(p.placeholder || '搜索') + '"><button type="button">⌕</button></form>';
             case 'language':
                 return '<span class="sb-public-language" style="' + styleAttr + '">' + esc(p.text || '中文 / EN') + '</span>';
             case 'contact':
-                return '<div class="sb-public-contact" style="' + styleAttr + '">' + esc(p.phone || '联系电话') + (p.email ? '<br>' + esc(p.email) : '') + (p.address ? '<br>' + esc(p.address) : '') + '</div>';
+                return '<div class="sb-public-contact" style="' + styleAttr + '">' + ['phone','email','address'].map(function(key){return p[key] ? '<div>' + esc(p[key]) + '</div>' : '';}).join('') + '</div>';
             case 'social':
-                return '<div class="sb-public-social" style="' + styleAttr + '"><strong>' + esc(p.text || '关注我们') + '</strong><div class="sb-muted">' + esc(p.links || '社交链接') + '</div></div>';
+                return '<div class="sb-public-social" style="' + styleAttr + '"><strong>' + esc(p.text == null ? '关注我们' : p.text) + '</strong><div>' + esc(p.links || '') + '</div></div>';
             case 'copyright':
                 return '<div class="sb-public-copyright" style="' + styleAttr + '">' + esc(p.text || '版权信息') + '</div>';
             default:
@@ -173,14 +174,18 @@
                 attributes += ' data-grid-id="' + esc(node.id) + '" data-grid-columns="' + widths.length + '"';
                 handles = gridResizeHandles(node, widths);
             }
-            var empty = children ? '' : '<div class="sb-drop-empty">拖入组件</div>';
+            var empty = children ? '' : '<div class="sb-drop-empty">拖入组件，或点击左侧添加</div>';
             return '<section class="' + classes + '"' + attributes + ' style="' + esc(css) + '">'
-                + toolbar(node, def) + children + handles + empty + '</section>';
+                + children + handles + empty + '</section>';
         }
 
         var leafClass = 'sb-node sb-leaf-node' + selected + hidden;
-        return '<section class="' + leafClass + '" data-node-id="' + esc(node.id) + '" data-node-type="' + esc(node.type) + '">'
-            + toolbar(node, def) + '<div class="sb-leaf-content">' + leafPreview(node) + '</div></section>';
+        // Put editing metadata on the rendered element itself: no toolbar or layout-changing wrapper.
+        return leafPreview(node).replace(/^<([a-z0-9]+)([^>]*)>/i, function (_, tag, attrs) {
+            if (/class="/.test(attrs)) attrs = attrs.replace('class="', 'class="' + leafClass + ' ');
+            else attrs += ' class="' + leafClass + '"';
+            return '<' + tag + attrs + ' data-node-id="' + esc(node.id) + '" data-node-type="' + esc(node.type) + '">';
+        });
     }
 
     function render(documentModel, selectedId) {
@@ -189,5 +194,5 @@
         return '<div class="sb-root-drop sb-children" data-parent-id="">' + nodes.map(function (node) { return nodeHtml(node, selectedId); }).join('') + '</div>';
     }
 
-    root.DesignerRenderer = { render: render, styleText: styleText, escapeHtml: esc };
+    root.DesignerRenderer = { render: render, styleText: styleText, escapeHtml: esc, setNavigation: function(items) { navigation = items || []; } };
 })(window);

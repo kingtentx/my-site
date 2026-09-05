@@ -46,14 +46,22 @@ namespace MySite.Web.Controllers
         }
 
         /// <summary>
-        /// 后台装修器的整页草稿预览。页面主体使用当前草稿，Header/Footer、导航、站点样式
-        /// 与公开站点使用同一套渲染链路，便于对比装修结果和最终发布效果。
+        /// 为装修画布提供与公开站点相同的页面导航树。
+        /// </summary>
+        [Authorize]
+        public IActionResult BuilderNavigation(string path = "/")
+        {
+            return Json(BuildNavigationTree(NormalizePath(path)));
+        }
+
+        /// <summary>
+        /// 使用保存的页面及全局区域草稿预览；发布站点始终只读取各自发布版本。
         /// </summary>
         [Authorize]
         public IActionResult BuilderPreview(int id)
         {
             var page = _pageRepository.GetOne(id);
-            if (page == null || page.IsDelete || IsGlobalPage(page)) return NotFound();
+            if (page == null || page.IsDelete) return NotFound();
 
             BuilderDocumentModel document;
             if (string.IsNullOrWhiteSpace(page.ComponentJson))
@@ -84,13 +92,25 @@ namespace MySite.Web.Controllers
                 SeoKeywords = page.SeoKeywords,
                 SeoDescription = page.SeoDescription,
                 Document = document,
-                HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode, BuilderDocumentFactory.CreateDefaultHeader()),
-                FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode, BuilderDocumentFactory.CreateDefaultFooter()),
+                HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode, previewDraft: true),
+                FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode, previewDraft: true),
                 SiteConfig = ToSiteConfigModel(siteConfig),
                 Navigation = BuildNavigationTree(page.PagePath)
             };
 
+            // Preview global drafts in the same surrounding page and layout as publication.
+            if (IsGlobalPage(page))
+            {
+                var home = _pageRepository.GetOne(p => p.IsHome && !p.IsDelete && p.IsActive && p.Status == 1);
+                model.Document = LoadPublishedDocument(home) ?? new BuilderDocumentModel();
+                model.PagePath = home?.PagePath ?? "/";
+                model.Navigation = BuildNavigationTree(model.PagePath);
+                if (page.PageCode == BuilderDocumentFactory.GlobalHeaderPageCode) model.HeaderDocument = document;
+                else if (page.PageCode == BuilderDocumentFactory.GlobalFooterPageCode) model.FooterDocument = document;
+            }
+
             ViewData["Title"] = "草稿预览 - " + (page.PageTitle ?? page.PageName ?? "页面");
+            ViewBag.IsBuilderPreview = true;
             ViewData["Keywords"] = page.SeoKeywords ?? siteConfig?.Keywords;
             ViewData["Description"] = page.SeoDescription ?? siteConfig?.Description;
             ViewBag.SiteConfig = model.SiteConfig;
@@ -227,8 +247,8 @@ namespace MySite.Web.Controllers
                 SeoKeywords = page.SeoKeywords,
                 SeoDescription = page.SeoDescription,
                 Document = document,
-                HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode, BuilderDocumentFactory.CreateDefaultHeader()),
-                FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode, BuilderDocumentFactory.CreateDefaultFooter()),
+                HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode),
+                FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode),
                 SiteConfig = ToSiteConfigModel(siteConfig),
                 Navigation = navigation
             };
@@ -255,8 +275,8 @@ namespace MySite.Web.Controllers
             ViewData["Description"] = siteConfig?.Description;
             ViewBag.SiteConfig = ToSiteConfigModel(siteConfig);
             ViewBag.NavigationList = navList;
-            ViewBag.HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode, BuilderDocumentFactory.CreateDefaultHeader());
-            ViewBag.FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode, BuilderDocumentFactory.CreateDefaultFooter());
+            ViewBag.HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode);
+            ViewBag.FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode);
         }
 
         private bool SiteEnabled()
@@ -346,10 +366,18 @@ namespace MySite.Web.Controllers
             catch { return null; }
         }
 
-        private BuilderDocumentModel LoadGlobalDocument(string code, BuilderDocumentModel fallback)
+        private BuilderDocumentModel LoadGlobalDocument(string code, bool previewDraft = false)
         {
-            var page = _pageRepository.GetOne(p => p.PageCode == code && !p.IsDelete && p.IsActive && p.Status == 1);
-            return LoadPublishedDocument(page) ?? fallback;
+            var empty = new BuilderDocumentModel();
+            var page = _pageRepository.GetOne(p => p.PageCode == code && !p.IsDelete && p.IsActive);
+            if (page == null) return empty;
+            if (!previewDraft) return page.Status == 1 ? LoadPublishedDocument(page) ?? empty : empty;
+            try
+            {
+                var draft = JsonConvert.DeserializeObject<BuilderDocumentModel>(page.ComponentJson ?? "{}");
+                return draft?.SchemaVersion == 1 ? draft : empty;
+            }
+            catch (JsonException) { return empty; }
         }
 
         private static SiteConfigModel ToSiteConfigModel(WebsiteSiteConfig entity)

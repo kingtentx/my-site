@@ -1,6 +1,7 @@
 @using System
 @using System.Collections.Generic
 @using System.Linq
+@using System.Globalization
 @using Newtonsoft.Json.Linq
 @model MySite.Web.Models.BuilderNodeRenderModel
 @{
@@ -84,14 +85,14 @@ else if (node.Type == "grid")
 {
     var columns = children.Count > 0 ? Math.Max(1, Math.Min(6, children.Count)) : Math.Max(1, Math.Min(6, IntProp("columns", 2)));
     var weights = StringListProp("columnWidths")
-        .Select(x => int.TryParse(x, out var width) ? width : 0)
+        .Select(x => double.TryParse(x, NumberStyles.Float, CultureInfo.InvariantCulture, out var width) && double.IsFinite(width) ? width : 0)
         .Where(x => x > 0)
         .ToList();
     if (weights.Count != columns)
     {
-        weights = Enumerable.Repeat(100, columns).ToList();
+        weights = Enumerable.Repeat(100d, columns).ToList();
     }
-    var gridTemplate = string.Join(" ", weights.Select(x => Math.Max(1, x) + "fr"));
+    var gridTemplate = string.Join(" ", weights.Select(x => Math.Max(1, x).ToString(CultureInfo.InvariantCulture) + "fr"));
     <div class="sb-public-grid" style="grid-template-columns:@gridTemplate;@css" data-builder-id="@node.Id">
         @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
     </div>

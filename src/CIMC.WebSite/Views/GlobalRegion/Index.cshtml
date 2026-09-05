@@ -18,7 +18,7 @@
     <div class="layui-card">
         <div class="layui-card-header">全局区域设计</div>
         <div class="layui-card-body">
-            <div class="tip">Header 和 Footer 已改为与普通页面完全一致的 Builder 文档。可使用区段、容器、网格、Logo、导航、搜索、按钮、联系方式等组件自由组合，发布后全站生效。</div>
+            <div class="tip">Header 和 Footer 分别保存、分别发布。首页发布不会自动发布这里的修改。草稿预览会显示最新保存的全局区域；正式网站只显示各自的发布版本。尚未发布的区域不会用默认模板替代。</div>
             <div class="region-grid">
                 <div class="region-card">
                     <h2>Header <span class="status @(ViewBag.HeaderStatus == 1 ? "published" : "draft")">@(ViewBag.HeaderStatus == 1 ? "已发布" : "草稿")</span></h2>

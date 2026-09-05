@@ -1,5 +1,14 @@
 @model MySite.Web.Models.PageRenderModel
-<div class="sb-runtime" data-builder-document>
+@{
+    var designWidth = 1200;
+    if (Model?.Document?.Settings != null && Model.Document.Settings.TryGetValue("designWidth", out var configuredWidth)
+        && int.TryParse(configuredWidth?.ToString(), out var parsedWidth)
+        && (parsedWidth == 1200 || parsedWidth == 1440 || parsedWidth == 1920))
+    {
+        designWidth = parsedWidth;
+    }
+}
+<div class="sb-runtime" data-builder-document data-design-width="@designWidth" style="max-width:@(designWidth)px;margin-left:auto;margin-right:auto">
 @if (Model?.Document?.Nodes != null)
 {
     foreach (var node in Model.Document.Nodes)

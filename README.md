@@ -475,6 +475,14 @@ scripts/site_builder_reset_v3.sql
 
 ## 9. 页面发布流程
 
+装修器的“设计宽度”保存在 `BuilderDocument.Settings.designWidth` 中（1200 / 1440 / 1920px），
+设计、草稿预览和正式页使用相同宽度并居中；小屏下自适应收缩。旧文档没有此字段时使用 1200px。
+宽度调整支持撤销 / 重做，保存草稿后保留，重新发布后正式页生效。
+
+Header、Footer 和普通页面分别保存、分别发布。`/Home/BuilderPreview` 显示最新保存的页面和全局区域草稿，
+并标注草稿预览；正式网站只使用各自的发布版本。未发布的全局区域留空，不会偷偷替换成默认 Logo 或按钮。
+默认 Header / Footer 仅用于首次新建或显式恢复模板。
+
 ```text
 编辑页面
    ↓

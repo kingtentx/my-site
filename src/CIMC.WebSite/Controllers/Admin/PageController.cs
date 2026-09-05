@@ -384,6 +384,7 @@ namespace MySite.Web.Controllers
         {
             var page = _pageRepository.GetOne(id);
             if (page == null || page.IsDelete) return NotFound();
+            if (IsGlobalPage(page)) return RedirectToAction("BuilderPreview", "Home", new { id });
             var json = NormalizeBuilderDocument(page.ComponentJson, out var error);
             if (!string.IsNullOrEmpty(error)) return BadRequest(error);
             ViewBag.PageId = page.Id;

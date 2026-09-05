@@ -6,7 +6,7 @@
     var Tree = root.Tree;
 
     function createDocument(name) {
-        return { schemaVersion: 1, name: name || '', nodes: [], settings: {} };
+        return { schemaVersion: 1, name: name || '', nodes: [], settings: { designWidth: 1200 } };
     }
 
     function pick(object, lower, upper, fallback) {
@@ -119,6 +119,8 @@
             nodes: Array.isArray(nodes) ? nodes.map(normalizeNode) : [],
             settings: pick(value, 'settings', 'Settings', {}) || {}
         };
+        var width = Number(this.document.settings.designWidth);
+        this.document.settings.designWidth = [1200, 1440, 1920].indexOf(width) >= 0 ? width : 1200;
         this.selectedId = null;
         this.history = [];
         this.future = [];
