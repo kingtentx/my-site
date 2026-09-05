@@ -1,4 +1,5 @@
 @model MySite.Web.Models.PageRenderModel
+<div class="sb-runtime" data-builder-document>
 @if (Model?.Document?.Nodes != null)
 {
     foreach (var node in Model.Document.Nodes)
@@ -7,3 +8,4 @@
         @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = node, Page = Model })
     }
 }
+</div>
