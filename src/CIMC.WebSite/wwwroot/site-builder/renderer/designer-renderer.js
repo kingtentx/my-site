@@ -28,12 +28,30 @@
         return parts.join(';');
     }
 
+    function bannerPreview(p) {
+        var images = Array.isArray(p.images) ? p.images.filter(function (x) { return !!safeUrl(x); }) : [];
+        if (!images.length) return '<div class="sb-placeholder">请选择 Banner 图片，可多选；2 张及以上自动轮播</div>';
+        var height = Math.max(120, Math.min(900, Number(p.height || 420)));
+        var previewHeight = Math.min(320, height);
+        var fit = p.objectFit === 'contain' ? 'contain' : 'cover';
+        var html = '<div class="sb-banner-preview" style="height:' + previewHeight + 'px">'
+            + '<img src="' + esc(safeUrl(images[0])) + '" alt="Banner" style="width:100%;height:100%;object-fit:' + fit + ';display:block">'
+            + '<span class="sb-banner-badge">' + images.length + ' 张' + (images.length > 1 ? ' · 自动轮播' : '') + '</span>';
+        if (images.length > 1) {
+            html += '<div class="sb-banner-dots">';
+            images.forEach(function (_, index) { html += '<i class="' + (index === 0 ? 'active' : '') + '"></i>'; });
+            html += '</div>';
+        }
+        return html + '</div>';
+    }
+
     function leafPreview(node) {
         var p = node.props || {};
         switch (node.type) {
             case 'heading': var level = Math.max(1, Math.min(4, Number(p.level || 2))); return '<h' + level + '>' + esc(p.text || '标题') + '</h' + level + '>';
             case 'text': return '<p>' + esc(p.text || '文本内容').replace(/\n/g,'<br>') + '</p>';
             case 'image': var src = safeUrl(p.src); return src ? '<img src="' + esc(src) + '" alt="' + esc(p.alt || '') + '" style="max-width:100%;display:block">' : '<div class="sb-placeholder">请选择图片</div>';
+            case 'banner': return bannerPreview(p);
             case 'button': return '<span class="sb-button sb-button-' + esc(p.variant || 'primary') + '">' + esc(p.text || '按钮') + '</span>';
             case 'icon': return '<div style="font-size:' + Number(p.size || 32) + 'px">' + esc(p.text || '★') + '</div>';
             case 'video': return '<div class="sb-placeholder">视频：' + esc(p.src || '尚未配置') + '</div>';
