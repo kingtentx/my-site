@@ -40,6 +40,12 @@
             html += '<input type="checkbox" data-area="' + area + '" data-key="' + key + '" lay-skin="switch" lay-text="是|否"' + (value ? ' checked' : '') + '>';
         } else if (type === 'color') {
             html += '<input type="color" data-area="' + area + '" data-key="' + key + '" value="' + attr(/^#[0-9a-f]{6}$/i.test(value || '') ? value : '#ffffff') + '" style="width:100%;height:34px">';
+        } else if (type === 'image') {
+            html += '<div class="sb-image-input-row">'
+                + '<input class="layui-input" type="text" data-area="' + area + '" data-key="' + key + '" value="' + attr(value == null ? '' : value) + '" placeholder="图片地址或从素材库选择">'
+                + '<button type="button" class="sb-image-pick-btn" data-action="pick-image">素材库</button>'
+                + '</div>';
+            if (value) html += '<div class="sb-image-preview"><img src="' + attr(value) + '" alt="预览"></div>';
         } else {
             html += '<input class="layui-input" type="' + (type === 'number' ? 'number' : 'text') + '" data-area="' + area + '" data-key="' + key + '" value="' + attr(value == null ? '' : value) + '" placeholder="' + attr(field.placeholder || '') + '"' + (field.min != null ? ' min="' + field.min + '"' : '') + (field.max != null ? ' max="' + field.max + '"' : '') + '>';
         }

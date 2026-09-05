@@ -32,6 +32,7 @@
     var layer = null;
     var renderPending = false;
     var initialized = false;
+    var materialState = { pageIndex: 1, pageSize: 24, keywords: '', target: null, count: 0 };
 
     function ok(res) { var code = res ? Number(res.code) : -1; return code === 200 || code === 0; }
     function message(text, icon) {
@@ -39,6 +40,7 @@
         else if (window.console) console.log('[SiteBuilder]', text);
     }
     function groupName(key) { return { layout:'布局组件', basic:'基础组件', data:'内容组件', global:'全局组件' }[key] || key; }
+    function esc(value) { return SB.DesignerRenderer.escapeHtml(value == null ? '' : value); }
 
     function renderLibrary() {
         if (!SB.Registry || typeof SB.Registry.groups !== 'function') {
@@ -56,7 +58,7 @@
             componentCount += items.length;
             html += '<div class="lib-title">' + groupName(key) + '</div>';
             items.forEach(function (def) {
-                html += '<button type="button" class="lib-item" data-type="' + SB.DesignerRenderer.escapeHtml(def.type) + '"><i class="layui-icon ' + (def.icon || 'layui-icon-component') + '"></i><span>' + SB.DesignerRenderer.escapeHtml(def.name) + '</span></button>';
+                html += '<button type="button" class="lib-item" data-type="' + esc(def.type) + '"><i class="layui-icon ' + (def.icon || 'layui-icon-component') + '"></i><span>' + esc(def.name) + '</span></button>';
             });
         });
 
@@ -65,7 +67,7 @@
             if (presets.length) {
                 html += '<div class="lib-title">组合预设</div>';
                 presets.forEach(function (preset) {
-                    html += '<button type="button" class="lib-item lib-preset" data-preset="' + SB.DesignerRenderer.escapeHtml(preset.key) + '"><i class="layui-icon layui-icon-template"></i><span>' + SB.DesignerRenderer.escapeHtml(preset.name) + '</span></button>';
+                    html += '<button type="button" class="lib-item lib-preset" data-preset="' + esc(preset.key) + '"><i class="layui-icon layui-icon-template"></i><span>' + esc(preset.name) + '</span></button>';
                 });
             }
         }
@@ -115,26 +117,113 @@
     }
 
     function setupSortable() {
-        if (!window.Sortable || typeof window.Sortable.create !== 'function') return;
+        if (!window.Sortable || typeof window.Sortable.create !== 'function') {
+            if (window.console) console.warn('[SiteBuilder] Sortable 未加载，拖动排序不可用');
+            return;
+        }
 
         $('.sb-children').each(function () {
             var container = this;
             if (container._siteBuilderSortable) return;
             container._siteBuilderSortable = window.Sortable.create(container, {
                 group: { name: 'site-builder-tree', pull: true, put: true },
-                animation: 120,
+                animation: 160,
                 handle: '.sb-drag',
-                draggable: ':scope > .sb-node',
+                draggable: '.sb-node',
+                forceFallback: true,
                 fallbackOnBody: true,
+                fallbackTolerance: 3,
                 swapThreshold: 0.65,
+                emptyInsertThreshold: 14,
+                scroll: true,
+                bubbleScroll: true,
+                ghostClass: 'sb-sort-ghost',
+                chosenClass: 'sb-sort-chosen',
+                dragClass: 'sb-sort-drag',
+                onStart: function () {
+                    document.body.classList.add('sb-is-dragging');
+                },
                 onEnd: function (evt) {
+                    document.body.classList.remove('sb-is-dragging');
                     var id = $(evt.item).attr('data-node-id');
                     var parentId = $(evt.to).attr('data-parent-id') || null;
-                    var newIndex = $(evt.to).children('.sb-node').index(evt.item);
-                    store.move(id, parentId, newIndex < 0 ? 0 : newIndex);
+                    var newIndex = typeof evt.newDraggableIndex === 'number'
+                        ? evt.newDraggableIndex
+                        : $(evt.to).children('.sb-node').index(evt.item);
+                    if (!id || !store.move(id, parentId, newIndex < 0 ? 0 : newIndex)) {
+                        render();
+                    }
                 }
             });
         });
+    }
+
+    function ensureMaterialDialog() {
+        var $dialog = $('#sbMaterialDialog');
+        if ($dialog.length) return $dialog;
+        $('body').append(
+            '<div class="sb-material-mask" id="sbMaterialDialog" style="display:none">' +
+                '<div class="sb-material-dialog">' +
+                    '<div class="sb-material-head"><strong>选择图片素材</strong><button type="button" data-material-close>×</button></div>' +
+                    '<div class="sb-material-tools"><input type="text" id="sbMaterialKeywords" placeholder="搜索文件名"><button type="button" id="sbMaterialSearch">搜索</button></div>' +
+                    '<div class="sb-material-body" id="sbMaterialBody"></div>' +
+                    '<div class="sb-material-foot"><span id="sbMaterialCount"></span><div><button type="button" id="sbMaterialPrev">上一页</button><span id="sbMaterialPage"></span><button type="button" id="sbMaterialNext">下一页</button></div></div>' +
+                '</div>' +
+            '</div>');
+        return $('#sbMaterialDialog');
+    }
+
+    function closeImagePicker() {
+        materialState.target = null;
+        $('#sbMaterialDialog').hide();
+    }
+
+    function renderMaterialItems(items) {
+        var html = '';
+        (items || []).forEach(function (item) {
+            var url = item.url || item.Url || '';
+            var fileName = item.fileName || item.FileName || '';
+            if (!url) return;
+            html += '<button type="button" class="sb-material-item" data-url="' + esc(url) + '" title="' + esc(fileName) + '">' +
+                '<span class="sb-material-thumb"><img src="' + esc(url) + '" alt="' + esc(fileName) + '"></span>' +
+                '<span class="sb-material-name">' + esc(fileName || url) + '</span>' +
+                '</button>';
+        });
+        if (!html) html = '<div class="sb-material-empty">暂无图片素材，请先到“内容管理 → 素材管理”上传图片。</div>';
+        $('#sbMaterialBody').html(html);
+    }
+
+    function loadImageMaterials() {
+        $('#sbMaterialBody').html('<div class="sb-material-empty">正在加载素材...</div>');
+        $.get('/Images/GetList', {
+            pageIndex: materialState.pageIndex,
+            pageSize: materialState.pageSize,
+            keywords: materialState.keywords || ''
+        }).done(function (res) {
+            if (!ok(res)) {
+                $('#sbMaterialBody').html('<div class="sb-material-empty is-error">读取素材失败：' + esc((res && res.message) || '请确认当前账号拥有素材查看权限') + '</div>');
+                return;
+            }
+            materialState.count = Number(res.count || 0);
+            var pages = Math.max(1, Math.ceil(materialState.count / materialState.pageSize));
+            if (materialState.pageIndex > pages) materialState.pageIndex = pages;
+            renderMaterialItems(res.data || []);
+            $('#sbMaterialCount').text('共 ' + materialState.count + ' 张');
+            $('#sbMaterialPage').text(materialState.pageIndex + ' / ' + pages);
+            $('#sbMaterialPrev').prop('disabled', materialState.pageIndex <= 1);
+            $('#sbMaterialNext').prop('disabled', materialState.pageIndex >= pages);
+        }).fail(function () {
+            $('#sbMaterialBody').html('<div class="sb-material-empty is-error">读取素材请求失败，请检查 /Images/GetList。</div>');
+        });
+    }
+
+    function openImagePicker(input) {
+        materialState.target = input;
+        materialState.pageIndex = 1;
+        materialState.keywords = '';
+        ensureMaterialDialog().show();
+        $('#sbMaterialKeywords').val('');
+        loadImageMaterials();
     }
 
     function render() {
@@ -194,6 +283,42 @@
             var node = store.selected(); if (!node) return;
             store.update(node.id, $(this).attr('data-area'), $(this).attr('data-key'), SB.Inspector.readValue(this));
         });
+        $('#propsPanel').on('click.siteBuilder', '[data-action="pick-image"]', function (e) {
+            e.preventDefault();
+            var input = $(this).siblings('input[data-area][data-key]')[0];
+            if (input) openImagePicker(input);
+        });
+
+        $(document).off('.siteBuilderMaterial')
+            .on('click.siteBuilderMaterial', '[data-material-close]', function () { closeImagePicker(); })
+            .on('click.siteBuilderMaterial', '#sbMaterialDialog', function (e) { if (e.target === this) closeImagePicker(); })
+            .on('click.siteBuilderMaterial', '.sb-material-item', function () {
+                var url = $(this).attr('data-url') || '';
+                if (!materialState.target || !url) return;
+                $(materialState.target).val(url).trigger('change');
+                closeImagePicker();
+            })
+            .on('click.siteBuilderMaterial', '#sbMaterialSearch', function () {
+                materialState.keywords = $('#sbMaterialKeywords').val() || '';
+                materialState.pageIndex = 1;
+                loadImageMaterials();
+            })
+            .on('keydown.siteBuilderMaterial', '#sbMaterialKeywords', function (e) {
+                if (e.keyCode === 13) {
+                    e.preventDefault();
+                    materialState.keywords = $(this).val() || '';
+                    materialState.pageIndex = 1;
+                    loadImageMaterials();
+                }
+            })
+            .on('click.siteBuilderMaterial', '#sbMaterialPrev', function () {
+                if (materialState.pageIndex > 1) { materialState.pageIndex--; loadImageMaterials(); }
+            })
+            .on('click.siteBuilderMaterial', '#sbMaterialNext', function () {
+                var pages = Math.max(1, Math.ceil(materialState.count / materialState.pageSize));
+                if (materialState.pageIndex < pages) { materialState.pageIndex++; loadImageMaterials(); }
+            });
+
         $('#btnUndo').on('click.siteBuilder', function () { store.undo(); });
         $('#btnRedo').on('click.siteBuilder', function () { store.redo(); });
         $('#btnSaveDraft').on('click.siteBuilder', function () { saveDraft(); });
@@ -223,20 +348,17 @@
         showLibraryError('组件库初始化异常：' + (e && e.message ? e.message : e));
     }
 
-    // 防止浏览器缓存旧脚本或第三方脚本意外清空组件区。
     window.setTimeout(function () {
         if (!libraryElement) return;
         if (!libraryElement.querySelector('.lib-item')) {
-            try {
-                renderLibrary();
-            } catch (e) {
+            try { renderLibrary(); }
+            catch (e) {
                 if (window.console) console.error('[SiteBuilder] component library recovery failed', e);
                 showLibraryError('组件库恢复失败：' + (e && e.message ? e.message : e));
             }
         }
     }, 300);
 
-    // Layui 仅负责增强提示层和表单渲染；即使 Layui 模块加载失败，也不影响左侧组件库。
     if (window.layui && typeof layui.use === 'function') {
         layui.use(['layer','form'], function () {
             layer = layui.layer || null;
