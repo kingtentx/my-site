@@ -8,7 +8,7 @@
 
     reg({ type: 'section', name: '区段', group: 'layout', icon: 'layui-icon-template-1', container: true, defaults: {}, styleDefaults: { paddingTop: '48px', paddingBottom: '48px', backgroundColor: '#ffffff' }, inspector: [] });
     reg({ type: 'container', name: '容器', group: 'layout', icon: 'layui-icon-screen-full', container: true, defaults: {}, styleDefaults: { maxWidth: '1200px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '20px', paddingRight: '20px' }, inspector: [] });
-    reg({ type: 'grid', name: '网格', group: 'layout', icon: 'layui-icon-table', container: true, defaults: { columns: 2 }, styleDefaults: { gap: '24px' }, inspector: [f('columns', '列数', 'number', { min: 1, max: 6 })] });
+    reg({ type: 'grid', name: '网格', group: 'layout', icon: 'layui-icon-table', container: true, defaults: { columns: 2, columnWidths: [50, 50] }, styleDefaults: { gap: '24px' }, inspector: [f('columns', '网格列数', 'grid-columns', { min: 1, max: 6 })] });
     reg({ type: 'column', name: '列', group: 'layout', icon: 'layui-icon-tabs', container: true, defaults: {}, styleDefaults: { minHeight: '40px' }, inspector: [] });
 
     reg({ type: 'heading', name: '标题', group: 'basic', icon: 'layui-icon-fonts-strong', defaults: { text: '请输入标题', level: 2 }, inspector: [f('text', '标题文字'), f('level', '标题级别', 'select', { options: [{value:1,text:'H1'},{value:2,text:'H2'},{value:3,text:'H3'},{value:4,text:'H4'}] })] });
