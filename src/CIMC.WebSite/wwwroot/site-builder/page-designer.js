@@ -2,15 +2,32 @@
     'use strict';
 
     var libraryElement = document.getElementById('componentLibrary');
+
+    function showLibraryError(text) {
+        if (!libraryElement) return;
+        libraryElement.innerHTML = '<div class="lib-tip" style="color:#d4380d">' + String(text || '装修器组件库初始化失败') + '</div>';
+    }
+
     if (!$ || !window.pageDesignerConfig || !window.SiteBuilder) {
-        if (libraryElement) {
-            libraryElement.innerHTML = '<div class="lib-tip" style="color:#d4380d">装修器基础脚本加载失败，请刷新页面并检查浏览器控制台。</div>';
-        }
+        showLibraryError('装修器基础脚本加载失败，请按 Ctrl+F5 强制刷新，并检查 site-builder 静态脚本是否返回 200。');
         return;
     }
 
     var SB = window.SiteBuilder;
     var config = window.pageDesignerConfig;
+
+    if (!SB.Registry || !SB.Store || !SB.Tree || !SB.DesignerRenderer || !SB.Inspector) {
+        showLibraryError('装修器模块未完整加载。Registry / Store / Tree / Renderer / Inspector 中至少有一个缺失。');
+        if (window.console) console.error('[SiteBuilder] modules missing', {
+            Registry: !!SB.Registry,
+            Store: !!SB.Store,
+            Tree: !!SB.Tree,
+            DesignerRenderer: !!SB.DesignerRenderer,
+            Inspector: !!SB.Inspector
+        });
+        return;
+    }
+
     var store = new SB.Store(config.pageName || '');
     var layer = null;
     var renderPending = false;
@@ -19,14 +36,14 @@
     function ok(res) { var code = res ? Number(res.code) : -1; return code === 200 || code === 0; }
     function message(text, icon) {
         if (layer) layer.msg(text, icon ? { icon: icon } : undefined);
-        else window.alert(text);
+        else if (window.console) console.log('[SiteBuilder]', text);
     }
     function groupName(key) { return { layout:'布局组件', basic:'基础组件', data:'内容组件', global:'全局组件' }[key] || key; }
 
     function renderLibrary() {
         if (!SB.Registry || typeof SB.Registry.groups !== 'function') {
-            $('#componentLibrary').html('<div class="lib-tip" style="color:#d4380d">组件注册器加载失败，请检查 registry.js。</div>');
-            return;
+            showLibraryError('组件注册器加载失败，请检查 registry.js。');
+            return false;
         }
 
         var groups = SB.Registry.groups(), order = ['layout','basic','data','global'];
@@ -44,11 +61,11 @@
         });
 
         if (SB.Presets && typeof SB.Presets.all === 'function') {
-            var presets = SB.Presets.all();
+            var presets = SB.Presets.all() || [];
             if (presets.length) {
                 html += '<div class="lib-title">组合预设</div>';
                 presets.forEach(function (preset) {
-                    html += '<button type="button" class="lib-item lib-preset" data-preset="' + preset.key + '"><i class="layui-icon layui-icon-template"></i><span>' + SB.DesignerRenderer.escapeHtml(preset.name) + '</span></button>';
+                    html += '<button type="button" class="lib-item lib-preset" data-preset="' + SB.DesignerRenderer.escapeHtml(preset.key) + '"><i class="layui-icon layui-icon-template"></i><span>' + SB.DesignerRenderer.escapeHtml(preset.name) + '</span></button>';
                 });
             }
         }
@@ -57,7 +74,8 @@
             html += '<div class="lib-tip" style="margin-top:12px;color:#d4380d">没有加载到任何组件定义，请检查 default-components.js 是否成功加载。</div>';
         }
 
-        $('#componentLibrary').html(html);
+        if (libraryElement) libraryElement.innerHTML = html;
+        return componentCount > 0;
     }
 
     function selectedParentId() {
@@ -66,20 +84,34 @@
     }
 
     function addComponent(type) {
-        var node = store.add(type, selectedParentId());
-        if (!node) return;
-        if (type === 'grid') {
-            store.change(function () { node.children.push(SB.Registry.create('column')); node.children.push(SB.Registry.create('column')); });
-            store.select(node.id);
+        try {
+            var node = store.add(type, selectedParentId());
+            if (!node) return;
+            if (type === 'grid') {
+                store.change(function () {
+                    node.children.push(SB.Registry.create('column'));
+                    node.children.push(SB.Registry.create('column'));
+                });
+                store.select(node.id);
+            }
+        } catch (e) {
+            if (window.console) console.error('[SiteBuilder] add component failed', e);
+            message('添加组件失败：' + (e && e.message ? e.message : e), 2);
         }
     }
 
     function addPreset(key) {
-        var node = SB.Presets.create(key);
-        if (!node) return;
-        var parentId = selectedParentId();
-        store.change(function (doc) { if (!SB.Tree.insert(doc.nodes, node, parentId)) SB.Tree.insert(doc.nodes, node, null); });
-        store.select(node.id);
+        try {
+            if (!SB.Presets || typeof SB.Presets.create !== 'function') return;
+            var node = SB.Presets.create(key);
+            if (!node) return;
+            var parentId = selectedParentId();
+            store.change(function (doc) { if (!SB.Tree.insert(doc.nodes, node, parentId)) SB.Tree.insert(doc.nodes, node, null); });
+            store.select(node.id);
+        } catch (e) {
+            if (window.console) console.error('[SiteBuilder] add preset failed', e);
+            message('添加预设失败：' + (e && e.message ? e.message : e), 2);
+        }
     }
 
     function setupSortable() {
@@ -110,12 +142,17 @@
         renderPending = true;
         window.requestAnimationFrame(function () {
             renderPending = false;
-            $('#canvas').html(SB.DesignerRenderer.render(store.document, store.selectedId));
-            $('#propsPanel').html(SB.Inspector.render(store.selected()));
-            if (window.layui && layui.form) layui.form.render();
-            setupSortable();
-            $('#btnUndo').prop('disabled', store.history.length <= 1);
-            $('#btnRedo').prop('disabled', store.future.length === 0);
+            try {
+                $('#canvas').html(SB.DesignerRenderer.render(store.document, store.selectedId));
+                $('#propsPanel').html(SB.Inspector.render(store.selected()));
+                if (window.layui && layui.form) layui.form.render();
+                setupSortable();
+                $('#btnUndo').prop('disabled', store.history.length <= 1);
+                $('#btnRedo').prop('disabled', store.future.length === 0);
+            } catch (e) {
+                if (window.console) console.error('[SiteBuilder] render failed', e);
+                message('装修器渲染失败：' + (e && e.message ? e.message : e), 2);
+            }
         });
     }
 
@@ -139,11 +176,11 @@
     }
 
     function bindEvents() {
-        $('#componentLibrary').on('click', '[data-type]', function () { addComponent($(this).attr('data-type')); });
-        $('#componentLibrary').on('click', '[data-preset]', function () { addPreset($(this).attr('data-preset')); });
-        $('#canvas').on('click', '.sb-node', function (e) { if ($(e.target).closest('.sb-node-actions').length) return; e.stopPropagation(); store.select($(this).attr('data-node-id')); });
-        $('#canvas').on('click', function (e) { if (e.target === this || $(e.target).hasClass('sb-root-drop')) store.select(null); });
-        $('#canvas').on('click', '.sb-node-actions button', function (e) {
+        $('#componentLibrary').off('.siteBuilder').on('click.siteBuilder', '[data-type]', function () { addComponent($(this).attr('data-type')); });
+        $('#componentLibrary').on('click.siteBuilder', '[data-preset]', function () { addPreset($(this).attr('data-preset')); });
+        $('#canvas').on('click.siteBuilder', '.sb-node', function (e) { if ($(e.target).closest('.sb-node-actions').length) return; e.stopPropagation(); store.select($(this).attr('data-node-id')); });
+        $('#canvas').on('click.siteBuilder', function (e) { if (e.target === this || $(e.target).hasClass('sb-root-drop')) store.select(null); });
+        $('#canvas').on('click.siteBuilder', '.sb-node-actions button', function (e) {
             e.preventDefault(); e.stopPropagation();
             var id = $(this).closest('.sb-node').attr('data-node-id'), node = SB.Tree.find(store.document.nodes, id);
             if (!node) return;
@@ -153,15 +190,15 @@
             else if (action === 'duplicate') store.duplicate(id);
             else if (action === 'toggle') store.update(id, 'node', 'visible', node.visible === false);
         });
-        $('#propsPanel').on('change', '[data-area][data-key]', function () {
+        $('#propsPanel').on('change.siteBuilder', '[data-area][data-key]', function () {
             var node = store.selected(); if (!node) return;
             store.update(node.id, $(this).attr('data-area'), $(this).attr('data-key'), SB.Inspector.readValue(this));
         });
-        $('#btnUndo').on('click', function () { store.undo(); });
-        $('#btnRedo').on('click', function () { store.redo(); });
-        $('#btnSaveDraft').on('click', function () { saveDraft(); });
-        $('#btnPreview').on('click', function () { saveDraft(function () { window.open('/Page/Preview?id=' + config.pageId, '_blank'); }); });
-        $('#btnPublish').on('click', function () {
+        $('#btnUndo').on('click.siteBuilder', function () { store.undo(); });
+        $('#btnRedo').on('click.siteBuilder', function () { store.redo(); });
+        $('#btnSaveDraft').on('click.siteBuilder', function () { saveDraft(); });
+        $('#btnPreview').on('click.siteBuilder', function () { saveDraft(function () { window.open('/Page/Preview?id=' + config.pageId, '_blank'); }); });
+        $('#btnPublish').on('click.siteBuilder', function () {
             saveDraft(function () {
                 $.post('/Page/Publish', { id:config.pageId }).done(function (res) { if (ok(res)) message('页面已发布', 1); else message((res && res.message) || '发布失败', 2); });
             });
@@ -172,14 +209,32 @@
         if (initialized) return;
         initialized = true;
         bindEvents();
-        renderLibrary();
+        var hasComponents = renderLibrary();
+        if (!hasComponents && window.console) console.error('[SiteBuilder] no registered component definitions');
         store.subscribe(render);
         render();
         load();
     }
 
-    // 组件库和画布必须立即初始化，不再依赖 layui.use 回调。
-    initDesigner();
+    try {
+        initDesigner();
+    } catch (e) {
+        if (window.console) console.error('[SiteBuilder] initialize failed', e);
+        showLibraryError('组件库初始化异常：' + (e && e.message ? e.message : e));
+    }
+
+    // 防止浏览器缓存旧脚本或第三方脚本意外清空组件区。
+    window.setTimeout(function () {
+        if (!libraryElement) return;
+        if (!libraryElement.querySelector('.lib-item')) {
+            try {
+                renderLibrary();
+            } catch (e) {
+                if (window.console) console.error('[SiteBuilder] component library recovery failed', e);
+                showLibraryError('组件库恢复失败：' + (e && e.message ? e.message : e));
+            }
+        }
+    }, 300);
 
     // Layui 仅负责增强提示层和表单渲染；即使 Layui 模块加载失败，也不影响左侧组件库。
     if (window.layui && typeof layui.use === 'function') {
