@@ -124,6 +124,61 @@
 .sb-runtime .sb-public-search button { border: 0; background: transparent; padding: 8px; cursor: pointer; }
 .sb-runtime .sb-public-contact { line-height: 1.9; }
 
+.sb-runtime .banner,
+.sb-runtime .sb-public-banner {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    background: #2c3e50;
+    margin: 0;
+}
+.sb-runtime .banner-slides { position: relative; width: 100%; height: 100%; }
+.sb-runtime .banner-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity .6s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sb-runtime .banner-slide.active { opacity: 1; }
+.sb-runtime .banner-slide img { display: block; width: 100%; height: 100%; }
+.sb-runtime .banner-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(0,0,0,.3);
+    color: #fff;
+    font-size: 24px;
+    line-height: 44px;
+    text-align: center;
+    z-index: 3;
+}
+.sb-runtime .banner-arrow.prev { left: 20px; }
+.sb-runtime .banner-arrow.next { right: 20px; }
+.sb-runtime .banner-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 16px;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 3;
+}
+.sb-runtime .banner-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.5);
+}
+.sb-runtime .banner-dot.active { background: #fff; }
+
 .sb-runtime .sb-content-list { width: 100%; }
 .sb-runtime .sb-article-grid,
 .sb-runtime .sb-product-grid {
@@ -165,13 +220,6 @@
 }
 .sb-runtime .component-pagination a:hover,
 .sb-runtime .component-pagination .active { border-color: #1677ff; background: #1677ff; color: #fff; }
-
-.sb-runtime .sb-public-banner.banner {
-    margin: 0;
-}
-.sb-runtime .sb-public-banner .banner-slide img {
-    display: block;
-}
 
 @media (max-width: 900px) {
     .sb-runtime .sb-public-grid { grid-template-columns: 1fr !important; }
