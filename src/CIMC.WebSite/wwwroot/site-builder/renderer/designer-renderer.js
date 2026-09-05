@@ -28,6 +28,33 @@
         return parts.join(';');
     }
 
+    function normalizeGridWidths(node) {
+        var p = node.props || {};
+        var count = root.clampGridColumns ? root.clampGridColumns(p.columns || (node.children || []).length || 2) : Math.max(1, Math.min(6, Number(p.columns || 2)));
+        return root.normalizeGridWidths ? root.normalizeGridWidths(p.columnWidths, count) : (function () {
+            var result = [];
+            for (var i = 0; i < count; i++) result.push(100 / count);
+            return result;
+        })();
+    }
+
+    function gridTemplate(widths) {
+        return widths.map(function (width) { return Math.max(1, Number(width || 1)) + 'fr'; }).join(' ');
+    }
+
+    function gridResizeHandles(node, widths) {
+        if (!widths || widths.length <= 1) return '';
+        var html = '';
+        var total = widths.reduce(function (sum, item) { return sum + Number(item || 0); }, 0) || 100;
+        var cumulative = 0;
+        for (var i = 0; i < widths.length - 1; i++) {
+            cumulative += Number(widths[i] || 0);
+            var left = Math.max(0, Math.min(100, cumulative / total * 100));
+            html += '<button type="button" class="sb-grid-resize-handle" data-grid-id="' + esc(node.id) + '" data-index="' + i + '" style="left:' + left + '%" title="拖动调整列宽" aria-label="调整第' + (i + 1) + '列和第' + (i + 2) + '列宽度"><span></span></button>';
+        }
+        return html;
+    }
+
     function bannerPreview(p) {
         var images = Array.isArray(p.images) ? p.images.filter(function (x) { return !!safeUrl(x); }) : [];
         if (!images.length) return '<div class="sb-placeholder">请选择 Banner 图片，可多选；2 张及以上自动轮播</div>';
@@ -78,8 +105,17 @@
         if (def.container) {
             var children = (node.children || []).map(function (child) { return nodeHtml(child, selectedId); }).join('');
             var innerClass = 'sb-children';
-            if (node.type === 'grid') innerClass += ' sb-grid';
-            body = '<div class="' + innerClass + '" data-parent-id="' + esc(node.id) + '"' + (node.type === 'grid' ? ' style="grid-template-columns:repeat(' + Math.max(1, Number((node.props || {}).columns || 2)) + ',minmax(0,1fr))"' : '') + '>' + children + (children ? '' : '<div class="sb-drop-empty">拖入组件</div>') + '</div>';
+            var extraStyle = '';
+            var extraAttributes = '';
+            var handles = '';
+            if (node.type === 'grid') {
+                var widths = normalizeGridWidths(node);
+                innerClass += ' sb-grid';
+                extraStyle = ' style="grid-template-columns:' + esc(gridTemplate(widths)) + '"';
+                extraAttributes = ' data-grid-id="' + esc(node.id) + '" data-grid-columns="' + widths.length + '"';
+                handles = gridResizeHandles(node, widths);
+            }
+            body = '<div class="' + innerClass + '" data-parent-id="' + esc(node.id) + '"' + extraAttributes + extraStyle + '>' + children + handles + (children ? '' : '<div class="sb-drop-empty">拖入组件</div>') + '</div>';
         } else {
             body = leafPreview(node);
         }
