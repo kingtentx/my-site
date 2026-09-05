@@ -82,8 +82,17 @@ else if (node.Type == "container")
 }
 else if (node.Type == "grid")
 {
-    var columns = Math.Max(1, Math.Min(6, IntProp("columns", 2)));
-    <div class="sb-public-grid" style="grid-template-columns:repeat(@columns,minmax(0,1fr));@css" data-builder-id="@node.Id">
+    var columns = children.Count > 0 ? Math.Max(1, Math.Min(6, children.Count)) : Math.Max(1, Math.Min(6, IntProp("columns", 2)));
+    var weights = StringListProp("columnWidths")
+        .Select(x => int.TryParse(x, out var width) ? width : 0)
+        .Where(x => x > 0)
+        .ToList();
+    if (weights.Count != columns)
+    {
+        weights = Enumerable.Repeat(100, columns).ToList();
+    }
+    var gridTemplate = string.Join(" ", weights.Select(x => Math.Max(1, x) + "fr"));
+    <div class="sb-public-grid" style="grid-template-columns:@gridTemplate;@css" data-builder-id="@node.Id">
         @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
     </div>
 }
