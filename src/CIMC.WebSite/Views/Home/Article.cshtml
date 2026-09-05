@@ -1,53 +1,23 @@
 @using CIMC.Data
-@using MySite.Web.Models
 @model Article
 @{
     Layout = "_PublicLayout";
     ViewData["Title"] = Model.Title;
-
-    var navList = ViewBag.NavigationList as List<NavigationModel> ?? new List<NavigationModel>();
-    var footer = ViewBag.Footer as FooterModel ?? new FooterModel();
-    var siteConfig = ViewBag.SiteConfig as SiteConfigModel;
-    var currentPath = Context.Request.Path.Value ?? "/";
 }
-
-<header class="site-header is-fixed">
-    <div class="container header-inner">
-        <a href="/" class="logo">
-            @if (!string.IsNullOrEmpty(siteConfig?.Logo))
-            {
-                <img src="@siteConfig.Logo" alt="@siteConfig.SiteName" />
-            }
-            else
-            {
-                <span class="logo-text">@(siteConfig?.SiteName ?? "企业官网")</span>
-            }
-        </a>
-        <button type="button" class="nav-toggle" aria-label="切换菜单" data-nav-toggle>
-            <span></span><span></span><span></span>
-        </button>
-        <nav class="main-nav" data-nav-menu>
-            <ul>
-                @foreach (var nav in navList.Where(n => n.Pid == 0).OrderBy(n => n.Sort))
-                {
-                    var isActive = currentPath.Equals(nav.Path, StringComparison.OrdinalIgnoreCase)
-                                || (nav.Path != "/" && currentPath.StartsWith(nav.Path, StringComparison.OrdinalIgnoreCase));
-                    <li class="nav-item @(isActive ? "active" : "")">
-                        <a href="@nav.Path" target="@(nav.Target == 1 ? "_blank" : "_self")">@nav.Title</a>
-                    </li>
-                }
-            </ul>
-        </nav>
-    </div>
-</header>
 
 <article class="article-detail">
     <div class="container">
         <div class="article-header">
             <h1 class="article-title">@Model.Title</h1>
             <div class="article-meta">
-                @if (!string.IsNullOrEmpty(Model.Author)) { <span class="meta-item">作者：@Model.Author</span> }
-                @if (Model.CreationTime.HasValue) { <span class="meta-item">发布时间：@Model.CreationTime.Value.ToString("yyyy-MM-dd")</span> }
+                @if (!string.IsNullOrEmpty(Model.Author))
+                {
+                    <span class="meta-item">作者：@Model.Author</span>
+                }
+                @if (Model.CreationTime.HasValue)
+                {
+                    <span class="meta-item">发布时间：@Model.CreationTime.Value.ToString("yyyy-MM-dd")</span>
+                }
                 <span class="meta-item">浏览：@Model.ViewCount</span>
             </div>
         </div>
@@ -59,12 +29,3 @@
         </div>
     </div>
 </article>
-
-<footer class="site-footer" style="background-color:@(footer.BgColor); color:@(footer.TextColor);">
-    <div class="container">
-        <div class="footer-copyright">
-            @if (!string.IsNullOrEmpty(footer.Copyright)) { <span>@footer.Copyright</span> }
-            @if (!string.IsNullOrEmpty(footer.IcpNo)) { <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener" style="color:@footer.TextColor;">@footer.IcpNo</a> }
-        </div>
-    </div>
-</footer>
