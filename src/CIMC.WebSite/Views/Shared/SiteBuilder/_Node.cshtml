@@ -1,6 +1,7 @@
 @using System
 @using System.Collections.Generic
 @using System.Linq
+@using Newtonsoft.Json.Linq
 @model MySite.Web.Models.BuilderNodeRenderModel
 @{
     var node = Model.Node;
@@ -18,6 +19,28 @@
     bool BoolProp(string key, bool fallback)
     {
         return props.TryGetValue(key, out var value) && value != null && bool.TryParse(value.ToString(), out var result) ? result : fallback;
+    }
+    List<string> StringListProp(string key)
+    {
+        if (!props.TryGetValue(key, out var value) || value == null) return new List<string>();
+        if (value is JArray array)
+        {
+            return array.Select(x => x?.ToString()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+        }
+        if (value is IEnumerable<string> strings)
+        {
+            return strings.Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+        }
+        if (value is string text && !string.IsNullOrWhiteSpace(text))
+        {
+            try
+            {
+                var parsed = JArray.Parse(text);
+                return parsed.Select(x => x?.ToString()).Where(x => !string.IsNullOrWhiteSpace(x)).ToList();
+            }
+            catch { }
+        }
+        return new List<string>();
     }
     string SafeUrl(string value)
     {
@@ -89,6 +112,42 @@ else if (node.Type == "image")
     {
         if (!string.IsNullOrWhiteSpace(link)) { <a href="@link"><img class="sb-image" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /></a> }
         else { <img class="sb-image" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /> }
+    }
+}
+else if (node.Type == "banner")
+{
+    var images = StringListProp("images").Select(SafeUrl).Where(x => !string.IsNullOrWhiteSpace(x)).Take(30).ToList();
+    var height = Math.Max(120, Math.Min(900, IntProp("height", 420)));
+    var interval = Math.Max(1000, Math.Min(30000, IntProp("interval", 5000)));
+    var fit = Prop("objectFit", "cover") == "contain" ? "contain" : "cover";
+    var showArrows = BoolProp("showArrows", true);
+    var showDots = BoolProp("showDots", true);
+    if (images.Count > 0)
+    {
+        <div class="banner sb-public-banner" data-banner data-autoplay="@(images.Count > 1 ? "true" : "false")" data-interval="@interval" style="height:@(height)px;@css" data-builder-id="@node.Id">
+            <div class="banner-slides">
+                @for (var i = 0; i < images.Count; i++)
+                {
+                    <div class="banner-slide @(i == 0 ? "active" : "")">
+                        <img src="@images[i]" alt="Banner @(i + 1)" loading="@(i == 0 ? "eager" : "lazy")" style="width:100%;height:100%;object-fit:@fit" />
+                    </div>
+                }
+            </div>
+            @if (images.Count > 1 && showArrows)
+            {
+                <button type="button" class="banner-arrow prev" data-banner-prev aria-label="上一张">‹</button>
+                <button type="button" class="banner-arrow next" data-banner-next aria-label="下一张">›</button>
+            }
+            @if (images.Count > 1 && showDots)
+            {
+                <div class="banner-dots" data-banner-dots>
+                    @for (var i = 0; i < images.Count; i++)
+                    {
+                        <span class="banner-dot @(i == 0 ? "active" : "")"></span>
+                    }
+                </div>
+            }
+        </div>
     }
 }
 else if (node.Type == "button")
