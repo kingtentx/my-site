@@ -57,6 +57,19 @@
             ? SB.Inspector.normalizeImageList(value)
             : (Array.isArray(value) ? value.filter(Boolean) : []);
     }
+    function gridColumnCount(value) {
+        return SB.clampGridColumns ? SB.clampGridColumns(value) : Math.max(1, Math.min(6, Math.round(Number(value || 2))));
+    }
+    function gridWidths(value, count) {
+        return SB.normalizeGridWidths ? SB.normalizeGridWidths(value, count) : (function () {
+            var result = [];
+            for (var i = 0; i < count; i++) result.push(100 / count);
+            return result;
+        })();
+    }
+    function gridTemplate(widths) {
+        return widths.map(function (item) { return Math.max(1, Number(item || 1)) + 'fr'; }).join(' ');
+    }
 
     function renderLibrary() {
         if (!SB.Registry || typeof SB.Registry.groups !== 'function') {
@@ -105,13 +118,7 @@
         try {
             var node = store.add(type, selectedParentId());
             if (!node) return;
-            if (type === 'grid') {
-                store.change(function () {
-                    node.children.push(SB.Registry.create('column'));
-                    node.children.push(SB.Registry.create('column'));
-                });
-                store.select(node.id);
-            }
+            store.select(node.id);
         } catch (e) {
             if (window.console) console.error('[SiteBuilder] add component failed', e);
             message('添加组件失败：' + (e && e.message ? e.message : e), 2);
@@ -156,6 +163,14 @@
                 ghostClass: 'sb-sort-ghost',
                 chosenClass: 'sb-sort-chosen',
                 dragClass: 'sb-sort-drag',
+                onMove: function (evt) {
+                    var type = $(evt.dragged).attr('data-node-type') || '';
+                    var parentId = $(evt.to).attr('data-parent-id') || null;
+                    var parent = parentId ? SB.Tree.find(store.document.nodes, parentId) : null;
+                    if (type === 'column') return !!(parent && parent.type === 'grid');
+                    if (parent && parent.type === 'grid') return false;
+                    return true;
+                },
                 onStart: function () {
                     document.body.classList.add('sb-is-dragging');
                 },
@@ -166,12 +181,65 @@
                     var newIndex = typeof evt.newDraggableIndex === 'number'
                         ? evt.newDraggableIndex
                         : $(evt.to).children('.sb-node').index(evt.item);
-                    if (!id || !store.move(id, parentId, newIndex < 0 ? 0 : newIndex)) {
-                        render();
-                    }
+                    if (!id || !store.move(id, parentId, newIndex < 0 ? 0 : newIndex)) render();
                 }
             });
         });
+    }
+
+    function updateGridDom($grid, widths) {
+        var total = widths.reduce(function (sum, item) { return sum + Number(item || 0); }, 0) || 100;
+        var cumulative = 0;
+        $grid.css('grid-template-columns', gridTemplate(widths));
+        $grid.children('.sb-grid-resize-handle').each(function (index) {
+            cumulative += Number(widths[index] || 0);
+            var left = cumulative / total * 100;
+            $(this).css('left', left + '%');
+        });
+    }
+
+    function beginGridResize(e, handle) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $handle = $(handle);
+        var gridId = $handle.attr('data-grid-id');
+        var index = Number($handle.attr('data-index'));
+        var node = SB.Tree.find(store.document.nodes, gridId);
+        if (!node || node.type !== 'grid' || node.locked) return;
+        var $grid = $handle.closest('.sb-grid');
+        if (!$grid.length) return;
+        var rect = $grid[0].getBoundingClientRect();
+        if (!rect.width) return;
+        var count = gridColumnCount((node.props || {}).columns || (node.children || []).length || 2);
+        var startWidths = gridWidths((node.props || {}).columnWidths, count);
+        if (index < 0 || index >= startWidths.length - 1) return;
+        var current = startWidths.slice();
+        var startX = e.clientX;
+        var pairTotal = startWidths[index] + startWidths[index + 1];
+        var minWidth = Math.min(8, Math.max(2, pairTotal / 3));
+
+        store.select(gridId);
+        document.body.classList.add('sb-is-resizing-grid');
+        $handle.addClass('is-resizing');
+
+        $(document).off('.siteBuilderGridResize')
+            .on('mousemove.siteBuilderGridResize', function (moveEvent) {
+                moveEvent.preventDefault();
+                var delta = (moveEvent.clientX - startX) / rect.width * 100;
+                var left = Math.max(minWidth, Math.min(pairTotal - minWidth, startWidths[index] + delta));
+                var right = pairTotal - left;
+                current[index] = Math.round(left * 10) / 10;
+                current[index + 1] = Math.round(right * 10) / 10;
+                updateGridDom($grid, current);
+                $handle.attr('data-size-label', Math.round(current[index]) + '% / ' + Math.round(current[index + 1]) + '%');
+            })
+            .on('mouseup.siteBuilderGridResize', function () {
+                $(document).off('.siteBuilderGridResize');
+                document.body.classList.remove('sb-is-resizing-grid');
+                $handle.removeClass('is-resizing');
+                store.setGridWidths(gridId, current);
+                store.select(gridId);
+            });
     }
 
     function ensureMaterialDialog() {
@@ -359,8 +427,9 @@
     function bindEvents() {
         $('#componentLibrary').off('.siteBuilder').on('click.siteBuilder', '[data-type]', function () { addComponent($(this).attr('data-type')); });
         $('#componentLibrary').on('click.siteBuilder', '[data-preset]', function () { addPreset($(this).attr('data-preset')); });
-        $('#canvas').on('click.siteBuilder', '.sb-node', function (e) { if ($(e.target).closest('.sb-node-actions').length) return; e.stopPropagation(); store.select($(this).attr('data-node-id')); });
+        $('#canvas').on('click.siteBuilder', '.sb-node', function (e) { if ($(e.target).closest('.sb-node-actions,.sb-grid-resize-handle').length) return; e.stopPropagation(); store.select($(this).attr('data-node-id')); });
         $('#canvas').on('click.siteBuilder', function (e) { if (e.target === this || $(e.target).hasClass('sb-root-drop')) store.select(null); });
+        $('#canvas').on('mousedown.siteBuilder', '.sb-grid-resize-handle', function (e) { beginGridResize(e, this); });
         $('#canvas').on('click.siteBuilder', '.sb-node-actions button', function (e) {
             e.preventDefault(); e.stopPropagation();
             var id = $(this).closest('.sb-node').attr('data-node-id'), node = SB.Tree.find(store.document.nodes, id);
@@ -373,7 +442,32 @@
         });
         $('#propsPanel').on('change.siteBuilder', '[data-area][data-key]', function () {
             var node = store.selected(); if (!node) return;
-            store.update(node.id, $(this).attr('data-area'), $(this).attr('data-key'), SB.Inspector.readValue(this));
+            var area = $(this).attr('data-area');
+            var key = $(this).attr('data-key');
+            var value = SB.Inspector.readValue(this);
+            if (node.type === 'grid' && area === 'props' && key === 'columns') {
+                store.setGridColumns(node.id, value);
+                store.select(node.id);
+                return;
+            }
+            store.update(node.id, area, key, value);
+        });
+        $('#propsPanel').on('click.siteBuilder', '[data-action="set-grid-columns"]', function (e) {
+            e.preventDefault();
+            var node = store.selected();
+            if (!node || node.type !== 'grid') return;
+            store.setGridColumns(node.id, Number($(this).attr('data-columns') || 2));
+            store.select(node.id);
+        });
+        $('#propsPanel').on('click.siteBuilder', '[data-action="equal-grid-columns"]', function (e) {
+            e.preventDefault();
+            var node = store.selected();
+            if (!node || node.type !== 'grid') return;
+            var count = gridColumnCount((node.props || {}).columns || (node.children || []).length || 2);
+            var widths = [];
+            for (var i = 0; i < count; i++) widths.push(100 / count);
+            store.setGridWidths(node.id, widths);
+            store.select(node.id);
         });
         $('#propsPanel').on('click.siteBuilder', '[data-action="pick-image"]', function (e) {
             e.preventDefault();
