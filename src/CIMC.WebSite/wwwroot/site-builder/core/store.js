@@ -15,6 +15,62 @@
         return fallback;
     }
 
+    function clampGridColumns(value) {
+        var count = Math.round(Number(value || 2));
+        if (!isFinite(count)) count = 2;
+        return Math.max(1, Math.min(6, count));
+    }
+
+    function normalizeGridWidths(value, count) {
+        count = clampGridColumns(count);
+        var source = Array.isArray(value) ? value : [];
+        var widths = source.map(function (item) { return Number(item); });
+        var valid = widths.length === count && widths.every(function (item) { return isFinite(item) && item > 0; });
+        if (!valid) {
+            widths = [];
+            for (var i = 0; i < count; i++) widths.push(100 / count);
+        }
+        var total = widths.reduce(function (sum, item) { return sum + item; }, 0) || 100;
+        return widths.map(function (item) { return Math.round((item / total) * 1000) / 10; });
+    }
+
+    function reconcileGridNode(node, requestedCount) {
+        if (!node || node.type !== 'grid') return node;
+        node.props = node.props || {};
+        node.children = Array.isArray(node.children) ? node.children : [];
+        var count = clampGridColumns(requestedCount == null ? node.props.columns : requestedCount);
+        var columns = [];
+        var looseChildren = [];
+
+        node.children.forEach(function (child) {
+            if (child && child.type === 'column') columns.push(child);
+            else if (child) looseChildren.push(child);
+        });
+
+        if (!columns.length) columns.push(Registry.create('column'));
+        if (looseChildren.length) {
+            columns[0].children = columns[0].children || [];
+            Array.prototype.push.apply(columns[0].children, looseChildren);
+        }
+
+        while (columns.length < count) columns.push(Registry.create('column'));
+        if (columns.length > count) {
+            var target = columns[Math.max(0, count - 1)];
+            target.children = target.children || [];
+            columns.slice(count).forEach(function (extra) {
+                if (extra && Array.isArray(extra.children) && extra.children.length) {
+                    Array.prototype.push.apply(target.children, extra.children);
+                }
+            });
+            columns = columns.slice(0, count);
+        }
+
+        node.children = columns;
+        node.props.columns = count;
+        node.props.columnWidths = normalizeGridWidths(node.props.columnWidths, count);
+        return node;
+    }
+
     function normalizeNode(source) {
         source = source || {};
         var type = pick(source, 'type', 'Type', '');
@@ -40,6 +96,7 @@
             var values = slots[key];
             node.slots[key] = Array.isArray(values) ? values.map(normalizeNode) : [];
         });
+        if (node.type === 'grid') reconcileGridNode(node, node.props.columns);
         return node;
     }
 
@@ -83,17 +140,46 @@
     Store.prototype.selected = function () { return Tree.find(this.document.nodes, this.selectedId); };
     Store.prototype.add = function (type, parentId) {
         var self=this, node=Registry.create(type);
+        if (type === 'grid') reconcileGridNode(node, node.props.columns);
         this.change(function (doc) { if (!Tree.insert(doc.nodes,node,parentId||null)) Tree.insert(doc.nodes,node,null); });
         self.selectedId=node.id; self.emit(); return node;
     };
     Store.prototype.remove = function (id) { var self=this; this.change(function (doc) { Tree.remove(doc.nodes,id); }); if(this.selectedId===id)this.selectedId=null; self.emit(); };
     Store.prototype.duplicate = function (id) { var copy=null,self=this; this.change(function(doc){copy=Tree.duplicate(doc.nodes,id);}); if(copy)this.selectedId=copy.id; self.emit(); return copy; };
-    Store.prototype.move = function (id,parentId,index) { this.change(function(doc){Tree.move(doc.nodes,id,parentId||null,index);}); };
+    Store.prototype.move = function (id,parentId,index) {
+        var moved = false;
+        this.change(function(doc){ moved = Tree.move(doc.nodes,id,parentId||null,index); });
+        return moved;
+    };
     Store.prototype.update = function (id,area,key,value) { this.change(function(doc){var node=Tree.find(doc.nodes,id);if(!node)return;if(area==='node')node[key]=value;else{node[area]=node[area]||{};node[area][key]=value;}}); };
+    Store.prototype.setGridColumns = function (id, count) {
+        var changed = false;
+        this.change(function (doc) {
+            var node = Tree.find(doc.nodes, id);
+            if (!node || node.type !== 'grid') return;
+            reconcileGridNode(node, count);
+            changed = true;
+        });
+        return changed;
+    };
+    Store.prototype.setGridWidths = function (id, widths) {
+        var changed = false;
+        this.change(function (doc) {
+            var node = Tree.find(doc.nodes, id);
+            if (!node || node.type !== 'grid') return;
+            node.props = node.props || {};
+            var count = clampGridColumns(node.props.columns || (node.children || []).length || 2);
+            node.props.columnWidths = normalizeGridWidths(widths, count);
+            changed = true;
+        });
+        return changed;
+    };
     Store.prototype.undo = function () { if(this.history.length<=1)return;this.future.push(this.history.pop());this.document=JSON.parse(this.history[this.history.length-1]);this.selectedId=null;this.emit(); };
     Store.prototype.redo = function () { if(!this.future.length)return;var json=this.future.pop();this.history.push(json);this.document=JSON.parse(json);this.selectedId=null;this.emit(); };
     Store.prototype.serialize = function () { return JSON.stringify(this.document); };
 
     root.Store = Store;
     root.createDocument = createDocument;
+    root.normalizeGridWidths = normalizeGridWidths;
+    root.clampGridColumns = clampGridColumns;
 })(window);
