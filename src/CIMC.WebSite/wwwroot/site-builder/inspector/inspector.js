@@ -66,6 +66,19 @@
         return html + '</div>';
     }
 
+    function renderGridColumns(field, value, area) {
+        var count = Math.max(1, Math.min(6, Number(value || 2)));
+        var html = '<div class="sb-grid-column-control">'
+            + '<input class="layui-input sb-grid-column-number" type="number" data-area="' + area + '" data-key="' + attr(field.key) + '" value="' + count + '" min="1" max="6">'
+            + '<div class="sb-grid-column-buttons">';
+        for (var i = 1; i <= 6; i++) {
+            html += '<button type="button" data-action="set-grid-columns" data-columns="' + i + '" class="' + (i === count ? 'active' : '') + '">' + i + '列</button>';
+        }
+        html += '</div><div class="sb-grid-column-tools"><button type="button" data-action="equal-grid-columns">平均分配列宽</button></div>'
+            + '<div class="sb-grid-column-tip">可直接选择 1~6 列；在画布中拖动列之间的蓝色分隔线，可自由调整每列宽度。</div></div>';
+        return html;
+    }
+
     function renderField(field, value, area) {
         var key = field.key, type = field.type || 'text';
         var html = '<div class="layui-form-item"><label class="layui-form-label">' + esc(field.label || key) + '</label><div class="layui-input-block">';
@@ -87,6 +100,8 @@
             if (value) html += '<div class="sb-image-preview"><img src="' + attr(value) + '" alt="预览"></div>';
         } else if (type === 'image-list') {
             html += renderImageList(field, value, area);
+        } else if (type === 'grid-columns') {
+            html += renderGridColumns(field, value, area);
         } else {
             html += '<input class="layui-input" type="' + (type === 'number' ? 'number' : 'text') + '" data-area="' + area + '" data-key="' + key + '" value="' + attr(value == null ? '' : value) + '" placeholder="' + attr(field.placeholder || '') + '"' + (field.min != null ? ' min="' + field.min + '"' : '') + (field.max != null ? ' max="' + field.max + '"' : '') + '>';
         }
