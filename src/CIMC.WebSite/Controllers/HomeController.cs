@@ -1,5 +1,6 @@
 using CIMC.Data;
 using CIMC.EntityFramework;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using System;
@@ -42,6 +43,64 @@ namespace MySite.Web.Controllers
         {
             var model = BuildPage(p => p.IsHome && !p.IsDelete);
             return model == null ? View("NotFound") : View(model);
+        }
+
+        /// <summary>
+        /// 后台装修器的整页草稿预览。页面主体使用当前草稿，Header/Footer、导航、站点样式
+        /// 与公开站点使用同一套渲染链路，便于对比装修结果和最终发布效果。
+        /// </summary>
+        [Authorize]
+        public IActionResult BuilderPreview(int id)
+        {
+            var page = _pageRepository.GetOne(id);
+            if (page == null || page.IsDelete || IsGlobalPage(page)) return NotFound();
+
+            BuilderDocumentModel document;
+            if (string.IsNullOrWhiteSpace(page.ComponentJson))
+            {
+                document = new BuilderDocumentModel { Name = page.PageName };
+            }
+            else
+            {
+                try
+                {
+                    document = JsonConvert.DeserializeObject<BuilderDocumentModel>(page.ComponentJson);
+                    if (document == null || document.SchemaVersion != 1) return BadRequest("页面结构版本不受支持");
+                    document.Nodes = document.Nodes ?? new List<BuilderNodeModel>();
+                }
+                catch
+                {
+                    return BadRequest("页面草稿不是合法的 Builder 文档");
+                }
+            }
+
+            var siteConfig = _siteConfigRepository.GetOne(1);
+            var model = new PageRenderModel
+            {
+                PageId = page.Id,
+                PageName = page.PageName,
+                PagePath = page.PagePath,
+                PageTitle = page.PageTitle,
+                SeoKeywords = page.SeoKeywords,
+                SeoDescription = page.SeoDescription,
+                Document = document,
+                HeaderDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalHeaderPageCode, BuilderDocumentFactory.CreateDefaultHeader()),
+                FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode, BuilderDocumentFactory.CreateDefaultFooter()),
+                SiteConfig = ToSiteConfigModel(siteConfig),
+                Navigation = BuildNavigationTree(page.PagePath)
+            };
+
+            ViewData["Title"] = "草稿预览 - " + (page.PageTitle ?? page.PageName ?? "页面");
+            ViewData["Keywords"] = page.SeoKeywords ?? siteConfig?.Keywords;
+            ViewData["Description"] = page.SeoDescription ?? siteConfig?.Description;
+            ViewBag.SiteConfig = model.SiteConfig;
+            ViewBag.NavigationList = model.Navigation;
+            ViewBag.HeaderDocument = model.HeaderDocument;
+            ViewBag.FooterDocument = model.FooterDocument;
+            ViewBag.NewsList = _articleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).Take(6).ToList();
+            ViewBag.ProductList = _productRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true).Take(8).ToList();
+            ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true).ToList();
+            return View("Index", model);
         }
 
         public IActionResult About()
@@ -208,7 +267,6 @@ namespace MySite.Web.Controllers
 
         private List<NavigationModel> BuildNavigationTree(string currentPath)
         {
-            // 只有已经发布、启用、允许显示并且所有祖先都允许显示的页面才进入公开导航。
             var allPages = _pageRepository
                 .GetList(p => !p.IsDelete && p.IsActive && p.Status == 1, p => p.Sort, true)
                 .Where(p => !IsGlobalPage(p))
