@@ -27,6 +27,45 @@
 
     function attr(value) { return esc(value == null ? '' : value); }
 
+    function normalizeImageList(value) {
+        if (Array.isArray(value)) return value.filter(function (x) { return !!x; });
+        if (typeof value === 'string' && value.trim()) {
+            try {
+                var parsed = JSON.parse(value);
+                if (Array.isArray(parsed)) return parsed.filter(function (x) { return !!x; });
+            } catch (e) { }
+        }
+        return [];
+    }
+
+    function renderImageList(field, value, area) {
+        var images = normalizeImageList(value);
+        var html = '<div class="sb-image-list-field">'
+            + '<div class="sb-image-list-toolbar">'
+            + '<button type="button" class="sb-image-pick-btn" data-action="pick-images" data-area="' + area + '" data-key="' + attr(field.key) + '">从素材库选择多图</button>';
+        if (images.length) {
+            html += '<button type="button" class="sb-image-list-clear" data-action="clear-list-images" data-area="' + area + '" data-key="' + attr(field.key) + '">清空</button>';
+        }
+        html += '<span class="sb-image-list-count">已选 ' + images.length + ' 张</span></div>';
+
+        if (!images.length) {
+            html += '<div class="sb-image-list-empty">未选择图片。选择 2 张及以上时，前台会自动轮播。</div>';
+        } else {
+            html += '<div class="sb-image-list">';
+            images.forEach(function (url, index) {
+                html += '<div class="sb-image-list-item">'
+                    + '<img src="' + attr(url) + '" alt="Banner ' + (index + 1) + '">'
+                    + '<div class="sb-image-list-meta"><span>' + (index + 1) + '</span><div>'
+                    + '<button type="button" data-action="move-list-image" data-direction="up" data-index="' + index + '" data-area="' + area + '" data-key="' + attr(field.key) + '"' + (index === 0 ? ' disabled' : '') + '>↑</button>'
+                    + '<button type="button" data-action="move-list-image" data-direction="down" data-index="' + index + '" data-area="' + area + '" data-key="' + attr(field.key) + '"' + (index === images.length - 1 ? ' disabled' : '') + '>↓</button>'
+                    + '<button type="button" data-action="remove-list-image" data-index="' + index + '" data-area="' + area + '" data-key="' + attr(field.key) + '">删除</button>'
+                    + '</div></div></div>';
+            });
+            html += '</div>';
+        }
+        return html + '</div>';
+    }
+
     function renderField(field, value, area) {
         var key = field.key, type = field.type || 'text';
         var html = '<div class="layui-form-item"><label class="layui-form-label">' + esc(field.label || key) + '</label><div class="layui-input-block">';
@@ -46,6 +85,8 @@
                 + '<button type="button" class="sb-image-pick-btn" data-action="pick-image">素材库</button>'
                 + '</div>';
             if (value) html += '<div class="sb-image-preview"><img src="' + attr(value) + '" alt="预览"></div>';
+        } else if (type === 'image-list') {
+            html += renderImageList(field, value, area);
         } else {
             html += '<input class="layui-input" type="' + (type === 'number' ? 'number' : 'text') + '" data-area="' + area + '" data-key="' + key + '" value="' + attr(value == null ? '' : value) + '" placeholder="' + attr(field.placeholder || '') + '"' + (field.min != null ? ' min="' + field.min + '"' : '') + (field.max != null ? ' max="' + field.max + '"' : '') + '>';
         }
@@ -78,5 +119,5 @@
         return $el.val();
     }
 
-    root.Inspector = { render: render, readValue: readValue };
+    root.Inspector = { render: render, readValue: readValue, normalizeImageList: normalizeImageList };
 })(window, window.jQuery);
