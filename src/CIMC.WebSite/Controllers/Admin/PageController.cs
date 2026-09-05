@@ -21,7 +21,7 @@ namespace MySite.Web.Controllers
         private static readonly HashSet<string> AllowedNodeTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "section", "container", "grid", "column",
-            "heading", "text", "image", "button", "icon", "video", "divider", "spacer",
+            "heading", "text", "image", "banner", "button", "icon", "video", "divider", "spacer",
             "articleList", "productList", "jobList",
             "logo", "navigation", "search", "language", "contact", "social", "copyright"
         };
