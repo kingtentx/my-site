@@ -75,8 +75,19 @@
 .sb-runtime .sb-text {
     margin: 0;
     line-height: 1.8;
-    white-space: pre-line;
 }
+
+/* 富文本组件：父级继承装修器设置，内部标签只负责语义排版。 */
+.sb-runtime .sb-richtext {white-space:normal;overflow-wrap:anywhere}
+.sb-runtime .sb-richtext > :first-child {margin-top:0}
+.sb-runtime .sb-richtext > :last-child {margin-bottom:0}
+.sb-runtime .sb-richtext p {margin:0 0 1em;line-height:inherit}
+.sb-runtime .sb-richtext h1,.sb-runtime .sb-richtext h2,.sb-runtime .sb-richtext h3,.sb-runtime .sb-richtext h4 {margin:1.15em 0 .55em;line-height:1.35;font-weight:600;color:inherit}
+.sb-runtime .sb-richtext h1 {font-size:2em}.sb-runtime .sb-richtext h2 {font-size:1.5em}.sb-runtime .sb-richtext h3 {font-size:1.2em}.sb-runtime .sb-richtext h4 {font-size:1em}
+.sb-runtime .sb-richtext ul,.sb-runtime .sb-richtext ol {margin:.75em 0 1em;padding-left:1.8em}
+.sb-runtime .sb-richtext li {margin:.28em 0}
+.sb-runtime .sb-richtext blockquote {margin:1em 0;padding:.65em 1em;border-left:4px solid currentColor;background:rgba(148,163,184,.10);opacity:.9}
+.sb-runtime .sb-richtext a {color:#1677ff;text-decoration:underline;text-underline-offset:2px}
 
 .sb-runtime .sb-image {
     display: block;
