@@ -3,6 +3,7 @@
 @using System.Linq
 @using System.Globalization
 @using Newtonsoft.Json.Linq
+@using MySite.Web.Common
 @model MySite.Web.Models.BuilderNodeRenderModel
 @{
     var node = Model.Node;
@@ -121,7 +122,8 @@ else if (node.Type == "heading")
 }
 else if (node.Type == "text")
 {
-    <p class="sb-text" style="@css">@Prop("text", "文本内容")</p>
+    var richText = RichTextSanitizer.Sanitize(Prop("text", "文本内容"));
+    <div class="sb-text sb-rich-text" style="white-space:normal;@css">@Html.Raw(richText)</div>
 }
 else if (node.Type == "image")
 {
