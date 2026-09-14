@@ -107,8 +107,13 @@
                 var level = Math.max(1, Math.min(4, Number(p.level || 2)));
                 return '<h' + level + ' class="sb-heading" style="' + styleAttr + '">' + esc(p.text || '标题') + '</h' + level + '>';
             }
-            case 'text':
-                return '<p class="sb-text" style="' + styleAttr + '">' + esc(p.text == null ? '文本内容' : p.text) + '</p>';
+            case 'text': {
+                var value = p.text == null ? '文本内容' : p.text;
+                var rich = root.RichText && typeof root.RichText.sanitize === 'function'
+                    ? root.RichText.sanitize(value)
+                    : '<p>' + esc(value) + '</p>';
+                return '<div class="sb-text sb-richtext" style="' + styleAttr + '">' + rich + '</div>';
+            }
             case 'image': {
                 var src = safeUrl(p.src);
                 if (!src) return '<div class="sb-placeholder" style="' + styleAttr + '">请选择图片</div>';
