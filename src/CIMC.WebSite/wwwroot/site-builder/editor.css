@@ -86,3 +86,150 @@
 .sb-global-settings select {padding:5px;border:1px solid #cbd5e1;border-radius:4px}
 .sb-global-shortcuts {display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 .sb-global-shortcuts button {padding:4px 8px;background:white;border:1px solid #cbd5e1;border-radius:4px;color:#1677ff;cursor:pointer}
+
+/* ── 右侧属性面板可读性优化 ───────────────────────────────────────────── */
+.designer-props {
+    width: 410px;
+    padding: 16px 15px 22px;
+    background: #f6f8fb;
+    color: #334155;
+    font-size: 13px;
+    line-height: 1.55;
+}
+.props-title {
+    align-items: flex-start;
+    gap: 12px;
+    padding: 4px 3px 14px;
+    margin-bottom: 10px;
+}
+.props-title > div:first-child {min-width:0;flex:1}
+.props-title strong {display:block;font-size:18px;line-height:1.35;color:#172033;letter-spacing:.01em}
+.props-title small {margin-top:5px;font-size:12.5px;line-height:1.55;color:#7b8798;white-space:normal;overflow-wrap:anywhere}
+.props-title-actions {flex:0 0 auto;gap:6px}
+.props-title-actions button {width:32px;height:32px;border-radius:7px!important;background:#fff!important}
+.props-breadcrumb {padding:8px 10px;margin-bottom:12px;font-size:12px;scrollbar-width:thin}
+.props-breadcrumb button {font-size:12px!important}
+.props-fold {margin:10px 0;border-color:#dce4ee;border-radius:9px;box-shadow:0 1px 2px rgba(15,23,42,.025)}
+.props-fold summary {min-height:42px;padding:11px 13px;font-size:13.5px;line-height:1.4;color:#263449}
+.props-fold-body {padding:13px 13px 5px}
+.props-style-heading {margin:20px 3px 9px;font-size:13px}
+.props-style-heading>span:first-child {font-size:13.5px}
+.props-style-heading>span:first-child em,.props-style-heading .props-style-tools em {font-size:11.5px}
+.props-style-heading .props-style-tools button {height:28px;padding:0 10px;font-size:12px;border-radius:6px}
+
+.designer-props .layui-form-item {
+    display:grid;
+    grid-template-columns:96px minmax(0,1fr);
+    align-items:start;
+    column-gap:10px;
+    margin-bottom:12px;
+    clear:both;
+}
+.designer-props .layui-form-label {
+    float:none!important;
+    width:auto!important;
+    padding:8px 0!important;
+    margin:0!important;
+    text-align:left!important;
+    color:#526176!important;
+    font-size:13px!important;
+    line-height:1.45!important;
+    white-space:normal!important;
+    overflow-wrap:anywhere;
+}
+.designer-props .layui-input-block {margin-left:0!important;min-width:0}
+.designer-props .layui-input,
+.designer-props .layui-textarea,
+.designer-props select,
+.sb-length-unit {
+    border-color:#ccd6e3;
+    border-radius:6px;
+    background:#fff;
+    color:#263449;
+    font-size:13px;
+    line-height:1.45;
+    transition:border-color .15s,box-shadow .15s;
+}
+.designer-props .layui-input,.designer-props select,.sb-length-unit {height:36px}
+.designer-props .layui-textarea {min-height:92px;padding:9px 10px;resize:vertical}
+.designer-props .layui-input:focus,
+.designer-props .layui-textarea:focus,
+.designer-props select:focus,
+.sb-length-value:focus,
+.sb-length-unit:focus {border-color:#4d91ff!important;box-shadow:0 0 0 3px rgba(22,119,255,.10);outline:none}
+.sb-field-row {gap:7px}
+.sb-field-row.is-tall>.sb-field-reset {margin-top:7px}
+.sb-field-reset {flex-basis:26px;width:26px;height:26px;font-size:15px;border-radius:6px}
+.sb-field-hint {grid-column:2;margin:-5px 0 10px;padding-left:106px;color:#8794a6;font-size:12px;line-height:1.65}
+.props-hint {padding:10px 11px;font-size:12px;line-height:1.7;border:1px solid #dbeafe;background:#f4f8ff}
+.sb-checkbox-row {height:36px;font-size:13px}
+.sb-checkbox-row input[type=checkbox] {width:17px;height:17px}
+.sb-color-control input[type=color] {width:34px!important;height:34px!important;border-radius:6px}
+.sb-image-pick-btn,.sb-image-list-clear {height:36px!important;border-radius:6px!important;font-size:12.5px}
+.sb-grid-column-number {height:36px!important}
+.sb-grid-column-buttons button,.sb-grid-column-tools button {height:34px!important;font-size:12px!important;border-radius:6px!important}
+.sb-grid-column-tip,.sb-image-list-empty {font-size:12px!important;line-height:1.65!important}
+
+/* 间距区仍保持双列，但每个字段改为上下排版，避免标签被挤成一列字。 */
+.props-style-spacing .props-fold-body {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 12px}
+.props-style-spacing .layui-form-item {display:block;margin-bottom:4px}
+.props-style-spacing .layui-form-label {padding:0 0 5px!important;font-size:12.5px!important}
+.props-style-spacing .layui-input-block {margin:0!important}
+.props-style-spacing .sb-field-hint {padding-left:0;grid-column:auto}
+
+/* ── 富文本编辑器 ───────────────────────────────────────────────────── */
+.sb-richtext-source {display:none!important}
+.sb-field-row>.sb-richtext-editor-wrap {min-width:0;flex:1}
+.sb-richtext-editor-wrap {
+    overflow:hidden;
+    border:1px solid #cbd6e3;
+    border-radius:8px;
+    background:#fff;
+    box-shadow:0 1px 2px rgba(15,23,42,.03);
+}
+.sb-richtext-editor-wrap:focus-within {border-color:#4d91ff;box-shadow:0 0 0 3px rgba(22,119,255,.10)}
+.sb-richtext-toolbar {
+    display:flex;
+    align-items:center;
+    gap:4px;
+    flex-wrap:wrap;
+    padding:7px 8px;
+    border-bottom:1px solid #e4e9f0;
+    background:#f8fafc;
+}
+.sb-richtext-toolbar button {
+    min-width:30px;
+    height:29px;
+    padding:0 8px;
+    border:1px solid transparent;
+    border-radius:5px;
+    background:transparent;
+    color:#46566b;
+    font-size:12px;
+    line-height:27px;
+    cursor:pointer;
+    white-space:nowrap;
+}
+.sb-richtext-toolbar button:hover {border-color:#c7d8ef;background:#eef5ff;color:#1677ff}
+.sb-rte-separator {width:1px;height:20px;margin:0 2px;background:#d9e0e9}
+.sb-richtext-editor {
+    min-height:190px;
+    max-height:420px;
+    overflow:auto;
+    padding:13px 14px;
+    outline:0;
+    color:#253247;
+    background:#fff;
+    font:14px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
+    word-break:break-word;
+}
+.sb-richtext-editor:empty:before {content:attr(data-placeholder);color:#a2adbb;pointer-events:none}
+.sb-richtext-editor p {margin:0 0 10px}
+.sb-richtext-editor h1,.sb-richtext-editor h2,.sb-richtext-editor h3,.sb-richtext-editor h4 {margin:14px 0 8px;line-height:1.4;color:#172033}
+.sb-richtext-editor h2 {font-size:20px}.sb-richtext-editor h3 {font-size:17px}
+.sb-richtext-editor ul,.sb-richtext-editor ol {margin:8px 0;padding-left:24px}
+.sb-richtext-editor blockquote {margin:10px 0;padding:8px 12px;border-left:3px solid #8ebcff;background:#f5f9ff;color:#526176}
+.sb-richtext-editor a {color:#1677ff;text-decoration:underline}
+
+@media(max-width:1500px){.designer-props{width:370px}.designer-props .layui-form-item{grid-template-columns:88px minmax(0,1fr)}.sb-field-hint{padding-left:98px}}
+@media(max-width:1200px){.designer-lib{width:210px;min-width:210px}.designer-props{width:320px;padding-left:11px;padding-right:11px}.designer-props .layui-form-item{grid-template-columns:1fr;row-gap:5px}.designer-props .layui-form-label{padding:0!important}.sb-field-hint{grid-column:1;padding-left:0}.props-style-spacing .props-fold-body{grid-template-columns:1fr}.sb-richtext-editor{min-height:160px}}
