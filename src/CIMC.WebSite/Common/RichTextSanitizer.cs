@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -143,7 +145,7 @@ public static class RichTextSanitizer
     private static string ReadAttribute(string attrs, string name)
     {
         if (string.IsNullOrWhiteSpace(attrs)) return string.Empty;
-        var pattern = @"(?:^|\s)" + Regex.Escape(name) + @"\s*=\s*(?:\"(?<v>[^\"]*)\"|'(?<v>[^']*)'|(?<v>[^\s\"'=<>`]+))";
+        var pattern = "(?:^|\\s)" + Regex.Escape(name) + "\\s*=\\s*(?:\"(?<v>[^\"]*)\"|'(?<v>[^']*)'|(?<v>[^\\s\"'=<>`]+))";
         var match = Regex.Match(attrs, pattern, RegexOptions.IgnoreCase);
         return match.Success ? match.Groups["v"].Value : string.Empty;
     }
@@ -151,7 +153,7 @@ public static class RichTextSanitizer
     private static bool IsSafeHref(string href)
     {
         href = WebUtility.HtmlDecode(href ?? string.Empty).Trim();
-        if (string.IsNullOrEmpty(href)) return false;
+        if (string.IsNullOrEmpty(href) || href.StartsWith("//", StringComparison.Ordinal)) return false;
         if (href.StartsWith("#", StringComparison.Ordinal) ||
             href.StartsWith("/", StringComparison.Ordinal) ||
             href.StartsWith("./", StringComparison.Ordinal) ||
