@@ -16,6 +16,13 @@
     var categoryId = GetInt("categoryId", 0);
     var showSummary = GetBool("showSummary", true);
     var showDate = GetBool("showDate", true);
+    var showImage = GetBool("showImage", true);
+    var enablePagination = GetBool("enablePagination", true);
+
+    var layoutRaw = (props.TryGetValue("layout", out var layoutObj) && layoutObj != null) ? layoutObj.ToString() : "card";
+    var layout = string.IsNullOrWhiteSpace(layoutRaw) ? "card" : layoutRaw.ToLowerInvariant();
+    if (layout != "card" && layout != "list" && layout != "timeline" && layout != "editorial") layout = "card";
+
     var categoryIds = categoryId > 0 ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true) : new List<int>();
     var allItems = ArticleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).Where(a => categoryId <= 0 || categoryIds.Contains(a.TagId)).ToList();
     var request = ViewContext.HttpContext.Request;
@@ -24,6 +31,7 @@
     var pages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
     current = Math.Min(current, pages);
     var items = allItems.Skip((current - 1) * pageSize).Take(pageSize).ToList();
+
     string PageUrl(int number)
     {
         var parts = new List<string>();
@@ -35,23 +43,164 @@
         parts.Add(WebUtility.UrlEncode(key) + "=" + number);
         return $"{request.PathBase}{request.Path}?{string.Join("&", parts)}";
     }
+
+    string ArticleUrl(int id) => $"/news/info-{id}.html";
+    string FormatDate(DateTime? dt) => dt.HasValue ? dt.Value.ToString("yyyy-MM-dd") : "";
 }
-<div class="sb-content-list @(props.TryGetValue("layout", out var layout) && layout?.ToString() == "editorial" ? "is-editorial" : "")" style="@Model.RenderedStyle" data-builder-id="@Model.Node.Id">
-    @if (items.Count == 0) { <p class="sb-empty">暂无文章</p> }
-    else
+
+<div class="sb-content-list is-@layout" style="@Model.RenderedStyle" data-builder-id="@Model.Node.Id">
+    @if (items.Count == 0)
+    {
+        <p class="sb-empty">暂无文章</p>
+    }
+    else if (layout == "card")
     {
         <div class="sb-article-grid" style="--sb-cols:@columns">
             @foreach (var item in items)
             {
                 <article class="sb-content-card">
-                    @if (!string.IsNullOrWhiteSpace(item.ImageUrl)) { <a href="/news/info-@(item.Id).html"><img src="@item.ImageUrl" alt="@item.Title" loading="lazy" /></a> }
-                    <div class="sb-content-card-body"><h3><a href="/news/info-@(item.Id).html">@item.Title</a></h3>@if(showSummary && !string.IsNullOrWhiteSpace(item.Description)){<p>@item.Description</p>}@if(showDate && item.CreationTime.HasValue){<time>@item.CreationTime.Value.ToString("yyyy-MM-dd")</time>}</div>
+                    @if (showImage && !string.IsNullOrWhiteSpace(item.ImageUrl))
+                    {
+                        <a href="@ArticleUrl(item.Id)"><img src="@item.ImageUrl" alt="@item.Title" loading="lazy" /></a>
+                    }
+                    <div class="sb-content-card-body">
+                        <h3><a href="@ArticleUrl(item.Id)">@item.Title</a></h3>
+                        @if (showSummary && !string.IsNullOrWhiteSpace(item.Description))
+                        {
+                            <p>@item.Description</p>
+                        }
+                        @if (showDate && item.CreationTime.HasValue)
+                        {
+                            <time>@FormatDate(item.CreationTime)</time>
+                        }
+                    </div>
                 </article>
             }
         </div>
-        @if (pages > 1)
-        {
-            <nav class="component-pagination">@if(current > 1){<a href="@PageUrl(current - 1)">上一页</a>}@for(var i=1;i<=pages;i++){if(i==current){<span class="active">@i</span>}else{<a href="@PageUrl(i)">@i</a>}}@if(current < pages){<a href="@PageUrl(current + 1)">下一页</a>}</nav>
-        }
+    }
+    else if (layout == "list")
+    {
+        <div class="sb-article-listview">
+            @foreach (var item in items)
+            {
+                <article class="sb-article-list-item">
+                    @if (showImage && !string.IsNullOrWhiteSpace(item.ImageUrl))
+                    {
+                        <a class="sb-article-list-thumb" href="@ArticleUrl(item.Id)"><img src="@item.ImageUrl" alt="@item.Title" loading="lazy" /></a>
+                    }
+                    <div class="sb-article-list-content">
+                        <h3><a href="@ArticleUrl(item.Id)">@item.Title</a></h3>
+                        @if (showSummary && !string.IsNullOrWhiteSpace(item.Description))
+                        {
+                            <p>@item.Description</p>
+                        }
+                        @if (showDate && item.CreationTime.HasValue)
+                        {
+                            <time>@FormatDate(item.CreationTime)</time>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else if (layout == "timeline")
+    {
+        <div class="sb-article-timeline">
+            @foreach (var item in items)
+            {
+                <article class="sb-article-timeline-item">
+                    <div class="sb-timeline-date">@FormatDate(item.CreationTime)</div>
+                    <div class="sb-timeline-dot"></div>
+                    <div class="sb-timeline-content">
+                        @if (showImage && !string.IsNullOrWhiteSpace(item.ImageUrl))
+                        {
+                            <a href="@ArticleUrl(item.Id)"><img src="@item.ImageUrl" alt="@item.Title" loading="lazy" /></a>
+                        }
+                        <h3><a href="@ArticleUrl(item.Id)">@item.Title</a></h3>
+                        @if (showSummary && !string.IsNullOrWhiteSpace(item.Description))
+                        {
+                            <p>@item.Description</p>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else if (layout == "editorial")
+    {
+        var first = items.FirstOrDefault();
+        var rest = items.Skip(1).ToList();
+        <div class="sb-article-editorial">
+            @if (first != null)
+            {
+                <article class="sb-article-editorial-featured">
+                    @if (showImage && !string.IsNullOrWhiteSpace(first.ImageUrl))
+                    {
+                        <a href="@ArticleUrl(first.Id)"><img src="@first.ImageUrl" alt="@first.Title" loading="lazy" /></a>
+                    }
+                    <div class="sb-article-editorial-body">
+                        <h3><a href="@ArticleUrl(first.Id)">@first.Title</a></h3>
+                        @if (showSummary && !string.IsNullOrWhiteSpace(first.Description))
+                        {
+                            <p>@first.Description</p>
+                        }
+                        @if (showDate && first.CreationTime.HasValue)
+                        {
+                            <time>@FormatDate(first.CreationTime)</time>
+                        }
+                    </div>
+                </article>
+            }
+            @if (rest.Any())
+            {
+                <div class="sb-article-editorial-list">
+                    @foreach (var item in rest)
+                    {
+                        <article class="sb-content-card">
+                            @if (showImage && !string.IsNullOrWhiteSpace(item.ImageUrl))
+                            {
+                                <a href="@ArticleUrl(item.Id)"><img src="@item.ImageUrl" alt="@item.Title" loading="lazy" /></a>
+                            }
+                            <div class="sb-content-card-body">
+                                <h3><a href="@ArticleUrl(item.Id)">@item.Title</a></h3>
+                                @if (showSummary && !string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <p>@item.Description</p>
+                                }
+                                @if (showDate && item.CreationTime.HasValue)
+                                {
+                                    <time>@FormatDate(item.CreationTime)</time>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @if (enablePagination && pages > 1)
+    {
+        <nav class="component-pagination" aria-label="文章分页">
+            @if (current > 1)
+            {
+                <a href="@PageUrl(current - 1)">上一页</a>
+            }
+            @for (var i = 1; i <= pages; i++)
+            {
+                if (i == current)
+                {
+                    <span class="active">@i</span>
+                }
+                else
+                {
+                    <a href="@PageUrl(i)">@i</a>
+                }
+            }
+            @if (current < pages)
+            {
+                <a href="@PageUrl(current + 1)">下一页</a>
+            }
+        </nav>
     }
 </div>

@@ -98,6 +98,62 @@
         return html + '</div>';
     }
 
+    function articleListPreview(p, css) {
+        var layout = String(p.layout || 'card').toLowerCase();
+        if (layout !== 'card' && layout !== 'list' && layout !== 'timeline' && layout !== 'editorial') layout = 'card';
+        var columns = Math.max(1, Math.min(6, Number(p.columns || 3)));
+        var showImage = p.showImage !== false;
+        var showSummary = p.showSummary !== false;
+        var showDate = p.showDate !== false;
+        var pageSize = Math.max(1, Math.min(100, Number(p.pageSize || 6)));
+        var count = Math.min(pageSize, 4);
+
+        function mockCard(i, featured) {
+            var thumb = showImage ? ('<a class="sb-thumb' + (featured ? ' is-featured' : '') + '"><div class="sb-thumb-placeholder">封面</div></a>') : '';
+            var title = '<h3><a>文章标题示例 ' + (i + 1) + '</a></h3>';
+            var summary = showSummary ? '<p>这是一段摘要示例，用于预览文章列表在实际页面中的排版效果。</p>' : '';
+            var date = showDate ? '<time>2026-09-14</time>' : '';
+            return '<article class="sb-content-card' + (featured ? ' is-featured' : '') + '">' + thumb + '<div class="sb-content-card-body">' + title + summary + date + '</div></article>';
+        }
+        function mockListItem(i) {
+            var thumb = showImage ? '<a class="sb-article-list-thumb"><div class="sb-thumb-placeholder">封面</div></a>' : '';
+            return '<article class="sb-article-list-item">' + thumb
+                + '<div class="sb-article-list-content"><h3><a>文章标题示例 ' + (i + 1) + '</a></h3>'
+                + (showSummary ? '<p>这是一段摘要示例，用于预览纵向列表排版效果。</p>' : '')
+                + (showDate ? '<time>2026-09-14</time>' : '') + '</div></article>';
+        }
+        function mockTimelineItem(i) {
+            return '<article class="sb-article-timeline-item">'
+                + '<div class="sb-timeline-date">2026-09-14</div><div class="sb-timeline-dot"></div>'
+                + '<div class="sb-timeline-content">' + (showImage ? '<a><div class="sb-thumb-placeholder">封面</div></a>' : '')
+                + '<h3><a>文章标题示例 ' + (i + 1) + '</a></h3>' + (showSummary ? '<p>这是一段摘要示例，用于预览时间轴排版效果。</p>' : '') + '</div></article>';
+        }
+
+        var html = '<div class="sb-content-list is-' + layout + ' sb-designer-article-list" style="' + esc(css) + '">';
+        if (layout === 'card') {
+            html += '<div class="sb-article-grid" style="--sb-cols:' + columns + '">';
+            for (var i = 0; i < count; i++) html += mockCard(i, false);
+            html += '</div>';
+        } else if (layout === 'list') {
+            html += '<div class="sb-article-listview">';
+            for (var i = 0; i < count; i++) html += mockListItem(i);
+            html += '</div>';
+        } else if (layout === 'timeline') {
+            html += '<div class="sb-article-timeline">';
+            for (var i = 0; i < count; i++) html += mockTimelineItem(i);
+            html += '</div>';
+        } else if (layout === 'editorial') {
+            html += '<div class="sb-article-editorial">' + mockCard(0, true)
+                + '<div class="sb-article-editorial-list">';
+            for (var i = 1; i < count; i++) html += mockCard(i, false);
+            html += '</div></div>';
+        }
+        if (p.enablePagination !== false) {
+            html += '<nav class="component-pagination"><a>上一页</a><span class="active">1</span><a>2</a><a>3</a><a>下一页</a></nav>';
+        }
+        return html + '</div>';
+    }
+
     function leafPreview(node) {
         var p = node.props || {};
         var css = styleText(node.style);
@@ -140,7 +196,7 @@
             case 'spacer':
                 return '<div aria-hidden="true" style="height:' + Math.max(4, Math.min(400, Number(p.height || 40))) + 'px;' + styleAttr + '"></div>';
             case 'articleList':
-                return '<div class="sb-placeholder" style="' + styleAttr + '">文章列表 · ' + Number(p.pageSize || 6) + ' 条 · ' + Number(p.columns || 3) + ' 列</div>';
+                return articleListPreview(p, css);
             case 'productList':
                 return '<div class="sb-placeholder" style="' + styleAttr + '">产品列表 · ' + Number(p.pageSize || 8) + ' 条 · ' + Number(p.columns || 4) + ' 列</div>';
             case 'jobList':

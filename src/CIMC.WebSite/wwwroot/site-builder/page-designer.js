@@ -567,6 +567,7 @@
                     if (sameNode) $('#propsPanel details').each(function(){folds.push(this.open);});
                     $('#propsPanel').html(SB.Inspector.render(store.selected(), store.document));
                     renderGlobalSettings();
+                    SB.Inspector.populateCategories();
                     if (sameNode) $('#propsPanel details').each(function(index){if(index < folds.length)this.open = folds[index];});
                     $('#propsPanel').scrollTop(sameNode ? panelScroll : 0);
                     if (focus) $('#propsPanel [data-area][data-key]').filter(function(){return $(this).attr('data-area')===focus.area&&$(this).attr('data-key')===focus.key&&$(this).attr('type')===focus.type;}).first().each(function(){this.focus({preventScroll:true});if(focus.start!=null&&this.setSelectionRange)this.setSelectionRange(focus.start,focus.end);});

@@ -161,6 +161,47 @@
         return html;
     }
 
+    // ── 分类选择器：从后台 /admin/contentcategory/getoptions 拉取文章/产品/招聘分类树 ───
+    var categoryCache = {};
+    function renderCategory(field, value, area) {
+        var contentType = field.contentType || 'article';
+        var allText = field.allText || '全部分类';
+        var selected = String(value == null ? 0 : value);
+        var html = '<select lay-ignore data-area="' + area + '" data-key="' + attr(field.key) + '" data-category-type="' + attr(contentType) + '" data-category-value="' + attr(selected) + '">'
+            + '<option value="0">' + esc(allText) + '</option>'
+            + '</select>';
+        return html;
+    }
+    function fillCategoryOptions(contentType, data) {
+        var allText = (data && data.allText) || '全部分类';
+        var options = (data && data.options) || [];
+        $('#propsPanel select[data-category-type="' + contentType + '"]').each(function () {
+            var $sel = $(this);
+            var current = String($sel.attr('data-category-value') || $sel.val() || '0');
+            var html = '<option value="0">' + esc(allText) + '</option>';
+            options.forEach(function (opt) {
+                html += '<option value="' + attr(opt.value) + '">' + esc(opt.text) + '</option>';
+            });
+            $sel.html(html).val(current);
+        });
+    }
+    function populateCategories() {
+        var $selects = $('#propsPanel select[data-category-type]');
+        if (!$selects.length) return;
+        var types = {};
+        $selects.each(function () { types[$(this).attr('data-category-type')] = true; });
+        Object.keys(types).forEach(function (contentType) {
+            if (categoryCache[contentType]) { fillCategoryOptions(contentType, categoryCache[contentType]); return; }
+            $.get('/admin/contentcategory/getoptions', { contentType: contentType }).done(function (res) {
+                if (!res || res.code !== 0) return;
+                categoryCache[contentType] = res.data || {};
+                fillCategoryOptions(contentType, categoryCache[contentType]);
+            }).fail(function () {
+                $('#propsPanel select[data-category-type="' + contentType + '"]').append('<option value="" disabled>分类加载失败</option>');
+            });
+        });
+    }
+
     function renderField(field, value, area, node) {
         var key = field.key, type = field.type || 'text';
         var blockTypes = ['image-list', 'grid-columns'];
@@ -188,6 +229,8 @@
             html += renderImageList(field, value, area);
         } else if (type === 'grid-columns') {
             html += renderGridColumns(field, value, area);
+        } else if (type === 'category') {
+            html += renderCategory(field, value, area);
         } else if (type === 'length') {
             html += renderLength(field, value, area);
         } else {
@@ -292,6 +335,10 @@
     function readValue(el) {
         var $el = $(el);
         var area = $el.attr('data-area'), key = $el.attr('data-key') || '';
+        if ($el.attr('data-category-type')) {
+            var v = Number($el.val());
+            return isFinite(v) ? v : 0;
+        }
         if ($el.attr('data-unit-select')) {
             var $number = $el.siblings('input[data-area][data-key]').first();
             return composeLength($number.val(), $el.val());
@@ -317,6 +364,7 @@
         normalizeImageList: normalizeImageList,
         resetValue: resetValue,
         styleGroups: styleGroups,
+        populateCategories: populateCategories,
         styleKeysFor: function (node) {
             var scopes = scopesOf(node);
             var keys = [];
