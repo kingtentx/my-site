@@ -567,14 +567,53 @@ Header / Footer = 全局 BuilderDocument
 
 ```text
 1. Registry 组件定义
-2. Inspector 配置
-3. Designer Renderer
-4. Server Renderer (_Node.cshtml)
-5. runtime.css
-6. BuilderDocument 服务端校验
+2. styleScope 样式能力声明（决定属性面板显示哪些样式项）
+3. Inspector 配置
+4. Designer Renderer
+5. Server Renderer (_Node.cshtml)
+6. runtime.css
+7. BuilderDocument 服务端校验
 ```
 
 设计器和正式前台的 DOM / CSS 应尽量保持一致，避免重新产生两套渲染规则。
+
+#### styleScope 样式能力声明
+
+`default-components.js` 中每个组件都要声明自己能使用哪些样式维度，属性面板据此裁剪字段：
+
+```text
+background  背景色 / 背景图片 / 背景遮罩
+size        最大宽度 / 最小高度 / 固定高度
+fit         图片填充
+align       内容对齐
+color       文字颜色
+grid        列的垂直对齐
+gap         子项间距
+typography  字号 / 字重 / 行高 / 字间距
+spacing     内边距 / 外边距
+border      圆角 / 阴影
+position    定位 / 层级
+```
+
+规则：
+
+- 未声明 `styleScope` 的组件按“全部维度”处理，不会丢字段；
+- 组件的语义参数（例如 Banner 的高度、图片填充）放在 `inspector`（内容区）里配置，
+  同名维度就不要重复写进 `styleScope`，否则属性面板会出现两个同名控件；
+- 新增样式维度时，需要同时在 `inspector.js` 的 `styleGroups`、`designer-renderer.js` 的 `styleText`
+  和 `_Node.cshtml` 的 `StyleText` 里登记 CSS 映射。
+
+### 属性面板取值规则
+
+```text
+length 类型    数值 + 单位下拉；留空表示“恢复默认”，非法值不写入文档
+number 类型    留空表示“恢复默认”，不再强制写成 0
+每字段 ↺       恢复该字段的组件默认值（styleDefaults / defaults）
+恢复默认样式   清空本组件所有样式，回到 styleDefaults
+```
+
+输入过程中的实时预览（如拖动取色器）不写入撤销栈；输入完成后才补一次历史，
+因此一次颜色调整只占一步撤销。
 
 ---
 
@@ -600,6 +639,14 @@ agent/site-builder-enhancements
 ---
 
 ## 13. 后续建议
+
+### 装修操作说明（2026-09-10）
+
+- 图片选择器支持「上传新图片」一次选择多张文件，逐张反馈成功或失败；Banner 保留原有选择并勾选新上传图片，点击确定才应用。单图控件也支持批量上传，再选择其中一张使用。关闭弹窗不会删除已上传的素材。
+- 内容可直接拖动到其他容器，目标区域会出现蓝色虚线；拖动结束保留原有页面元素，撤销／重做仍然有效。嵌套布局也可通过「页面结构」选中后使用右侧上移／下移。
+- 全局页头／页脚提供 Logo、导航、联系方式、版权等已有组件的快捷入口。页头可以设置随页面滚动或吸顶，短页面的页脚保持在视口底部。
+- 全局区域管理显示最近发布时间、草稿是否有待发布修改，可分别发布页头、页脚或查看正式网站。重置只覆盖草稿，不下线已有发布快照；缺少快照的旧页面需先重新发布再重置。
+- 草稿整页预览与正式浏览仍严格分离，测试不会自动发布数据库中的页面。
 
 后续开发建议优先继续完善：
 

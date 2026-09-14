@@ -131,7 +131,9 @@ namespace MySite.Web.Controllers
 
         public IActionResult Products(string category)
         {
-            var model = BuildPage(p => p.PagePath == "/products" && !p.IsDelete);
+            var categoryPath = string.IsNullOrWhiteSpace(category) ? null : NormalizePath("/products/" + category);
+            var model = categoryPath == null ? null : BuildPage(p => p.PagePath == categoryPath && !p.IsDelete);
+            model ??= BuildPage(p => p.PagePath == "/products" && !p.IsDelete);
             if (model == null) return View("NotFound");
 
             List<ContentProduct> products;

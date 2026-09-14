@@ -7,8 +7,9 @@
     {
         designWidth = parsedWidth;
     }
+    var fullWidth = Model?.Document?.Settings != null && Model.Document.Settings.TryGetValue("fullWidth", out var configuredFullWidth) && bool.TryParse(configuredFullWidth?.ToString(), out var parsedFullWidth) && parsedFullWidth;
 }
-<div class="sb-runtime" data-builder-document data-design-width="@designWidth" style="max-width:@(designWidth)px;margin-left:auto;margin-right:auto">
+<div class="sb-runtime" data-builder-document data-design-width="@designWidth" data-full-width="@fullWidth.ToString().ToLowerInvariant()" style="--sb-design-width:@(designWidth)px;max-width:@(fullWidth ? "none" : designWidth + "px");margin-left:auto;margin-right:auto">
 @if (Model?.Document?.Nodes != null)
 {
     foreach (var node in Model.Document.Nodes)

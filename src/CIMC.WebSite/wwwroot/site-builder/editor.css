@@ -40,8 +40,49 @@
 .sb-color-control input[type=color] {width:30px!important;flex-shrink:0}
 .sb-color-control input[type=text] {min-width:0;flex:1}
 .sb-color-control button {border:0;background:transparent;color:#64748b;cursor:pointer}
+.sb-length-control {display:flex;gap:4px;align-items:center}
+.sb-length-control .sb-length-value {min-width:0;flex:1}
+.sb-length-unit {width:58px;flex-shrink:0;height:32px;border:1px solid #d2d2d2;border-radius:2px;background:#fff;font-size:12px;color:#475569}
+.sb-checkbox-row {display:inline-flex;align-items:center;gap:6px;height:32px;font-size:12px;color:#475569;cursor:pointer}
+.sb-checkbox-row input[type=checkbox] {width:16px;height:16px;accent-color:#1677ff;cursor:pointer}
+.sb-field-row {display:flex;align-items:center;gap:5px;min-width:0}
+.sb-field-row>input,.sb-field-row>.layui-textarea,.sb-field-row>.sb-color-control,.sb-field-row>.sb-length-control,.sb-field-row>.sb-image-input-row {min-width:0;flex:1}
+.sb-field-row.is-tall {align-items:flex-start}
+.sb-field-row.is-tall>.sb-field-reset {margin-top:5px}
+.sb-field-reset {flex:0 0 22px;width:22px;height:22px;line-height:1;padding:0;border:0;border-radius:4px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer}
+.sb-field-reset:hover {background:#eff6ff;color:#1677ff}
+.sb-field-hint {margin:4px 0 0;color:#94a3b8;font-size:11px;line-height:1.5;overflow-wrap:anywhere}
+.props-style-spacing .sb-field-row {gap:4px}
+.props-fold-title {flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.props-style-heading>span {display:inline-flex;align-items:center;gap:7px}
+.props-style-heading>span:first-child {font-size:12px;font-weight:700;color:#475569}
+.props-style-heading>span:first-child em {font-style:normal;font-size:10px;font-weight:400;color:#94a3b8}
+.props-style-heading .props-style-tools em {font-style:normal;font-size:10px;font-weight:400;color:#94a3b8}
+.props-style-heading .props-style-tools button {height:23px;padding:0 8px;border:1px solid #dbe3ec;border-radius:4px;background:#fff;color:#64748b;font-size:11px;font-weight:400;cursor:pointer}
+.props-style-heading .props-style-tools button:hover {border-color:#1677ff;color:#1677ff}
+.props-title small {display:block;margin-top:2px;color:#94a3b8;font-size:10px;font-weight:400}
 .sb-outline {margin-top:18px;border-top:1px solid #e2e8f0;padding-top:10px}
 .sb-outline summary {font-weight:600;font-size:12px;cursor:pointer;margin-bottom:8px}
 .sb-outline button {display:block;width:100%;border:0;border-radius:4px;background:transparent;text-align:left;padding:7px;color:#64748b;font-size:12px;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sb-outline button.active,.sb-outline button:hover {background:#eaf3ff;color:#1677ff}
 @media(max-width:1200px){.designer-lib{width:220px;min-width:220px}.designer-props{width:300px}}
+.sb-is-dragging {user-select:none;cursor:grabbing}
+#canvas .sb-drop-target {outline:2px dashed #1677ff!important;outline-offset:3px}
+#canvas .sortable-fallback {pointer-events:none!important}
+.sb-material-head,.sb-material-tools,.sb-material-foot {flex-shrink:0}
+.sb-material-body {min-height:100px}
+.sb-material-tools input[type=file][hidden] {display:none}
+.sb-material-tools input[type=text] {min-width:0}
+.sb-material-tools button {white-space:nowrap}
+.sb-material-upload-info {padding:8px 16px;color:#64748b;font-size:12px;flex-shrink:0}
+#sbMaterialUploadStatus {max-height:64px;overflow:auto;color:#334155;line-height:1.8;overflow-wrap:anywhere}
+.sb-material-uploaded {display:flex;gap:10px;overflow:auto;max-height:150px}
+.sb-material-uploaded:empty {display:none}
+.sb-material-uploaded .sb-material-item {flex:0 0 125px;margin:6px 2px}
+.sb-material-uploaded .sb-material-thumb {height:75px}
+.sb-material-tools button:disabled {opacity:.5;cursor:wait}
+.sb-global-settings {padding:12px;margin-bottom:12px;border:1px solid #dbeafe;border-radius:8px;background:#f8fbff;font-size:12px}
+.sb-global-settings label {display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sb-global-settings select {padding:5px;border:1px solid #cbd5e1;border-radius:4px}
+.sb-global-shortcuts {display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.sb-global-shortcuts button {padding:4px 8px;background:white;border:1px solid #cbd5e1;border-radius:4px;color:#1677ff;cursor:pointer}

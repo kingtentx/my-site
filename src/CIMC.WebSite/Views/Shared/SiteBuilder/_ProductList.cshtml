@@ -35,7 +35,7 @@
         return $"{request.PathBase}{request.Path}?{string.Join("&", parts)}";
     }
 }
-<div class="sb-content-list" data-builder-id="@Model.Node.Id">
+<div class="sb-content-list" style="@Model.RenderedStyle" data-builder-id="@Model.Node.Id">
     @if (items.Count == 0) { <p class="sb-empty">暂无产品</p> }
     else
     {

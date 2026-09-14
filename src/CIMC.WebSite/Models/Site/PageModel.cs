@@ -88,6 +88,7 @@ namespace MySite.Web.Models
 
     public class BuilderNodeRenderModel
     {
+        public string RenderedStyle { get; set; }
         public BuilderNodeModel Node { get; set; }
         public PageRenderModel Page { get; set; }
     }

@@ -21,12 +21,18 @@
             backgroundColor:'background-color', color:'color', maxWidth:'max-width', width:'width', minHeight:'min-height',
             gap:'gap', borderRadius:'border-radius', textAlign:'text-align', borderTopWidth:'border-top-width',
             borderTopStyle:'border-top-style', borderTopColor:'border-top-color', position:'position', top:'top',
-            zIndex:'z-index', boxShadow:'box-shadow'
+            zIndex:'z-index', boxShadow:'box-shadow', fontSize:'font-size', fontWeight:'font-weight',
+            lineHeight:'line-height', letterSpacing:'letter-spacing', alignItems:'align-items', height:'height', objectFit:'object-fit'
         };
         var parts = [];
         Object.keys(map).forEach(function (key) {
             if (style[key] !== undefined && style[key] !== null && style[key] !== '') parts.push(map[key] + ':' + style[key]);
         });
+        if(style.backgroundImage){
+            var url=safeUrl(style.backgroundImage).replace(/["'()\\]/g,function(c){return '%'+c.charCodeAt(0).toString(16);});
+            var shade=Math.max(0,Math.min(1,Number(style.backgroundOverlay)||0));
+            if(url)parts.push('background-image:linear-gradient(rgba(0,0,0,'+shade+'),rgba(0,0,0,'+shade+')),url("'+url+'")','background-size:cover','background-position:center');
+        }
         return parts.join(';');
     }
 
@@ -76,6 +82,11 @@
             html += '<div class="banner-slide' + (index === 0 ? ' active' : '') + '"><img src="' + esc(url) + '" alt="Banner ' + (index + 1) + '" style="width:100%;height:100%;object-fit:' + fit + '"></div>';
         });
         html += '</div>';
+        if (p.title || p.description || p.buttonText) {
+            html += '<div class="sb-banner-shade"></div><div class="sb-banner-copy"><h1>' + esc(p.title || '') + '</h1><p>' + esc(p.description || '') + '</p>';
+            if(p.buttonText) html += '<a class="sb-public-button" href="' + esc(safeUrl(p.buttonHref || '#')) + '">' + esc(p.buttonText) + '</a>';
+            html += '</div>';
+        }
         if (images.length > 1 && p.showArrows !== false) {
             html += '<button type="button" class="banner-arrow prev">‹</button><button type="button" class="banner-arrow next">›</button>';
         }
@@ -101,25 +112,28 @@
             case 'image': {
                 var src = safeUrl(p.src);
                 if (!src) return '<div class="sb-placeholder" style="' + styleAttr + '">请选择图片</div>';
-                return '<img class="sb-image" src="' + esc(src) + '" alt="' + esc(p.alt || '') + '" style="' + styleAttr + '">';
+                var imageHtml = '<img class="sb-image" src="' + esc(src) + '" alt="' + esc(p.alt || '') + '" style="' + styleAttr + '">';
+                var imageLink = safeUrl(p.link);
+                // 与前台保持一致：配置了跳转链接时包一层 <a>，避免装修器里看不出效果
+                return imageLink ? '<a class="sb-image-link" href="' + esc(imageLink) + '">' + imageHtml + '</a>' : imageHtml;
             }
             case 'banner':
                 return bannerPreview(p, css);
             case 'button':
-                return '<a class="sb-public-button sb-public-button-' + esc(p.variant || 'primary') + '" href="#" style="' + styleAttr + '">' + esc(p.text || '按钮') + '</a>';
+                return '<a class="sb-public-button sb-public-button-' + esc(p.variant || 'primary') + '" href="' + esc(safeUrl(p.href || '#')) + '" target="' + (p.target === '_blank' ? '_blank' : '_self') + '" style="' + styleAttr + '">' + esc(p.text || '按钮') + '</a>';
             case 'icon':
                 return '<span class="sb-public-icon" style="font-size:' + Math.max(12, Math.min(160, Number(p.size || 32))) + 'px;' + styleAttr + '">' + esc(p.text || '★') + '</span>';
             case 'video': {
                 var videoSrc = safeUrl(p.src);
                 var poster = safeUrl(p.poster);
-                return videoSrc
-                    ? '<video class="sb-public-video" src="' + esc(videoSrc) + '" poster="' + esc(poster) + '" style="' + styleAttr + '" controls></video>'
-                    : '<div class="sb-placeholder" style="' + styleAttr + '">视频：尚未配置</div>';
+                if (!videoSrc) return '<div class="sb-placeholder" style="' + styleAttr + '">视频：尚未配置</div>';
+                // 与前台保持一致：未勾选「显示播放控件」时不输出 controls
+                return '<video class="sb-public-video" src="' + esc(videoSrc) + '" poster="' + esc(poster) + '" style="' + styleAttr + '"' + (p.controls === false ? '' : ' controls') + '></video>';
             }
             case 'divider':
                 return '<hr class="sb-public-divider" style="' + styleAttr + '">';
             case 'spacer':
-                return '<div aria-hidden="true" style="height:' + Math.max(4, Number(p.height || 40)) + 'px;' + styleAttr + '"></div>';
+                return '<div aria-hidden="true" style="height:' + Math.max(4, Math.min(400, Number(p.height || 40))) + 'px;' + styleAttr + '"></div>';
             case 'articleList':
                 return '<div class="sb-placeholder" style="' + styleAttr + '">文章列表 · ' + Number(p.pageSize || 6) + ' 条 · ' + Number(p.columns || 3) + ' 列</div>';
             case 'productList':
@@ -128,14 +142,14 @@
                 return '<div class="sb-placeholder" style="' + styleAttr + '">招聘列表 · ' + Number(p.pageSize || 10) + ' 条</div>';
             case 'logo': {
                 var logoSrc = safeUrl(p.src);
-                return '<a class="sb-public-logo" href="#" style="' + styleAttr + '">' + (logoSrc ? '<img src="' + esc(logoSrc) + '" alt="' + esc(p.text || 'Logo') + '">' : '<strong>' + esc(p.text || '企业名称') + '</strong>') + '</a>';
+                return '<a class="sb-public-logo" href="' + esc(safeUrl(p.href || '/')) + '" style="' + styleAttr + '">' + (logoSrc ? '<img src="' + esc(logoSrc) + '" alt="' + esc(p.text || 'Logo') + '">' : '<strong>' + esc(p.text || '企业名称') + '</strong>') + '</a>';
             }
             case 'navigation': {
                 var vertical = p.direction === 'vertical';
                 return '<nav class="sb-public-nav ' + (vertical ? 'is-vertical' : 'is-horizontal') + '" style="' + styleAttr + '">' + navigationHtml(navigation) + '</nav>';
             }
             case 'search':
-                return '<form class="sb-public-search" style="' + styleAttr + '"><input placeholder="' + esc(p.placeholder || '搜索') + '"><button type="button">⌕</button></form>';
+                return '<form class="sb-public-search" action="' + esc(safeUrl(p.action || '/search')) + '" method="get" onsubmit="return false" style="' + styleAttr + '"><input name="q" placeholder="' + esc(p.placeholder || '搜索') + '"><button type="button">⌕</button></form>';
             case 'language':
                 return '<span class="sb-public-language" style="' + styleAttr + '">' + esc(p.text || '中文 / EN') + '</span>';
             case 'contact':

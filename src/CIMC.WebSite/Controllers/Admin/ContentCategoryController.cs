@@ -24,7 +24,6 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_ProductCategory, PermissionType.View)]
         public IActionResult Index()
         {
-            ContentCategoryHelper.EnsureRoots(_repository);
             ViewData[PageCode.PAGE_Button_Add] = _permission.CheckPermission(LoginUser, MenuCode.Content_ProductCategory, PermissionType.Add);
             ViewData[PageCode.PAGE_Button_Edit] = _permission.CheckPermission(LoginUser, MenuCode.Content_ProductCategory, PermissionType.Edit);
             ViewData[PageCode.PAGE_Button_Delete] = _permission.CheckPermission(LoginUser, MenuCode.Content_ProductCategory, PermissionType.Delete);
@@ -35,7 +34,6 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_ProductCategory, PermissionType.View)]
         public JsonResult GetList()
         {
-            ContentCategoryHelper.EnsureRoots(_repository);
             var list = _repository.GetList(LambdaHelper.True<ContentProductCategory>().And(p => !p.IsDelete), p => p.Sort, true);
             var data = list.Select(p => new
             {
@@ -52,7 +50,6 @@ namespace MySite.Web.Controllers
         [HttpGet]
         public IActionResult GetOptions(string contentType)
         {
-            ContentCategoryHelper.EnsureRoots(_repository);
             var rootId = ContentCategoryHelper.GetRootId(_repository, contentType);
             var rootName = ContentCategoryHelper.ResolveRootName(contentType);
             var descendants = ContentCategoryHelper.GetDescendants(_repository, rootId, true);
@@ -74,7 +71,6 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_ProductCategory, PermissionType.Edit)]
         public IActionResult Edit(int id = 0, int pid = 0)
         {
-            ContentCategoryHelper.EnsureRoots(_repository);
             var model = new ProductCategoryModel { IsActive = true, Pid = pid };
             if (id > 0)
             {
@@ -91,7 +87,6 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_ProductCategory, PermissionType.Edit)]
         public IActionResult Edit(int id, ProductCategoryModel input)
         {
-            ContentCategoryHelper.EnsureRoots(_repository);
             if (input == null || string.IsNullOrWhiteSpace(input.Name))
                 return Json(Error("请填写分类名称"));
 
@@ -138,7 +133,6 @@ namespace MySite.Web.Controllers
         [PermissionFilter(MenuCode.Content_ProductCategory, PermissionType.Delete)]
         public IActionResult Delete(int id)
         {
-            ContentCategoryHelper.EnsureRoots(_repository);
             var entity = _repository.GetOne(id);
             if (entity == null || entity.IsDelete)
                 return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });

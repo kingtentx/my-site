@@ -21,17 +21,19 @@
             <div class="tip">Header 和 Footer 分别保存、分别发布。首页发布不会自动发布这里的修改。草稿预览会显示最新保存的全局区域；正式网站只显示各自的发布版本。尚未发布的区域不会用默认模板替代。</div>
             <div class="region-grid">
                 <div class="region-card">
-                    <h2>Header <span class="status @(ViewBag.HeaderStatus == 1 ? "published" : "draft")">@(ViewBag.HeaderStatus == 1 ? "已发布" : "草稿")</span></h2>
+                    <h2>页头 Header <span class="status @(ViewBag.HeaderStatus == 1 ? "published" : "draft")">@ViewBag.HeaderState</span></h2>
                     <p>适合设计单层/双层导航、Logo、搜索、语言切换、联系电话、CTA 等组合。</p>
-                    <div class="region-actions"><a class="layui-btn" href="/Page/Design?id=@ViewBag.HeaderId">装修 Header</a><a class="layui-btn layui-btn-primary" target="_blank" href="/Page/Preview?id=@ViewBag.HeaderId">预览</a><button class="layui-btn layui-btn-danger layui-btn-primary" data-reset="header">恢复默认</button></div>
+                    <p>最近发布：@ViewBag.HeaderPublishTime<br>建议先配置 Logo，再配置导航；按钮仅在需要时添加。</p>
+                    <div class="region-actions"><a class="layui-btn" href="/Page/Design?id=@ViewBag.HeaderId">配置页头</a><a class="layui-btn layui-btn-primary" target="_blank" rel="noopener" href="/Page/Preview?id=@ViewBag.HeaderId">整页草稿预览</a>@if (ViewBag.CanPublish == true) {<button class="layui-btn layui-btn-normal" data-publish="@ViewBag.HeaderId" data-name="页头">发布页头</button>}<button class="layui-btn layui-btn-danger layui-btn-primary" data-reset="header">重置草稿</button></div>
                 </div>
                 <div class="region-card">
-                    <h2>Footer <span class="status @(ViewBag.FooterStatus == 1 ? "published" : "draft")">@(ViewBag.FooterStatus == 1 ? "已发布" : "草稿")</span></h2>
+                    <h2>页脚 Footer <span class="status @(ViewBag.FooterStatus == 1 ? "published" : "draft")">@ViewBag.FooterState</span></h2>
                     <p>可自由组合企业介绍、快捷导航、联系方式、社交链接、版权信息等内容。</p>
-                    <div class="region-actions"><a class="layui-btn" href="/Page/Design?id=@ViewBag.FooterId">装修 Footer</a><a class="layui-btn layui-btn-primary" target="_blank" href="/Page/Preview?id=@ViewBag.FooterId">预览</a><button class="layui-btn layui-btn-danger layui-btn-primary" data-reset="footer">恢复默认</button></div>
+                    <p>最近发布：@ViewBag.FooterPublishTime<br>可从组合模板开始，用页面结构快速选择嵌套组件。</p>
+                    <div class="region-actions"><a class="layui-btn" href="/Page/Design?id=@ViewBag.FooterId">配置页脚</a><a class="layui-btn layui-btn-primary" target="_blank" rel="noopener" href="/Page/Preview?id=@ViewBag.FooterId">整页草稿预览</a>@if (ViewBag.CanPublish == true) {<button class="layui-btn layui-btn-normal" data-publish="@ViewBag.FooterId" data-name="页脚">发布页脚</button>}<button class="layui-btn layui-btn-danger layui-btn-primary" data-reset="footer">重置草稿</button></div>
                 </div>
             </div>
-            <div style="margin-top:20px"><a href="/Page/Index" class="layui-btn layui-btn-primary">返回页面管理</a></div>
+            <div style="margin-top:20px"><a href="/Page/Index" class="layui-btn layui-btn-primary">返回页面管理</a><a href="/" target="_blank" rel="noopener" class="layui-btn layui-btn-primary">查看正式网站</a></div>
         </div>
     </div>
 </div>
@@ -39,10 +41,18 @@
 <script>
 layui.use(['layer'], function(){
     var $=layui.$, layer=layui.layer;
+    $('[data-publish]').on('click',function(){
+        var button=$(this);
+        layer.confirm('将最新保存的'+button.attr('data-name')+'应用到所有前台页面？未保存的编辑不会发布。',function(index){
+            layer.close(index); button.prop('disabled',true);
+            $.post('/Page/Publish',{id:button.attr('data-publish')}).done(function(res){if(Number(res.code)===200){location.reload();}else layer.msg(res.message||'发布失败');}).fail(function(){layer.msg('发布失败，请重试');}).always(function(){button.prop('disabled',false);});
+        });
+    });
     $('[data-reset]').on('click', function(){
         var region=$(this).attr('data-reset');
-        layer.confirm('确认恢复为新版默认结构？当前未发布装修内容会被覆盖。', function(index){
-            $.post('/GlobalRegion/Reset',{region:region},function(res){layer.close(index);if(res.code===200){layer.alert(res.message,function(){location.reload();});}else layer.msg(res.message||'操作失败',{icon:5});},'json');
+        layer.confirm('确认重置草稿？当前草稿会被覆盖，已发布的正式网站保持不变。', function(index){
+            layer.close(index);
+            $.post('/GlobalRegion/Reset',{region:region},function(res){if(res.code===200){layer.alert(res.message,function(){location.reload();});}else layer.msg(res.message||'操作失败',{icon:5});},'json').fail(function(){layer.msg('重置失败，请重试');});
         });
     });
 });

@@ -3,6 +3,13 @@
     box-sizing: border-box;
 }
 
+.page-wrapper > .site-main { flex: 1 0 auto; min-width: 0; }
+.page-wrapper > .site-global-header, .page-wrapper > .site-global-footer { flex-shrink: 0; min-width: 0; }
+.site-global-header.is-sticky { position: sticky; top: 0; z-index: 1000; }
+/* The outer header owns scrolling, otherwise a sticky node is trapped in its short parent. */
+.site-global-header > .sb-runtime > [style*="position:sticky"],
+.site-global-header > .sb-runtime > [style*="position: sticky"] { position: static !important; }
+
 .builder-preview-notice {
     position:fixed;right:16px;bottom:16px;z-index:99999;max-width:calc(100vw - 32px);
     padding:8px 12px;border-radius:6px;background:rgba(17,24,39,.88);color:#fff;
@@ -25,7 +32,7 @@
 
 .sb-runtime .sb-public-container {
     width: 100%;
-    max-width: 1200px;
+    max-width: var(--sb-design-width, 1200px);
     margin-left: auto;
     margin-right: auto;
     padding-left: 20px;
@@ -40,7 +47,20 @@
 
 .sb-runtime .sb-public-column {
     min-width: 0;
+    overflow-wrap: anywhere;
 }
+
+.sb-runtime .sb-banner-shade {position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,22,48,.76),rgba(3,22,48,.46) 42%,rgba(3,22,48,.08));z-index:1;pointer-events:none}
+.sb-runtime .sb-banner-copy {position:absolute;z-index:2;inset:0;max-width:var(--sb-design-width,1200px);margin:auto;padding:0 20px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;color:white}
+.sb-runtime .sb-banner-copy h1 {font-size:clamp(28px,3.6cqw,52px);line-height:1.25;max-width:850px;margin:0 0 24px;font-weight:700}
+.sb-runtime .sb-banner-copy p {font-size:18px;line-height:1.9;max-width:640px;margin:0 0 36px;color:rgba(255,255,255,.88)}
+.sb-runtime .sb-banner-copy .sb-public-button {background:#0054a6;color:white;border-radius:0;padding:14px 28px}
+.sb-runtime .sb-banner-copy h1:empty,.sb-runtime .sb-banner-copy p:empty {display:none}
+.sb-runtime .is-editorial .sb-content-card {border:0;border-radius:0;box-shadow:0 16px 38px rgba(15,35,65,.1)}
+.sb-runtime .is-editorial .sb-content-card-body {display:flex;flex-direction:column;padding:24px}
+.sb-runtime .is-editorial .sb-content-card-body h3 {font-size:21px;line-height:1.4}
+.sb-runtime .is-editorial .sb-content-card-body p {display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;margin:0;font-size:15px}
+.sb-runtime .is-editorial .sb-content-card-body time {order:-1;color:#0054a6;font-weight:600;margin-bottom:8px}
 
 .sb-runtime .sb-heading {
     margin: 0;
@@ -63,6 +83,7 @@
     max-width: 100%;
     height: auto;
 }
+.sb-runtime .sb-image-link { display: block; max-width: 100%; }
 
 .sb-runtime .sb-public-button {
     display: inline-block;
@@ -212,6 +233,11 @@
 .sb-runtime .sb-job-card { border: 1px solid #e5e7eb; border-radius: 7px; margin-bottom: 10px; background: #fff; }
 .sb-runtime .sb-job-card summary { display: grid; grid-template-columns: 2fr repeat(3,1fr); gap: 15px; align-items: center; padding: 16px 18px; cursor: pointer; }
 .sb-runtime .sb-job-detail { padding: 0 20px 20px; line-height: 1.8; }
+.sb-runtime .is-compact .sb-job-card {border:0;border-radius:0;box-shadow:0 12px 28px rgba(15,35,65,.08);margin-bottom:14px}
+.sb-runtime .is-compact .sb-job-card summary {display:flex;justify-content:space-between;padding:22px 26px;font-size:14px}
+.sb-runtime .is-compact .sb-job-card summary span {display:none}
+.sb-runtime .is-compact .sb-job-card summary:after {content:'查看详情';color:#64748b;font-size:12px;flex-shrink:0}
+.sb-runtime .is-compact .sb-job-card[open] summary:after {content:'收起'}
 .sb-runtime .sb-empty { padding: 30px; text-align: center; color: #9ca3af; }
 
 .sb-runtime .component-pagination { display: flex; justify-content: center; align-items: center; gap: 7px; flex-wrap: wrap; margin: 28px 0 8px; }
@@ -240,6 +266,7 @@
 }
 
 @container sb-page (max-width: 560px) {
+    .sb-runtime .sb-banner-copy p {font-size:14px;margin-bottom:20px}
     .sb-runtime .sb-public-container { padding-left: 14px; padding-right: 14px; }
     .sb-runtime .sb-article-grid,
     .sb-runtime .sb-product-grid { grid-template-columns: 1fr; }

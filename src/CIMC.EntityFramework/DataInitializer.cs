@@ -16,14 +16,21 @@ namespace CIMC.Data
     ///
     /// 页面树同时承担前台网站导航，不再初始化独立 WebsiteNavigation、
     /// 旧 WebsiteFooter、旧数组格式页面、文章/产品/招聘/素材演示数据和演示角色权限。
+    ///
+    /// 写入规则（2026-09-14 明确）：<b>种子数据只在对应数据不存在时才写入</b>。
+    /// 每一步都先查存在性再决定是否插入，已存在的记录一律不改写，
+    /// 因此重复启动、并发启动都不会产生重复行，也不会覆盖后台的修改。
+    /// 内容分类（文章/产品/招聘）的种子数据由
+    /// <c>MySite.Web.ContentCategoryHelper.EnsureSeed</c> 在启动时单独处理，
+    /// 规则相同——分类表非空即不写。
     /// </summary>
     public class DataInitializer
     {
         public void Create(AppDbContext context)
         {
-            InitUser(context);
-            InitMenus(context);
-            InitSiteConfig(context);
+            InitUser(context);        // Admin 表无同名管理员时才创建
+            InitMenus(context);       // 仅补建缺失的菜单，已存在的菜单不改写
+            InitSiteConfig(context);  // 仅在站点配置不存在时创建
         }
 
         private static void InitUser(AppDbContext context)
@@ -139,30 +146,39 @@ namespace CIMC.Data
             {
                 menu = context.Menu.FirstOrDefault(p => p.Pid == 0 && p.PermissionKey == permissionKey);
             }
-
-            if (menu == null)
+            else
             {
-                menu = new Menu
-                {
-                    CreationBy = "system",
-                    CreationTime = DateTime.Now
-                };
-                context.Menu.Add(menu);
+                // 既没有 Path 也没有 PermissionKey 就无法判重，直接跳过，避免每次启动插一条新记录。
+                return null;
             }
 
-            menu.Title = title;
-            menu.Path = path;
-            menu.Icon = icon;
-            menu.MenuType = menuType;
-            menu.Pid = pid;
-            menu.Spread = spread;
-            menu.PermissionKey = permissionKey;
-            menu.Buttons = buttons;
-            menu.Sort = sort;
-            menu.IsShow = true;
-            menu.IsDelete = false;
-            menu.UpdateBy = "system";
-            menu.UpdateTime = DateTime.Now;
+            // 已存在则直接返回：种子数据只在「缺失」时补建。
+            // 旧实现每次启动都会把 Title/Icon/Pid/Sort/IsShow 等字段重新写一遍，
+            // 后台手工调整过的菜单会被静默改回去，也不符合「有数据就不写」的约定。
+            if (menu != null)
+            {
+                return menu;
+            }
+
+            menu = new Menu
+            {
+                Title = title,
+                Path = path,
+                Icon = icon,
+                MenuType = menuType,
+                Pid = pid,
+                Spread = spread,
+                PermissionKey = permissionKey,
+                Buttons = buttons,
+                Sort = sort,
+                IsShow = true,
+                IsDelete = false,
+                CreationBy = "system",
+                CreationTime = DateTime.Now,
+                UpdateBy = "system",
+                UpdateTime = DateTime.Now
+            };
+            context.Menu.Add(menu);
 
             context.SaveChanges();
             return menu;

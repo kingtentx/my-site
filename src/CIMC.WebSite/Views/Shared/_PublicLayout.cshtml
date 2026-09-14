@@ -1,4 +1,5 @@
 @using System.Collections.Generic
+@using System.Linq
 @using MySite.Web.Models
 @{
     var siteConfig = ViewBag.SiteConfig as SiteConfigModel;
@@ -10,6 +11,10 @@
     var description = ViewData["Description"] as string ?? siteConfig?.Description;
     var currentPath = Context.Request.Path.Value ?? "/";
     var chromeModel = new PageRenderModel { SiteConfig = siteConfig, Navigation = navigation, PagePath = currentPath };
+    var firstHeaderNode = headerDocument.Nodes?.FirstOrDefault(n => n != null && n.Visible);
+    var headerPosition = headerDocument.Settings != null && headerDocument.Settings.TryGetValue("headerPosition", out var position)
+        ? position?.ToString()
+        : firstHeaderNode?.Style != null && firstHeaderNode.Style.TryGetValue("position", out var legacyPosition) ? legacyPosition?.ToString() : "static";
 }
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -20,11 +25,11 @@
     @if (!string.IsNullOrEmpty(keywords)) { <meta name="keywords" content="@keywords" /> }
     @if (!string.IsNullOrEmpty(description)) { <meta name="description" content="@description" /> }
     <link rel="stylesheet" href="~/site/css/site.css" />
-    <link rel="stylesheet" href="~/site-builder/runtime.css?v=2026090511" />
+    <link rel="stylesheet" href="~/site-builder/runtime.css?v=2026091001" />
 </head>
 <body>
     <div class="page-wrapper" data-current-path="@currentPath">
-        <header class="site-global-header">
+        <header class="site-global-header @(headerPosition == "sticky" ? "is-sticky" : "")">
             @{ chromeModel.Document = headerDocument; }
             @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Document.cshtml", chromeModel)
         </header>

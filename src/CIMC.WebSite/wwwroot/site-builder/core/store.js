@@ -153,7 +153,26 @@
         this.change(function(doc){ moved = Tree.move(doc.nodes,id,parentId||null,index); });
         return moved;
     };
-    Store.prototype.update = function (id,area,key,value) { this.change(function(doc){var node=Tree.find(doc.nodes,id);if(!node)return;if(area==='node')node[key]=value;else{node[area]=node[area]||{};node[area][key]=value;}}); };
+    /**
+     * 更新单个属性。
+     * options.live = true 时只改文档并重绘，不写入撤销栈——用于输入过程中的实时预览；
+     * 输入完成（change/blur）时再用普通调用补一次快照，这样一次颜色拖动只占一步撤销。
+     */
+    Store.prototype.update = function (id, area, key, value, options) {
+        var node = Tree.find((this.document || {}).nodes, id);
+        if (!node) return false;
+        if (area === 'node') {
+            if (node[key] === value) return false;
+            node[key] = value;
+        } else {
+            node[area] = node[area] || {};
+            if (node[area][key] === value) return false;
+            node[area][key] = value;
+        }
+        if (options && options.live === true) this.emit();
+        else { this.snapshot(); this.emit(); }
+        return true;
+    };
     Store.prototype.setGridColumns = function (id, count) {
         var changed = false;
         this.change(function (doc) {
@@ -176,8 +195,27 @@
         });
         return changed;
     };
-    Store.prototype.undo = function () { if(this.history.length<=1)return;this.future.push(this.history.pop());this.document=JSON.parse(this.history[this.history.length-1]);this.selectedId=null;this.emit(); };
-    Store.prototype.redo = function () { if(!this.future.length)return;var json=this.future.pop();this.history.push(json);this.document=JSON.parse(json);this.selectedId=null;this.emit(); };
+    Store.prototype.keepSelection = function () {
+        if (this.selectedId && !Tree.find(this.document.nodes, this.selectedId)) this.selectedId = null;
+    };
+    Store.prototype.undo = function () {
+        var current = JSON.stringify(this.document);
+        // 实时预览留下的未入栈改动，先补成一次历史，保证「撤销」只回退一步
+        if (this.history.length && this.history[this.history.length - 1] !== current) this.history.push(current);
+        if (this.history.length <= 1) return;
+        this.future.push(this.history.pop());
+        this.document = JSON.parse(this.history[this.history.length - 1]);
+        this.keepSelection();
+        this.emit();
+    };
+    Store.prototype.redo = function () {
+        if (!this.future.length) return;
+        var json = this.future.pop();
+        if (this.history[this.history.length - 1] !== json) this.history.push(json);
+        this.document = JSON.parse(json);
+        this.keepSelection();
+        this.emit();
+    };
     Store.prototype.serialize = function () { return JSON.stringify(this.document); };
 
     root.Store = Store;

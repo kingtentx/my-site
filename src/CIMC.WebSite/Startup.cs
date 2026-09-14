@@ -310,6 +310,13 @@ namespace MySite.Web
             {
                 dbContext.Database.Migrate();
                 new DataInitializer().Create(dbContext);
+
+                // 内容分类（文章/产品/招聘 统一分类树）种子数据：
+                // 只在分类表一条记录都没有时写入，且仅在启动时执行一次。
+                // 请求路径不再写库——旧实现在每次请求里惰性插入，并发时会重复插入。
+                var categoryRepository = new AppRepository<ContentProductCategory>(dbContext);
+                ContentCategoryHelper.EnsureSeed(categoryRepository);
+                ContentCategoryHelper.MigrateLegacyTopLevel(categoryRepository);
             }
             #endregion
         }

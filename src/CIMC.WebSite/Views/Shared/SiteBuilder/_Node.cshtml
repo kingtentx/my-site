@@ -57,11 +57,19 @@
             {"backgroundColor","background-color"},{"color","color"},{"maxWidth","max-width"},{"width","width"},{"minHeight","min-height"},
             {"gap","gap"},{"borderRadius","border-radius"},{"textAlign","text-align"},{"borderTopWidth","border-top-width"},
             {"borderTopStyle","border-top-style"},{"borderTopColor","border-top-color"},{"position","position"},{"top","top"},
-            {"zIndex","z-index"},{"boxShadow","box-shadow"}
+            {"zIndex","z-index"},{"boxShadow","box-shadow"},{"fontSize","font-size"},{"fontWeight","font-weight"},
+            {"lineHeight","line-height"},{"letterSpacing","letter-spacing"},{"alignItems","align-items"},{"height","height"},{"objectFit","object-fit"}
         };
         return string.Join(";", map.Where(pair => style.ContainsKey(pair.Key) && style[pair.Key] != null && !string.IsNullOrWhiteSpace(style[pair.Key].ToString())).Select(pair => pair.Value + ":" + style[pair.Key]));
     }
     var css = StyleText();
+    if (style.TryGetValue("backgroundImage", out var backgroundImage))
+    {
+        var url = SafeUrl(backgroundImage?.ToString()).Replace("\\", "%5C").Replace("\"", "%22").Replace("'", "%27").Replace("(", "%28").Replace(")", "%29");
+        var shade = style.TryGetValue("backgroundOverlay", out var overlay) && double.TryParse(overlay?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var opacity) && double.IsFinite(opacity) ? Math.Clamp(opacity, 0, 1) : 0;
+        if (!string.IsNullOrEmpty(url)) css += $";background-image:linear-gradient(rgba(0,0,0,{shade.ToString(CultureInfo.InvariantCulture)}),rgba(0,0,0,{shade.ToString(CultureInfo.InvariantCulture)})),url(\"{url}\");background-size:cover;background-position:center";
+    }
+    Model.RenderedStyle = css;
     var children = node.Children ?? new List<MySite.Web.Models.BuilderNodeModel>();
 }
 @if (!node.Visible)
@@ -143,6 +151,11 @@ else if (node.Type == "banner")
                     </div>
                 }
             </div>
+            @if (!string.IsNullOrWhiteSpace(Prop("title")) || !string.IsNullOrWhiteSpace(Prop("description")) || !string.IsNullOrWhiteSpace(Prop("buttonText")))
+            {
+                <div class="sb-banner-shade"></div>
+                <div class="sb-banner-copy"><h1>@Prop("title")</h1><p>@Prop("description")</p>@if(!string.IsNullOrWhiteSpace(Prop("buttonText"))){<a class="sb-public-button" href="@SafeUrl(Prop("buttonHref","#"))">@Prop("buttonText")</a>}</div>
+            }
             @if (images.Count > 1 && showArrows)
             {
                 <button type="button" class="banner-arrow prev" data-banner-prev aria-label="上一张">‹</button>

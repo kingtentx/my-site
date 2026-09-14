@@ -5,37 +5,59 @@
     var Registry = root.Registry;
     var esc = root.DesignerRenderer.escapeHtml;
 
+    // 样式字段按「能力令牌」声明归属：组件在 default-components.js 里用 styleScope 声明自己支持哪些令牌，
+    // 面板据此裁剪，避免在文本组件上出现「图片填充」、在非容器组件上出现「子项间距」这类无意义项。
     var styleGroups = [
-        { key:'layout', title:'布局与颜色', fields:[
-            { key:'backgroundColor', label:'背景色', type:'color' },
-            { key:'color', label:'文字颜色', type:'color' },
-            { key:'textAlign', label:'内容对齐', type:'select', options:[{value:'',text:'默认'},{value:'left',text:'左对齐'},{value:'center',text:'居中'},{value:'right',text:'右对齐'}] },
-            { key:'maxWidth', label:'最大宽度', type:'text', placeholder:'如 1200px' },
-            { key:'minHeight', label:'最小高度', type:'text', placeholder:'如 200px' }
+        { key:'layout', title:'背景与尺寸', fields:[
+            { key:'backgroundColor', label:'背景色', type:'color', scope:'background' },
+            { key:'backgroundImage', label:'背景图片', type:'image', scope:'background' },
+            { key:'backgroundOverlay', label:'背景遮罩', type:'number', min:0, max:1, step:0.05, scope:'background', hint:'0~1，数值越大遮罩越深' },
+            { key:'maxWidth', label:'最大宽度', type:'length', units:['px','%','vw','auto'], scope:'size' },
+            { key:'minHeight', label:'最小高度', type:'length', units:['px','vh','auto'], scope:'size' },
+            { key:'height', label:'固定高度', type:'length', units:['px','vh','auto'], scope:'size' },
+            { key:'objectFit', label:'图片填充', type:'select', options:[{value:'',text:'默认'},{value:'cover',text:'裁剪铺满'},{value:'contain',text:'完整显示'}], scope:'fit' },
+            { key:'textAlign', label:'内容对齐', type:'select', options:[{value:'',text:'默认'},{value:'left',text:'左对齐'},{value:'center',text:'居中'},{value:'right',text:'右对齐'}], scope:'align' },
+            { key:'color', label:'文字颜色', type:'color', scope:'color' },
+            { key:'alignItems', label:'列的垂直对齐', type:'select', options:[{value:'',text:'默认（拉伸）'},{value:'start',text:'顶部对齐'},{value:'center',text:'垂直居中'},{value:'end',text:'底部对齐'}], scope:'grid' }
+        ]},
+        { key:'typography', title:'字体排版', fields:[
+            { key:'fontSize', label:'字号', type:'length', units:['px','rem','em'], scope:'typography' },
+            { key:'fontWeight', label:'字重', type:'select', options:[{value:'',text:'默认'},{value:'400',text:'常规'},{value:'500',text:'中等'},{value:'600',text:'半粗'},{value:'700',text:'加粗'}], scope:'typography' },
+            { key:'lineHeight', label:'行高', type:'text', placeholder:'如 1.8 或 24px', scope:'typography' },
+            { key:'letterSpacing', label:'字间距', type:'length', units:['px','em'], scope:'typography' }
         ]},
         { key:'spacing', title:'间距', fields:[
-            { key:'paddingTop', label:'上内边距', type:'text', placeholder:'如 24px' },
-            { key:'paddingRight', label:'右内边距', type:'text', placeholder:'如 20px' },
-            { key:'paddingBottom', label:'下内边距', type:'text', placeholder:'如 24px' },
-            { key:'paddingLeft', label:'左内边距', type:'text', placeholder:'如 20px' },
-            { key:'marginTop', label:'上外边距', type:'text', placeholder:'如 0' },
-            { key:'marginRight', label:'右外边距', type:'text', placeholder:'如 0' },
-            { key:'marginBottom', label:'下外边距', type:'text', placeholder:'如 0' },
-            { key:'marginLeft', label:'左外边距', type:'text', placeholder:'如 0' },
-            { key:'gap', label:'子项间距', type:'text', placeholder:'如 24px' }
+            { key:'paddingTop', label:'上内边距', type:'length', scope:'spacing' },
+            { key:'paddingRight', label:'右内边距', type:'length', scope:'spacing' },
+            { key:'paddingBottom', label:'下内边距', type:'length', scope:'spacing' },
+            { key:'paddingLeft', label:'左内边距', type:'length', scope:'spacing' },
+            { key:'marginTop', label:'上外边距', type:'length', scope:'spacing' },
+            { key:'marginRight', label:'右外边距', type:'length', scope:'spacing' },
+            { key:'marginBottom', label:'下外边距', type:'length', scope:'spacing' },
+            { key:'marginLeft', label:'左外边距', type:'length', scope:'spacing' },
+            { key:'gap', label:'子项间距', type:'length', scope:'gap', hint:'作用于网格列之间' }
         ]},
         { key:'appearance', title:'边框与阴影', fields:[
-            { key:'borderRadius', label:'圆角', type:'text', placeholder:'如 8px' },
-            { key:'boxShadow', label:'阴影', type:'text', placeholder:'如 0 2px 8px rgba(0,0,0,.08)' }
+            { key:'borderRadius', label:'圆角', type:'length', units:['px','%'], scope:'border' },
+            { key:'boxShadow', label:'阴影', type:'text', placeholder:'如 0 2px 8px rgba(0,0,0,.08)', scope:'border' }
         ]},
         { key:'advanced', title:'高级定位', fields:[
-            { key:'position', label:'定位', type:'select', options:[{value:'',text:'默认'},{value:'relative',text:'相对定位'},{value:'sticky',text:'吸顶'},{value:'fixed',text:'固定'}] },
-            { key:'top', label:'顶部距离', type:'text', placeholder:'如 0px' },
-            { key:'zIndex', label:'层级', type:'number', min:0, max:99999 }
+            { key:'position', label:'定位方式', type:'select', options:[{value:'',text:'默认'},{value:'relative',text:'相对定位'},{value:'static',text:'普通流'},{value:'sticky',text:'吸顶（随页面滚动固定）'},{value:'fixed',text:'固定'}], scope:'position' },
+            { key:'top', label:'顶部距离', type:'length', units:['px','vh'], scope:'position' },
+            { key:'zIndex', label:'层级', type:'number', min:0, max:99999, scope:'position' }
         ]}
     ];
 
+    var ALL_SCOPES = ['background','size','fit','align','color','grid','typography','spacing','gap','border','position'];
+
+    function fieldDef(key, label, type, extra) { var x = { key:key, label:label, type:type || 'text' }; if (extra) Object.keys(extra).forEach(function (k) { x[k] = extra[k]; }); return x; }
     function attr(value) { return esc(value == null ? '' : value); }
+    function scopesOf(node) {
+        var def = node && Registry.get(node.type);
+        var list = def && def.styleScope;
+        return Array.isArray(list) && list.length ? list : ALL_SCOPES;
+    }
+    function fieldApplies(field, scopes) { return !field.scope || scopes.indexOf(field.scope) >= 0; }
 
     function normalizeImageList(value) {
         if (Array.isArray(value)) return value.filter(function (x) { return !!x; });
@@ -46,6 +68,48 @@
             } catch (e) { }
         }
         return [];
+    }
+
+    // ── CSS 长度值：文本输入 + 单位下拉，避免用户手打「24px」写错格式 ───────────────
+    var UNIT_KEYWORDS = ['auto', 'none', 'inherit', 'initial', 'unset'];
+    var CUSTOM_UNIT = 'custom';
+    function parseLength(value, defaultUnit) {
+        var text = String(value == null ? '' : value).trim();
+        var matched = /^(-?\d+(?:\.\d+)?)\s*(px|%|rem|em|vh|vw|pt|auto|none)?$/i.exec(text);
+        if (matched) {
+            var unit = (matched[2] || defaultUnit || 'px').toLowerCase();
+            if (UNIT_KEYWORDS.indexOf(unit) >= 0) return { number:'', unit:unit };
+            return { number: matched[1], unit: unit };
+        }
+        // calc()/min()/… 等自定义表达式原样保留，避免读取时把它改写成非法值
+        if (text) return { number: text, unit: CUSTOM_UNIT };
+        return { number:'', unit: defaultUnit || 'px' };
+    }
+    function composeLength(raw, unit) {
+        var text = String(raw == null ? '' : raw).trim();
+        var normalizedUnit = String(unit || 'px').toLowerCase();
+        if (normalizedUnit === CUSTOM_UNIT) return text;
+        if (!text) return UNIT_KEYWORDS.indexOf(normalizedUnit) >= 0 ? normalizedUnit : '';
+        if (UNIT_KEYWORDS.indexOf(text.toLowerCase()) >= 0) return text.toLowerCase();
+        if (/^-?\d+(?:\.\d+)?$/.test(text)) return text + normalizedUnit;
+        if (/^-?\d+(\.\d+)?\s*(px|%|rem|em|vh|vw|pt)$/i.test(text)) return text.replace(/\s+/g, '');
+        return null;                                     // 非法值：交给调用方拦截，不写入文档
+    }
+
+    function renderLength(field, value, area) {
+        var units = field.units || ['px', '%'];
+        var parsed = parseLength(value, units[0]);
+        var options = units.slice();
+        if (parsed.unit === CUSTOM_UNIT) options.push(CUSTOM_UNIT);
+        else if (units.indexOf(parsed.unit) < 0) options.push(parsed.unit);
+        var html = '<div class="sb-length-control">'
+            + '<input class="layui-input sb-length-value" type="text" data-area="' + area + '" data-key="' + attr(field.key) + '" value="' + attr(parsed.number) + '" placeholder="留空=默认">'
+            + '<select class="sb-length-unit" data-area="' + area + '" data-key="' + attr(field.key) + '" data-unit-select="1">';
+        options.forEach(function (unit) {
+            html += '<option value="' + attr(unit) + '"' + (unit === parsed.unit ? ' selected' : '') + '>' + esc(unit === CUSTOM_UNIT ? '自定义' : unit) + '</option>';
+        });
+        html += '</select></div>';
+        return html;
     }
 
     function renderImageList(field, value, area) {
@@ -93,23 +157,27 @@
             html += '</div>';
         }
         html += '<div class="sb-grid-column-tools"><button type="button" data-action="equal-grid-columns">平均分配列宽</button></div>'
-            + '<div class="sb-grid-column-tip">可直接选择 1~6 列；在画布中拖动列之间的蓝色分隔线，可自由调整每列宽度。</div></div>';
+            + '<div class="sb-grid-column-tip">可直接选择 1~6 列；在画布中拖动列之间的蓝色分隔线，可自由调整每列宽度。减少列数时，原列内容会合并到相邻列。</div></div>';
         return html;
     }
 
-    function renderField(field, value, area) {
+    function renderField(field, value, area, node) {
         var key = field.key, type = field.type || 'text';
-        var html = '<div class="layui-form-item"><label class="layui-form-label" for="field-' + area + '-' + key + '">' + esc(field.label || key) + '</label><div class="layui-input-block">';
+        var blockTypes = ['image-list', 'grid-columns'];
+        var canReset = !!node && area !== 'node' && blockTypes.indexOf(type) < 0;
+        var wrap = canReset;                       // 需要重置按钮时才套一层行容器，保证按钮与控件同行且不遮挡输入
+        var html = '<div class="layui-form-item"><label class="layui-form-label" for="field-' + area + '-' + key + '">' + esc(field.label || key) + '</label><div class="layui-input-block">'
+            + (wrap ? '<div class="sb-field-row' + (type === 'textarea' ? ' is-tall' : '') + '">' : '');
         if (type === 'textarea') {
-            html += '<textarea class="layui-textarea" data-area="' + area + '" data-key="' + key + '" placeholder="' + attr(field.placeholder || '') + '">' + esc(value || '') + '</textarea>';
+            html += '<textarea class="layui-textarea" data-area="' + area + '" data-key="' + key + '" rows="' + (field.rows || 3) + '" placeholder="' + attr(field.placeholder || '') + '">' + esc(value || '') + '</textarea>';
         } else if (type === 'select') {
             html += '<select lay-ignore data-area="' + area + '" data-key="' + key + '">';
             (field.options || []).forEach(function (item) { html += '<option value="' + attr(item.value) + '"' + (String(item.value) === String(value == null ? '' : value) ? ' selected' : '') + '>' + esc(item.text) + '</option>'; });
             html += '</select>';
         } else if (type === 'checkbox') {
-            html += '<input type="checkbox" lay-ignore style="display:inline-block;width:18px;height:18px;margin-top:7px;accent-color:#1677ff" data-area="' + area + '" data-key="' + key + '"' + (value ? ' checked' : '') + '>';
+            html += '<label class="sb-checkbox-row"><input type="checkbox" lay-ignore data-area="' + area + '" data-key="' + key + '"' + (value ? ' checked' : '') + '><span>开启</span></label>';
         } else if (type === 'color') {
-            html += '<div class="sb-color-control"><input type="color" aria-label="选择' + attr(field.label) + '" data-area="' + area + '" data-key="' + key + '" value="' + attr(/^#[0-9a-f]{6}$/i.test(value || '') ? value : '#ffffff') + '"><input type="text" class="layui-input" data-area="' + area + '" data-key="' + key + '" value="' + attr(value || '') + '" placeholder="默认 / #ffffff"><button type="button" data-action="clear-color" data-key="' + key + '" title="恢复默认颜色">↺</button></div>';
+            html += '<div class="sb-color-control"><input type="color" aria-label="选择' + attr(field.label) + '" data-area="' + area + '" data-key="' + key + '" value="' + attr(/^#[0-9a-f]{6}$/i.test(value || '') ? value : '#ffffff') + '"><input type="text" class="layui-input" data-area="' + area + '" data-key="' + key + '" value="' + attr(value || '') + '" placeholder="留空=默认 / #ffffff"></div>';
         } else if (type === 'image') {
             html += '<div class="sb-image-input-row">'
                 + '<input class="layui-input" type="text" data-area="' + area + '" data-key="' + key + '" value="' + attr(value == null ? '' : value) + '" placeholder="图片地址或从素材库选择">'
@@ -120,11 +188,21 @@
             html += renderImageList(field, value, area);
         } else if (type === 'grid-columns') {
             html += renderGridColumns(field, value, area);
+        } else if (type === 'length') {
+            html += renderLength(field, value, area);
         } else {
-            html += '<input class="layui-input" type="' + (type === 'number' ? 'number' : 'text') + '" data-area="' + area + '" data-key="' + key + '" value="' + attr(value == null ? '' : value) + '" placeholder="' + attr(field.placeholder || '') + '"' + (field.min != null ? ' min="' + field.min + '"' : '') + (field.max != null ? ' max="' + field.max + '"' : '') + '>';
+            var step = field.step != null ? ' step="' + field.step + '"' : '';
+            html += '<input class="layui-input" type="' + (type === 'number' ? 'number' : 'text') + '" data-area="' + area + '" data-key="' + key + '" value="' + attr(value == null ? '' : value) + '" placeholder="' + attr(field.placeholder || '') + '"' + (field.min != null ? ' min="' + field.min + '"' : '') + (field.max != null ? ' max="' + field.max + '"' : '') + step + '>';
         }
-        html = html.replace(/<(input|textarea|select)\b/, '<$1 id="field-' + area + '-' + key + '"');
-        return html + '</div></div>';
+        html = html.replace(/<(input|textarea|select)\b/g, (function () {
+            var seq = 0;
+            return function (matched, tag) { seq++; return '<' + tag + ' id="field-' + area + '-' + key + (seq > 1 ? '-' + seq : '') + '"'; };
+        })());
+        if (canReset) html += '<button type="button" class="sb-field-reset" data-action="reset-field" data-area="' + area + '" data-key="' + attr(key) + '" title="恢复默认值">↺</button>';
+        if (wrap) html += '</div>';
+        html += '</div></div>';
+        if (field.hint) html += '<div class="sb-field-hint">' + esc(field.hint) + '</div>';
+        return html;
     }
 
     function nodePath(nodes, nodeId) {
@@ -141,21 +219,43 @@
         return trail;
     }
 
-    function section(title, content, open, modifier) {
-        return '<details class="props-fold ' + (modifier || '') + '"' + (open ? ' open' : '') + '><summary>' + esc(title) + '<i class="layui-icon layui-icon-down"></i></summary><div class="props-fold-body">' + content + '</div></details>';
+    function section(title, content, open, modifier, tools) {
+        return '<details class="props-fold ' + (modifier || '') + '"' + (open ? ' open' : '') + '><summary><span class="props-fold-title">' + esc(title) + '</span>'
+            + (tools || '') + '<i class="layui-icon layui-icon-down"></i></summary><div class="props-fold-body">' + content + '</div></details>';
     }
 
     function renderStyleGroups(node, contentExists) {
+        var scopes = scopesOf(node);
         var style = node.style || {};
         var html = '';
-        styleGroups.forEach(function (group, index) {
-            var fields = group.fields.map(function (field) { return renderField(field, style[field.key], 'style'); }).join('');
+        var first = true;
+        styleGroups.forEach(function (group) {
+            var fields = group.fields.filter(function (field) { return fieldApplies(field, scopes); });
+            if (!fields.length) return;
+            var body = fields.map(function (field) { return renderField(field, style[field.key], 'style', node); }).join('');
             if (group.key === 'spacing') {
-                fields = '<div class="props-quick-spacing"><span>快速设置</span><button type="button" data-action="set-spacing" data-value="12px">紧凑</button><button type="button" data-action="set-spacing" data-value="24px">舒适</button><button type="button" data-action="set-spacing" data-value="48px">宽松</button></div>' + fields;
+                body = '<div class="props-quick-spacing"><span>快速设置</span><button type="button" data-action="set-spacing" data-value="12px">紧凑</button><button type="button" data-action="set-spacing" data-value="24px">舒适</button><button type="button" data-action="set-spacing" data-value="48px">宽松</button></div>' + body;
             }
-            html += section(group.title, fields, !contentExists && index === 0, 'props-style-group props-style-' + group.key);
+            html += section(group.title, body, !contentExists && first, 'props-style-group props-style-' + group.key);
+            first = false;
         });
+        if (!html) html = '<div class="props-hint">该组件没有可调整的样式项。</div>';
         return html;
+    }
+
+    function styleSummary(node) {
+        var style = node.style || {};
+        var count = 0;
+        styleGroups.forEach(function (group) { group.fields.forEach(function (field) { if (style[field.key] !== undefined && style[field.key] !== null && style[field.key] !== '') count++; }); });
+        return count ? ('已设置 ' + count + ' 项') : '未设置样式';
+    }
+
+    function resetValue(node, area, key) {
+        var def = (node && Registry.get(node.type)) || {};
+        var source = area === 'style' ? (def.styleDefaults || {}) : (def.defaults || {});
+        if (!Object.prototype.hasOwnProperty.call(source, key)) return '';
+        var value = source[key];
+        return value && typeof value === 'object' ? Registry.clone(value) : value;
     }
 
     function render(node, documentModel) {
@@ -167,13 +267,15 @@
             var itemDef = Registry.get(item.type) || { name:item.type };
             return '<button type="button" data-action="select-node" data-node-id="' + attr(item.id) + '"' + (index === path.length - 1 ? ' class="is-current"' : '') + '>' + esc(item.name || itemDef.name) + '</button>';
         }).join('<span>›</span>');
-        var general = renderField({key:'name',label:'组件名称'}, node.name, 'node')
-            + renderField({key:'visible',label:'是否显示',type:'checkbox'}, node.visible !== false, 'node')
-            + renderField({key:'locked',label:'锁定组件',type:'checkbox'}, node.locked === true, 'node');
-        var contentExists = (def.inspector || []).length > 0;
+        var isContainer = !!(def.container);
+        var general = renderField(fieldDef('name', '组件名称', 'text', { hint: '仅用于后台管理，前台不显示' }), node.name, 'node', node)
+            + renderField(fieldDef('visible', isContainer ? '是否显示内容' : '是否显示', 'checkbox'), node.visible !== false, 'node', node)
+            + renderField(fieldDef('locked', '锁定组件', 'checkbox', { hint: '锁定后不能拖动或修改其属性' }), node.locked === true, 'node', node);
+        var contentFields = (def.inspector || []).filter(function (field) { return field && field.key; });
+        var contentExists = contentFields.length > 0;
         var location = root.Tree.locate(documentModel && documentModel.nodes, node.id);
         var blocked = path.some(function(item){return item.locked;}) || node.type === 'column';
-        var html = '<div class="props-title"><div><strong>' + esc(def.name) + '</strong></div><div class="props-title-actions">'
+        var html = '<div class="props-title"><div><strong>' + esc(def.name) + '</strong><small>' + esc(def.desc || node.type) + '</small></div><div class="props-title-actions">'
             + '<button type="button" data-action="move-node" data-direction="-1" title="上移"' + (blocked || !location || location.index === 0 ? ' disabled' : '') + '>↑</button>'
             + '<button type="button" data-action="move-node" data-direction="1" title="下移"' + (blocked || !location || location.index === location.collection.length-1 ? ' disabled' : '') + '>↓</button>'
             + '<button type="button" data-action="duplicate-node" title="复制组件"' + (blocked ? ' disabled' : '') + '><i class="layui-icon layui-icon-file"></i></button><button type="button" data-action="delete-node" title="删除组件"' + (blocked ? ' disabled' : '') + '><i class="layui-icon layui-icon-delete"></i></button></div></div>';
@@ -181,20 +283,47 @@
         if (breadcrumb) html += '<div class="props-breadcrumb">' + breadcrumb + '</div>';
         html += '<form class="layui-form" onsubmit="return false">';
         html += section('组件设置', general, !contentExists, 'props-general');
-        if (contentExists) html += section('内容', (def.inspector || []).map(function (field) { return renderField(field, (node.props || {})[field.key], 'props'); }).join(''), true, 'props-content');
-        html += '<div class="props-style-heading">样式 <span>按需展开</span></div>' + renderStyleGroups(node, contentExists);
-        html += '</form>';
+        if (contentExists) html += section('内容', contentFields.map(function (field) { return renderField(field, (node.props || {})[field.key], 'props', node); }).join(''), true, 'props-content');
+        html += '<div class="props-style-heading"><span>样式 <em>按需展开</em></span><span class="props-style-tools"><em class="props-style-count">' + esc(styleSummary(node)) + '</em><button type="button" data-action="reset-style" title="清空本组件已设置的样式，回到组件默认外观">恢复默认样式</button></span></div>';
+        html += renderStyleGroups(node, contentExists) + '</form>';
         return html;
     }
 
     function readValue(el) {
         var $el = $(el);
+        var area = $el.attr('data-area'), key = $el.attr('data-key') || '';
+        if ($el.attr('data-unit-select')) {
+            var $number = $el.siblings('input[data-area][data-key]').first();
+            return composeLength($number.val(), $el.val());
+        }
+        if ($el.hasClass('sb-length-value')) {
+            return composeLength($el.val(), $el.siblings('select[data-unit-select]').val());
+        }
         if ($el.attr('type') === 'checkbox') return $el.is(':checked');
-        if ($el.attr('type') === 'number') return Number($el.val() || 0);
-        var value = $el.val();
-        if ($el.attr('data-area') === 'style' && /^(padding|margin|gap|borderRadius|maxWidth|minHeight|top)/.test($el.attr('data-key') || '') && /^-?\d+(\.\d+)?$/.test(String(value).trim())) return String(value).trim() + 'px';
-        return value;
+        if ($el.attr('type') === 'number') {
+            var raw = String($el.val() == null ? '' : $el.val()).trim();
+            if (raw === '') return '';                       // 清空 = 恢复默认，不再强制写成 0
+            var number = Number(raw);
+            return isFinite(number) ? number : null;
+        }
+        void area;
+        void key;
+        return $el.val();
     }
 
-    root.Inspector = { render: render, readValue: readValue, normalizeImageList: normalizeImageList };
+    root.Inspector = {
+        render: render,
+        readValue: readValue,
+        normalizeImageList: normalizeImageList,
+        resetValue: resetValue,
+        styleGroups: styleGroups,
+        styleKeysFor: function (node) {
+            var scopes = scopesOf(node);
+            var keys = [];
+            styleGroups.forEach(function (group) {
+                group.fields.forEach(function (field) { if (fieldApplies(field, scopes)) keys.push(field.key); });
+            });
+            return keys;
+        }
+    };
 })(window, window.jQuery);
