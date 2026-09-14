@@ -369,3 +369,44 @@
     .designer-props .sb-length-control{grid-template-columns:minmax(0,1fr) 62px}
     .designer-props .sb-length-control .sb-length-unit{width:62px!important;min-width:62px!important;max-width:62px!important}
 }
+
+/* 富文本字段始终保持：标签在上，编辑器整行占满。放在文件末尾覆盖普通属性响应式规则。 */
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) {
+    position:relative;
+    display:grid;
+    grid-template-columns:minmax(0,1fr)!important;
+    row-gap:7px;
+}
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) > .layui-form-label {
+    grid-column:1;
+    width:100%!important;
+    padding:0 34px 6px 0!important;
+}
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) > .layui-input-block {
+    grid-column:1;
+    width:100%;
+    min-width:0;
+}
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-field-row.is-tall {
+    position:relative;
+    display:block;
+    width:100%;
+    min-width:0;
+}
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-richtext-editor-wrap {
+    display:block;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+}
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-field-reset {
+    position:absolute;
+    right:0;
+    top:-36px;
+    margin:0!important;
+}
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) + .sb-field-hint,
+.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-field-hint {
+    grid-column:1;
+    padding-left:0!important;
+}
