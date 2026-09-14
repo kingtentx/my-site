@@ -286,3 +286,86 @@
 @media(min-width:1501px){.designer-props{width:460px}}
 @media(max-width:1500px) and (min-width:1201px){.designer-props{width:420px}}
 @media(max-width:1200px){.props-content .sb-richtext-editor{min-height:240px;max-height:520px}}
+
+/* ── 复合属性控件宽度优化：录入值优先，单位/颜色/素材按钮保持紧凑 ─────── */
+.designer-props .sb-length-control {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 66px;
+    gap:6px;
+    width:100%;
+    min-width:0;
+}
+.designer-props .sb-length-control .sb-length-value {
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    flex:none!important;
+}
+.designer-props .sb-length-control .sb-length-unit {
+    width:66px!important;
+    min-width:66px!important;
+    max-width:66px!important;
+    flex:none!important;
+    padding:0 7px;
+}
+.designer-props .sb-color-control {
+    display:grid;
+    grid-template-columns:36px minmax(0,1fr);
+    gap:7px;
+    width:100%;
+    min-width:0;
+}
+.designer-props .sb-color-control input[type=color] {
+    width:36px!important;
+    min-width:36px!important;
+    max-width:36px!important;
+    margin:0;
+}
+.designer-props .sb-color-control input[type=text] {
+    width:100%!important;
+    min-width:0!important;
+}
+.designer-props .sb-image-input-row {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:7px!important;
+    width:100%;
+    min-width:0;
+}
+.designer-props .sb-image-input-row .layui-input {
+    width:100%!important;
+    min-width:0!important;
+}
+.designer-props .sb-image-input-row .sb-image-pick-btn {
+    width:auto!important;
+    min-width:72px;
+    max-width:88px;
+    padding:0 10px!important;
+    white-space:nowrap;
+}
+.designer-props .sb-field-row > .sb-length-control,
+.designer-props .sb-field-row > .sb-color-control,
+.designer-props .sb-field-row > .sb-image-input-row {
+    width:100%;
+    min-width:0;
+    flex:1 1 auto;
+}
+.designer-props .sb-field-reset {
+    flex:0 0 26px!important;
+    width:26px!important;
+    min-width:26px!important;
+    max-width:26px!important;
+}
+/* 普通属性再给输入区一点空间；标签保持可读但不占过多宽度。 */
+@media(min-width:1501px){
+    .designer-props .layui-form-item{grid-template-columns:88px minmax(0,1fr)}
+    .sb-field-hint{padding-left:98px}
+}
+@media(max-width:1500px) and (min-width:1201px){
+    .designer-props .layui-form-item{grid-template-columns:82px minmax(0,1fr)}
+    .sb-field-hint{padding-left:92px}
+}
+@media(max-width:1200px){
+    .designer-props .sb-length-control{grid-template-columns:minmax(0,1fr) 62px}
+    .designer-props .sb-length-control .sb-length-unit{width:62px!important;min-width:62px!important;max-width:62px!important}
+}
