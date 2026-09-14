@@ -410,3 +410,69 @@
     grid-column:1;
     padding-left:0!important;
 }
+
+/* 图片属性：标签独占一行，路径输入使用整行宽度；素材库按钮保留紧凑宽度，预览换到下一行。 */
+.designer-props .layui-form-item:has(.sb-image-input-row) {
+    display:grid;
+    grid-template-columns:minmax(0,1fr)!important;
+    row-gap:7px;
+    margin-bottom:14px;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) > .layui-form-label {
+    grid-column:1;
+    width:100%!important;
+    padding:0 0 6px!important;
+    font-weight:600;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) > .layui-input-block {
+    grid-column:1;
+    width:100%;
+    min-width:0;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) .sb-field-row {
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 26px;
+    grid-template-rows:auto auto;
+    gap:8px 7px;
+    width:100%;
+    min-width:0;
+    align-items:start;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) .sb-image-input-row {
+    grid-column:1;
+    grid-row:1;
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) 76px!important;
+    gap:7px!important;
+    width:100%;
+    min-width:0;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) .sb-image-input-row .layui-input {
+    width:100%!important;
+    min-width:0!important;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) .sb-image-input-row .sb-image-pick-btn {
+    width:76px!important;
+    min-width:76px!important;
+    max-width:76px!important;
+    padding:0 8px!important;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) .sb-field-reset {
+    position:static!important;
+    grid-column:2;
+    grid-row:1;
+    align-self:center;
+    margin:0!important;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) .sb-image-preview {
+    grid-column:1/-1;
+    grid-row:2;
+    justify-self:start;
+    margin:0;
+}
+.designer-props .layui-form-item:has(.sb-image-input-row) .sb-image-preview img {
+    display:block;
+    max-width:150px;
+    max-height:110px;
+    object-fit:contain;
+}
