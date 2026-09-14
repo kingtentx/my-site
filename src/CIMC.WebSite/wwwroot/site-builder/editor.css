@@ -233,3 +233,56 @@
 
 @media(max-width:1500px){.designer-props{width:370px}.designer-props .layui-form-item{grid-template-columns:88px minmax(0,1fr)}.sb-field-hint{padding-left:98px}}
 @media(max-width:1200px){.designer-lib{width:210px;min-width:210px}.designer-props{width:320px;padding-left:11px;padding-right:11px}.designer-props .layui-form-item{grid-template-columns:1fr;row-gap:5px}.designer-props .layui-form-label{padding:0!important}.sb-field-hint{grid-column:1;padding-left:0}.props-style-spacing .props-fold-body{grid-template-columns:1fr}.sb-richtext-editor{min-height:160px}}
+
+/* ── 富文本录入空间优化：内容区改为上下布局，编辑器使用整行宽度 ───────────── */
+.props-content .layui-form-item {
+    grid-template-columns: 1fr;
+    row-gap: 7px;
+    margin-bottom: 14px;
+}
+.props-content .layui-form-label {
+    padding: 0 0 6px!important;
+    font-size: 13.5px!important;
+    font-weight: 600;
+    color: #3d4b5f!important;
+}
+.props-content .layui-input-block {
+    width: 100%;
+    min-width: 0;
+}
+.props-content .sb-field-row.is-tall {
+    width: 100%;
+    align-items: flex-start;
+}
+.props-content .sb-richtext-editor-wrap {
+    width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+}
+.props-content .sb-field-hint {
+    grid-column: 1;
+    padding-left: 0;
+    margin: 7px 0 3px;
+    font-size: 12.5px;
+}
+.props-content .sb-richtext-toolbar {
+    gap: 5px;
+    padding: 8px 10px;
+}
+.props-content .sb-richtext-toolbar button {
+    min-width: 34px;
+    height: 31px;
+    padding: 0 9px;
+    font-size: 12.5px;
+    line-height: 29px;
+}
+.props-content .sb-richtext-editor {
+    min-height: 300px;
+    max-height: 620px;
+    padding: 15px 16px;
+    font-size: 14.5px;
+    line-height: 1.85;
+}
+@media(min-width:1501px){.designer-props{width:460px}}
+@media(max-width:1500px) and (min-width:1201px){.designer-props{width:420px}}
+@media(max-width:1200px){.props-content .sb-richtext-editor{min-height:240px;max-height:520px}}
