@@ -44,6 +44,8 @@
     var uploadedMaterials = [];
     // 属性面板正在做实时预览（如拖动取色器）时，跳过面板重建，避免焦点/输入法被打断
     var panelLiveEdit = false;
+    var categoryRequest = 0;
+    var categoryState = { nodeId: null, area: 'props', key: null, contentType: 'article', selected: [], keyword: '', options: [], allText: '全部' };
     var materialState = {
         pageIndex: 1,
         pageSize: 24,
@@ -92,8 +94,8 @@
             link.href = href;
             document.head.appendChild(link);
         }
-        addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091001');
-        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091001');
+        addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091403');
+        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091403');
 
         if (!document.getElementById('sbDesignerWysiwygCss')) {
             var style = document.createElement('style');
@@ -121,7 +123,7 @@
         }
 
         $('#canvas').addClass('sb-runtime');
-        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091001');
+        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091403');
     }
 
     function ensureCanvasViewport() {
@@ -536,6 +538,109 @@
         store.select(nodeId);
     }
 
+    // ── 分类多选弹窗：与素材库一致的「勾选 + 确定」交互，替代手动输入分类 ID ──────
+    function ensureCategoryDialog() {
+        var $dialog = $('#sbCategoryDialog');
+        if ($dialog.length) return $dialog;
+        $('body').append('<div class="sb-material-mask" id="sbCategoryDialog" style="display:none"><div class="sb-material-dialog sb-category-dialog">'
+            + '<div class="sb-material-head"><strong id="sbCategoryTitle">选择分类</strong><button type="button" data-category-close>×</button></div>'
+            + '<div class="sb-material-tools"><input type="text" id="sbCategoryKeywords" placeholder="搜索分类名称"><button type="button" id="sbCategorySearch">搜索</button>'
+            + '<button type="button" id="sbCategoryReset">清空选择（全部）</button></div>'
+            + '<div class="sb-material-body sb-category-body" id="sbCategoryBody"></div>'
+            + '<div class="sb-material-foot"><span id="sbCategoryCount"></span><div><span id="sbCategorySelected" class="sb-material-selected"></span>'
+            + '<button type="button" id="sbCategoryConfirm" class="sb-material-confirm">确定</button></div></div></div></div>');
+        return $('#sbCategoryDialog');
+    }
+    function isCategorySelected(id) { return categoryState.selected.indexOf(Number(id)) >= 0; }
+    function updateCategorySelectionUi() {
+        var count = categoryState.selected.length;
+        $('#sbCategorySelected').text(count ? ('已选 ' + count + ' 个分类') : categoryState.allText);
+        $('#sbCategoryDialog .sb-category-item').each(function () {
+            var id = Number($(this).attr('data-id') || 0);
+            $(this).toggleClass('is-selected', id > 0 ? isCategorySelected(id) : count === 0);
+        });
+    }
+    function renderCategoryItems() {
+        var keyword = String(categoryState.keyword || '').trim().toLowerCase();
+        var html = '<button type="button" class="sb-category-item is-all" data-id="0">'
+            + '<span class="sb-category-check">✓</span><span class="sb-category-name">' + esc(categoryState.allText || '全部') + '</span>'
+            + '<span class="sb-category-meta">不按分类筛选</span></button>';
+        var matched = (categoryState.options || []).filter(function (opt) {
+            return !keyword || String(opt.text || '').toLowerCase().indexOf(keyword) >= 0;
+        });
+        matched.forEach(function (opt) {
+            var id = Number(opt.value) || 0;
+            if (!id) return;
+            html += '<button type="button" class="sb-category-item" data-id="' + id + '">'
+                + '<span class="sb-category-check">✓</span><span class="sb-category-name">' + esc(String(opt.text || '').replace(/^[\s　]+/, '')) + '</span>'
+                + '<span class="sb-category-meta">ID ' + id + '</span></button>';
+        });
+        if (!matched.length) html += '<div class="sb-material-empty">没有匹配的分类，可在后台「内容 / 分类管理」中新增。</div>';
+        $('#sbCategoryBody').html(html);
+        $('#sbCategoryCount').text('共 ' + (categoryState.options || []).length + ' 个分类');
+        updateCategorySelectionUi();
+    }
+    function loadCategoryOptions() {
+        var request = ++categoryRequest;
+        $('#sbCategoryBody').html('<div class="sb-material-empty">正在加载分类...</div>');
+        $.ajax({
+            url: '/contentcategory/getoptions',
+            type: 'GET',
+            dataType: 'json',
+            data: { contentType: categoryState.contentType },
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).done(function (res) {
+            if (request !== categoryRequest) return;
+            if (!ok(res)) {
+                $('#sbCategoryBody').html('<div class="sb-material-empty is-error">读取分类失败：' + esc((res && res.message) || '请确认当前账号拥有分类查看权限') + '</div>');
+                return;
+            }
+            var data = res.data || {};
+            categoryState.options = data.options || [];
+            categoryState.allText = data.allText || ('全部' + (data.rootName || ''));
+            $('#sbCategoryTitle').text('选择' + (data.rootName || '') + '分类（可多选）');
+            renderCategoryItems();
+        }).fail(function (xhr, textStatus, errorThrown) {
+            if (request !== categoryRequest) return;
+            var status = xhr && xhr.status;
+            var msg = '读取分类请求失败：';
+            if (status === 401 || status === 403) {
+                msg += '当前账号未登录或无分类查看权限，请刷新页面后重试';
+            } else if (textStatus === 'parsererror') {
+                msg += '接口返回格式异常（可能返回了 HTML 登录页），请按 F12 查看 Network 中的 getoptions 响应';
+            } else {
+                msg += (errorThrown || textStatus || '网络异常') + '，请重试';
+            }
+            $('#sbCategoryBody').html('<div class="sb-material-empty is-error">' + msg + '</div>');
+        });
+    }
+    function openCategoryPicker(nodeId, area, key, contentType, current) {
+        categoryState.nodeId = nodeId;
+        categoryState.area = area || 'props';
+        categoryState.key = key;
+        categoryState.contentType = contentType || 'article';
+        categoryState.selected = SB.Inspector.normalizeCategoryIds(current);
+        categoryState.keyword = '';
+        categoryState.options = [];
+        ensureCategoryDialog().show();
+        $('#sbCategoryKeywords').val('');
+        $('#sbCategorySelected').text('');
+        loadCategoryOptions();
+    }
+    function closeCategoryPicker() {
+        categoryRequest++;
+        $('#sbCategoryDialog').hide();
+        categoryState.nodeId = null; categoryState.key = null; categoryState.selected = []; categoryState.options = [];
+    }
+    function confirmCategoryPicker() {
+        if (!categoryState.nodeId || !categoryState.key) return;
+        if (isLocked(categoryState.nodeId)) { message('组件已锁定，请先解锁'); return; }
+        var nodeId = categoryState.nodeId, area = categoryState.area, key = categoryState.key, values = categoryState.selected.slice();
+        store.update(nodeId, area, key, values);
+        closeCategoryPicker();
+        store.select(nodeId);
+    }
+
     function render() {
         if (renderPending) return;
         renderPending = true;
@@ -567,7 +672,8 @@
                     if (sameNode) $('#propsPanel details').each(function(){folds.push(this.open);});
                     $('#propsPanel').html(SB.Inspector.render(store.selected(), store.document));
                     renderGlobalSettings();
-                    SB.Inspector.populateCategories();
+                    // 分类树首次加载完成后重绘画布，让设计器预览里的分类 Tab 显示真实名称
+                    SB.Inspector.populateCategories(function(){ lastRenderedDocument = null; render(); });
                     if (sameNode) $('#propsPanel details').each(function(index){if(index < folds.length)this.open = folds[index];});
                     $('#propsPanel').scrollTop(sameNode ? panelScroll : 0);
                     if (focus) $('#propsPanel [data-area][data-key]').filter(function(){return $(this).attr('data-area')===focus.area&&$(this).attr('data-key')===focus.key&&$(this).attr('type')===focus.type;}).first().each(function(){this.focus({preventScroll:true});if(focus.start!=null&&this.setSelectionRange)this.setSelectionRange(focus.start,focus.end);});
@@ -727,6 +833,8 @@
         $('#propsPanel').on('click.siteBuilder','[data-action="delete-node"]',function(){var node=store.selected();if(node&&!isLocked(node.id)&&node.type!=='column')store.remove(node.id);});
         $('#propsPanel').on('click.siteBuilder','[data-action="move-node"]',function(){var node=store.selected(),location=node&&SB.Tree.locate(store.document.nodes,node.id);if(!location||isLocked(node.id)||node.type==='column')return;var index=location.index+Number($(this).attr('data-direction'));if(index>=0&&index<location.collection.length)store.move(node.id,location.parent?location.parent.id:null,index);});
         $('#propsPanel').on('click.siteBuilder','[data-action="clear-color"]',function(){var node=store.selected();if(node)store.update(node.id,'style',$(this).attr('data-key'),'');});
+        $('#propsPanel').on('click.siteBuilder','[data-action="pick-categories"]',function(e){e.preventDefault();var node=store.selected();if(!node)return;var area=$(this).attr('data-area')||'props',key=$(this).attr('data-key');var current=(node[area]||{})[key];openCategoryPicker(node.id,area,key,$(this).attr('data-category-type')||'article',current);});
+        $('#propsPanel').on('click.siteBuilder','[data-action="clear-categories"]',function(e){e.preventDefault();var node=store.selected();if(!node||isLocked(node.id))return;store.update(node.id,$(this).attr('data-area')||'props',$(this).attr('data-key'),[]);store.select(node.id);});
         $('#propsPanel').on('click.siteBuilder','[data-action="set-spacing"]',function(){var node=store.selected(),value=$(this).attr('data-value');if(!node||node.locked)return;store.change(function(doc){var target=SB.Tree.find(doc.nodes,node.id);if(!target)return;target.style=target.style||{};target.style.paddingTop=value;target.style.paddingRight=value;target.style.paddingBottom=value;target.style.paddingLeft=value;target.style.gap=value;});store.select(node.id);});
 
         $(document).off('.siteBuilderMaterial')
@@ -741,6 +849,21 @@
             .on('click.siteBuilderMaterial','#sbMaterialPrev',function(){if(materialState.pageIndex>1){materialState.pageIndex--;loadImageMaterials();}})
             .on('click.siteBuilderMaterial','#sbMaterialNext',function(){var pages=Math.max(1,Math.ceil(materialState.count/materialState.pageSize));if(materialState.pageIndex<pages){materialState.pageIndex++;loadImageMaterials();}});
 
+        $(document).off('.siteBuilderCategory')
+            .on('click.siteBuilderCategory','[data-category-close]',function(){closeCategoryPicker();})
+            .on('click.siteBuilderCategory','#sbCategoryDialog',function(e){if(e.target===this)closeCategoryPicker();})
+            .on('click.siteBuilderCategory','.sb-category-item',function(){
+                var id = Number($(this).attr('data-id') || 0);
+                if (id <= 0) { categoryState.selected = []; renderCategoryItems(); return; }
+                var index = categoryState.selected.indexOf(id);
+                if (index >= 0) categoryState.selected.splice(index, 1); else categoryState.selected.push(id);
+                renderCategoryItems();
+            })
+            .on('click.siteBuilderCategory','#sbCategoryReset',function(){categoryState.selected=[];renderCategoryItems();})
+            .on('click.siteBuilderCategory','#sbCategoryConfirm',function(){confirmCategoryPicker();})
+            .on('click.siteBuilderCategory','#sbCategorySearch',function(){categoryState.keyword=$('#sbCategoryKeywords').val()||'';renderCategoryItems();})
+            .on('keydown.siteBuilderCategory','#sbCategoryKeywords',function(e){if(e.keyCode===13){e.preventDefault();categoryState.keyword=$(this).val()||'';renderCategoryItems();}});
+
         $(document).on('change.siteBuilderViewport','#sbCanvasWidth',function(){var width=Number($(this).val())||1200;store.change(function(doc){doc.settings.designWidth=width;});});
         $(document).on('change.siteBuilderViewport','#sbFullWidth',function(){var enabled=this.checked;store.change(function(doc){doc.settings.fullWidth=enabled;});});
         $(window).on('resize.siteBuilderViewport',function(){applyCanvasViewport();});
@@ -752,6 +875,7 @@
         $(document).on('keydown.siteBuilderShortcuts',function(e){
             var tag=String(e.target && e.target.tagName || '').toLowerCase(), editing=tag==='input'||tag==='textarea'||tag==='select'||e.target.isContentEditable;
             if ($('#sbMaterialDialog:visible').length) {if(e.key==='Escape')closeImagePicker();return;}
+            if ($('#sbCategoryDialog:visible').length) {if(e.key==='Escape')closeCategoryPicker();return;}
             if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='s'){e.preventDefault();saveDraft();return;}
             if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='d'&&!editing){e.preventDefault();var node=store.selected();if(node&&!isLocked(node.id)&&node.type!=='column')store.duplicate(node.id);return;}
             if((e.ctrlKey||e.metaKey)&&String(e.key).toLowerCase()==='z'&&!editing){e.preventDefault();if(e.shiftKey)store.redo();else store.undo();return;}

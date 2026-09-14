@@ -98,6 +98,53 @@
         return html + '</div>';
     }
 
+    function normalizeIdList(value) {
+        var result = [];
+        function push(item) {
+            var id = Number(item);
+            if (isFinite(id) && id > 0 && result.indexOf(Math.round(id)) < 0) result.push(Math.round(id));
+        }
+        if (Array.isArray(value)) { value.forEach(push); return result; }
+        var text = String(value == null ? '' : value).trim();
+        if (!text) return result;
+        if (text.charAt(0) === '[') {
+            try {
+                var parsed = JSON.parse(text);
+                if (Array.isArray(parsed)) { parsed.forEach(push); return result; }
+            } catch (e) { /* 退回逗号分隔解析 */ }
+        }
+        text.split(/[,，;；\s]+/).forEach(push);
+        return result;
+    }
+
+    /**
+     * 分类切换 Tab 预览。分类名称由 inspector 拉取后写入 SiteBuilder.CategoryData，
+     * 首次加载完成时 page-designer 会重绘画布，这里就能显示真实分类名。
+     */
+    function categoryTabPreview(p, contentType) {
+        if (p.showTabs === false) return '';
+        var data = (root.CategoryData && root.CategoryData[contentType]) || null;
+        var options = (data && data.options) || [];
+        var ids = normalizeIdList(p.categoryIds);
+        var names = [];
+        if (ids.length === 0) {
+            if (!options.length) return '';
+            options.forEach(function (opt) {
+                if (Number(opt.parentId) === Number(data.rootId)) names.push(String(opt.text || '').replace(/^[\s　]+/, ''));
+            });
+        } else if (ids.length > 1) {
+            ids.forEach(function (id) {
+                var name = '';
+                options.forEach(function (opt) { if (Number(opt.value) === id) name = String(opt.text || '').replace(/^[\s　]+/, ''); });
+                names.push(name || ('分类 ' + id));
+            });
+        }
+        if (!names.length) return '';
+        var html = '<div class="sb-content-tabs"><a class="sb-content-tab is-active">全部</a>';
+        names.forEach(function (name) { html += '<a class="sb-content-tab">' + esc(name) + '</a>'; });
+        return html + '</div>';
+    }
+
     function articleListPreview(p, css) {
         var layout = String(p.layout || 'card').toLowerCase();
         if (layout !== 'card' && layout !== 'list' && layout !== 'timeline' && layout !== 'editorial') layout = 'card';
@@ -130,6 +177,7 @@
         }
 
         var html = '<div class="sb-content-list is-' + layout + ' sb-designer-article-list" style="' + esc(css) + '">';
+        html += categoryTabPreview(p, 'article');
         if (layout === 'card') {
             html += '<div class="sb-article-grid" style="--sb-cols:' + columns + '">';
             for (var i = 0; i < count; i++) html += mockCard(i, false);

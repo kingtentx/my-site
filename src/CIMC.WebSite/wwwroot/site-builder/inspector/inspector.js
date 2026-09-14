@@ -70,6 +70,26 @@
         return [];
     }
 
+    // ── 分类 ID 归一化：兼容数组 / JSON 字符串 / 「1,2」/ 单个数字 ──────────────
+    function normalizeCategoryIds(value) {
+        var result = [];
+        function push(item) {
+            var id = Number(item);
+            if (isFinite(id) && id > 0 && result.indexOf(Math.round(id)) < 0) result.push(Math.round(id));
+        }
+        if (Array.isArray(value)) { value.forEach(push); return result; }
+        var text = String(value == null ? '' : value).trim();
+        if (!text) return result;
+        if (text.charAt(0) === '[') {
+            try {
+                var parsed = JSON.parse(text);
+                if (Array.isArray(parsed)) { parsed.forEach(push); return result; }
+            } catch (e) { /* 非法 JSON 时退回按逗号分隔解析 */ }
+        }
+        text.split(/[,，;；\s]+/).forEach(push);
+        return result;
+    }
+
     // ── CSS 长度值：文本输入 + 单位下拉，避免用户手打「24px」写错格式 ───────────────
     var UNIT_KEYWORDS = ['auto', 'none', 'inherit', 'initial', 'unset'];
     var CUSTOM_UNIT = 'custom';
@@ -161,17 +181,63 @@
         return html;
     }
 
-    // ── 分类选择器：从后台 /admin/contentcategory/getoptions 拉取文章/产品/招聘分类树 ───
+    // ── 分类选择器 ────────────────────────────────────────────────────────────
+    // 数据来源：后台 /contentcategory/getoptions（文章 / 产品 / 招聘共用一套分类树）。
+    // 两种形态：
+    //   1. select[data-category-type]  单选下拉（保留给旧组件）；
+    //   2. .sb-category-field          多选，点「选择分类」弹窗勾选，值写成 id 数组。
     var categoryCache = {};
+
     function renderCategory(field, value, area) {
         var contentType = field.contentType || 'article';
-        var allText = field.allText || '全部分类';
         var selected = String(value == null ? 0 : value);
-        var html = '<select lay-ignore data-area="' + area + '" data-key="' + attr(field.key) + '" data-category-type="' + attr(contentType) + '" data-category-value="' + attr(selected) + '">'
-            + '<option value="0">' + esc(allText) + '</option>'
+        return '<select lay-ignore data-area="' + area + '" data-key="' + attr(field.key) + '" data-category-type="' + attr(contentType) + '" data-category-value="' + attr(selected) + '">'
+            + '<option value="0">' + esc(field.allText || '全部分类') + '</option>'
             + '</select>';
+    }
+
+    /** 多选分类：显示已选摘要 + 「选择分类」按钮，点按钮弹窗勾选。 */
+    function renderCategories(field, value, area) {
+        var contentType = field.contentType || 'article';
+        var ids = normalizeCategoryIds(value);
+        var html = '<div class="sb-category-field" data-category-type="' + attr(contentType) + '" data-category-value="' + attr(ids.join(',')) + '">'
+            + '<div class="sb-category-toolbar">'
+            + '<button type="button" class="sb-category-pick-btn" data-action="pick-categories" data-area="' + area + '" data-key="' + attr(field.key) + '" data-category-type="' + attr(contentType) + '">选择分类</button>'
+            + '<span class="sb-category-count"></span>';
+        if (ids.length) {
+            html += '<button type="button" class="sb-category-clear" data-action="clear-categories" data-area="' + area + '" data-key="' + attr(field.key) + '">清空</button>';
+        }
+        html += '</div><div class="sb-category-names"></div>'
+            + '<div class="sb-field-hint sb-category-tip">不勾选 = 全部文章；勾选多个时前台会生成分类切换 Tab。</div>'
+            + '</div>';
         return html;
     }
+
+    function categoryNameOf(contentType, id) {
+        var data = categoryCache[contentType];
+        if (!data || !data.options) return '';
+        var name = '';
+        (data.options || []).forEach(function (opt) {
+            if (Number(opt.value) === Number(id)) name = String(opt.text || '').replace(/^[\s　]+/, '');
+        });
+        return name;
+    }
+
+    /** 分类树加载完成后回填「已选 N 个 / 分类名称」，未加载时只显示条数。 */
+    function refreshCategoryFields() {
+        $('#propsPanel .sb-category-field').each(function () {
+            var $field = $(this);
+            var contentType = $field.attr('data-category-type');
+            var ids = normalizeCategoryIds($field.attr('data-category-value'));
+            var data = categoryCache[contentType];
+            var allText = (data && data.allText) || '全部';
+            $field.find('.sb-category-count').text(ids.length ? ('已选 ' + ids.length + ' 个分类') : allText);
+            if (!data) { $field.find('.sb-category-names').text(''); return; }
+            var names = ids.map(function (id) { return categoryNameOf(contentType, id) || ('#' + id); });
+            $field.find('.sb-category-names').text(names.length ? names.join('、') : '');
+        });
+    }
+
     function fillCategoryOptions(contentType, data) {
         var allText = (data && data.allText) || '全部分类';
         var options = (data && data.options) || [];
@@ -185,17 +251,28 @@
             $sel.html(html).val(current);
         });
     }
-    function populateCategories() {
-        var $selects = $('#propsPanel select[data-category-type]');
-        if (!$selects.length) return;
+
+    /**
+     * 拉取分类树并回填。
+     * onLoaded 只在真正发起网络请求并拿到数据时回调一次（后续走缓存不再触发），
+     * 调用方可借此重绘画布，让设计器预览里的分类 Tab 显示真实名称。
+     */
+    function populateCategories(onLoaded) {
+        var $targets = $('#propsPanel select[data-category-type], #propsPanel .sb-category-field[data-category-type]');
+        if (!$targets.length) return;
         var types = {};
-        $selects.each(function () { types[$(this).attr('data-category-type')] = true; });
+        $targets.each(function () { types[$(this).attr('data-category-type')] = true; });
         Object.keys(types).forEach(function (contentType) {
-            if (categoryCache[contentType]) { fillCategoryOptions(contentType, categoryCache[contentType]); return; }
-            $.get('/admin/contentcategory/getoptions', { contentType: contentType }).done(function (res) {
-                if (!res || res.code !== 0) return;
+            if (categoryCache[contentType]) { fillCategoryOptions(contentType, categoryCache[contentType]); refreshCategoryFields(); return; }
+            $.get('/contentcategory/getoptions', { contentType: contentType }).done(function (res) {
+                var code = res ? Number(res.code) : -1;
+                if (code !== 0 && code !== 200) return;   // 后台成功码是 200，兼容 0
                 categoryCache[contentType] = res.data || {};
+                root.CategoryData = root.CategoryData || {};
+                root.CategoryData[contentType] = res.data || {};
                 fillCategoryOptions(contentType, categoryCache[contentType]);
+                refreshCategoryFields();
+                if (typeof onLoaded === 'function') onLoaded(contentType);
             }).fail(function () {
                 $('#propsPanel select[data-category-type="' + contentType + '"]').append('<option value="" disabled>分类加载失败</option>');
             });
@@ -204,7 +281,7 @@
 
     function renderField(field, value, area, node) {
         var key = field.key, type = field.type || 'text';
-        var blockTypes = ['image-list', 'grid-columns'];
+        var blockTypes = ['image-list', 'grid-columns', 'categories'];
         var canReset = !!node && area !== 'node' && blockTypes.indexOf(type) < 0;
         var wrap = canReset;                       // 需要重置按钮时才套一层行容器，保证按钮与控件同行且不遮挡输入
         var html = '<div class="layui-form-item"><label class="layui-form-label" for="field-' + area + '-' + key + '">' + esc(field.label || key) + '</label><div class="layui-input-block">'
@@ -231,6 +308,8 @@
             html += renderGridColumns(field, value, area);
         } else if (type === 'category') {
             html += renderCategory(field, value, area);
+        } else if (type === 'categories') {
+            html += renderCategories(field, value, area);
         } else if (type === 'length') {
             html += renderLength(field, value, area);
         } else {
@@ -365,6 +444,8 @@
         resetValue: resetValue,
         styleGroups: styleGroups,
         populateCategories: populateCategories,
+        normalizeCategoryIds: normalizeCategoryIds,
+        categoryNameOf: categoryNameOf,
         styleKeysFor: function (node) {
             var scopes = scopesOf(node);
             var keys = [];

@@ -234,6 +234,38 @@
     border-radius: 8px;
     background: #fff;
 }
+/* ── 分类切换 Tab ───────────────────────────────────────────────────────── */
+.sb-runtime .sb-content-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0 0 26px;
+}
+
+.sb-runtime .sb-content-tab {
+    padding: 8px 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    background: #fff;
+    color: #4b5563;
+    font-size: 14px;
+    line-height: 1.4;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color .18s ease, border-color .18s ease, background-color .18s ease;
+}
+
+.sb-runtime .sb-content-tab:hover {
+    border-color: #1677ff;
+    color: #1677ff;
+}
+
+.sb-runtime .sb-content-tab.is-active {
+    background: #1677ff;
+    border-color: #1677ff;
+    color: #fff;
+}
+
 .sb-runtime .sb-content-card > a { text-decoration: none; color: inherit; }
 .sb-runtime .sb-content-card img { display: block; width: 100%; aspect-ratio: 16/10; object-fit: cover; }
 .sb-runtime .sb-content-card-body { padding: 18px; }
@@ -328,6 +360,8 @@
 @container sb-page (max-width: 560px) {
     .sb-runtime .sb-banner-copy p {font-size:14px;margin-bottom:20px}
     .sb-runtime .sb-public-container { padding-left: 14px; padding-right: 14px; }
+    .sb-runtime .sb-content-tabs { gap: 8px; margin-bottom: 18px; }
+    .sb-runtime .sb-content-tab { padding: 6px 14px; font-size: 13px; }
     .sb-runtime .sb-article-grid,
     .sb-runtime .sb-product-grid { grid-template-columns: 1fr; }
     .sb-runtime .sb-article-editorial-list { grid-template-columns: 1fr; }

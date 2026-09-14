@@ -1,6 +1,7 @@
 @using CIMC.Data
 @using CIMC.EntityFramework
 @using System
+@using System.Collections
 @using System.Collections.Generic
 @using System.Linq
 @using System.Net
@@ -13,35 +14,131 @@
     bool GetBool(string key, bool fallback) => props.TryGetValue(key, out var value) && value != null && bool.TryParse(value.ToString(), out var result) ? result : fallback;
     var pageSize = Math.Max(1, Math.Min(100, GetInt("pageSize", 6)));
     var columns = Math.Max(1, Math.Min(6, GetInt("columns", 3)));
-    var categoryId = GetInt("categoryId", 0);
     var showSummary = GetBool("showSummary", true);
     var showDate = GetBool("showDate", true);
     var showImage = GetBool("showImage", true);
     var enablePagination = GetBool("enablePagination", true);
+    var showTabs = GetBool("showTabs", true);
 
     var layoutRaw = (props.TryGetValue("layout", out var layoutObj) && layoutObj != null) ? layoutObj.ToString() : "card";
     var layout = string.IsNullOrWhiteSpace(layoutRaw) ? "card" : layoutRaw.ToLowerInvariant();
     if (layout != "card" && layout != "list" && layout != "timeline" && layout != "editorial") layout = "card";
 
-    var categoryIds = categoryId > 0 ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true) : new List<int>();
-    var allItems = ArticleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).Where(a => categoryId <= 0 || categoryIds.Contains(a.TagId)).ToList();
+    // ── 分类选择：categoryIds 为数组（可多选，空 = 全部）；兼容旧版单个 categoryId ──
+    var selectedIds = new List<int>();
+    if (props.TryGetValue("categoryIds", out var idsObj) && idsObj != null)
+    {
+        if (idsObj is string idsText)
+        {
+            foreach (var part in idsText.Split(new[] { ',', '，', ';', '；', ' ' }, StringSplitOptions.RemoveEmptyEntries))
+            {
+                if (int.TryParse(part.Trim(), out var parsed) && parsed > 0 && !selectedIds.Contains(parsed)) selectedIds.Add(parsed);
+            }
+        }
+        else if (idsObj is IEnumerable idsSeq)
+        {
+            foreach (var item in idsSeq)
+            {
+                if (item != null && int.TryParse(item.ToString(), out var parsed) && parsed > 0 && !selectedIds.Contains(parsed)) selectedIds.Add(parsed);
+            }
+        }
+    }
+    var legacyCategoryId = GetInt("categoryId", 0);
+    if (selectedIds.Count == 0 && legacyCategoryId > 0) selectedIds.Add(legacyCategoryId);
+
+    // ── 分类 Tab ────────────────────────────────────────────────────────────
+    // 多选：按所选顺序列出；全选（未勾选）：列出文章大类下的一级分类。
+    // 只勾选了一个分类时没有切换意义，不渲染 Tab。
+    var activeArticles = ArticleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).ToList();
+
+    var rootId = ContentCategoryHelper.GetRootId(CategoryRepository, "article");
+    var tabs = new List<ContentProductCategory>();
+    if (showTabs)
+    {
+        if (selectedIds.Count > 1)
+        {
+            foreach (var id in selectedIds)
+            {
+                var category = CategoryRepository.GetOne(id);
+                if (category != null && !category.IsDelete) tabs.Add(category);
+            }
+        }
+        else if (selectedIds.Count == 0)
+        {
+            int CountIn(int categoryId)
+            {
+                var scope = ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true);
+                return activeArticles.Count(a => scope.Contains(a.TagId));
+            }
+            var firstLevel = ContentCategoryHelper.GetDescendants(CategoryRepository, rootId, true)
+                .Where(p => p.Pid == rootId).ToList();
+            tabs = firstLevel.Where(p => CountIn(p.Id) > 0).ToList();
+            // 兜底：文章大类下暂无任何文章时（例如历史数据的 TagId 指向了其它大类下的分类），
+            // 退化为「文章实际使用到的分类」，保证 Tab 不会出现一整排空结果。
+            if (!tabs.Any())
+            {
+                foreach (var tagId in activeArticles.Select(a => a.TagId).Where(v => v > 0).Distinct())
+                {
+                    var category = CategoryRepository.GetOne(tagId);
+                    if (category != null && !category.IsDelete) tabs.Add(category);
+                }
+            }
+        }
+    }
+
     var request = ViewContext.HttpContext.Request;
-    var key = "page_" + new string((Model.Node.Id ?? "articles").Where(char.IsLetterOrDigit).ToArray());
-    var current = int.TryParse(request.Query[key].ToString(), out var requested) ? Math.Max(1, requested) : 1;
+    var nodeKey = new string((Model.Node.Id ?? "articles").Where(char.IsLetterOrDigit).ToArray());
+    var pageKey = "page_" + nodeKey;
+    var catKey = "cat_" + nodeKey;
+    var activeCat = int.TryParse(request.Query[catKey].ToString(), out var requestedCat) ? Math.Max(0, requestedCat) : 0;
+    if (activeCat > 0 && !tabs.Any(t => t.Id == activeCat)) activeCat = 0;
+
+    var filterIds = new List<int>();
+    if (activeCat > 0)
+    {
+        filterIds = ContentCategoryHelper.GetDescendantIds(CategoryRepository, activeCat, true);
+    }
+    else if (selectedIds.Count > 0)
+    {
+        foreach (var id in selectedIds) filterIds.AddRange(ContentCategoryHelper.GetDescendantIds(CategoryRepository, id, true));
+        filterIds = filterIds.Distinct().ToList();
+    }
+
+    var allItems = activeArticles.Where(a => filterIds.Count == 0 || filterIds.Contains(a.TagId)).ToList();
     var pages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
+    var current = int.TryParse(request.Query[pageKey].ToString(), out var requested) ? Math.Max(1, requested) : 1;
     current = Math.Min(current, pages);
     var items = allItems.Skip((current - 1) * pageSize).Take(pageSize).ToList();
 
+    var basePath = $"{request.PathBase}{request.Path}";
+
+    // Tab 链接：丢掉本组件的分页参数（切换分类回到第 1 页），保留其它查询参数
+    string TabUrl(int catId)
+    {
+        var parts = new List<string>();
+        foreach (var pair in request.Query)
+        {
+            if (string.Equals(pair.Key, pageKey, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(pair.Key, catKey, StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
+        }
+        if (catId > 0) parts.Add(WebUtility.UrlEncode(catKey) + "=" + catId);
+        return parts.Count == 0 ? basePath : basePath + "?" + string.Join("&", parts);
+    }
+
+    // 分页链接：保留当前分类，替换本组件的分页参数
     string PageUrl(int number)
     {
         var parts = new List<string>();
         foreach (var pair in request.Query)
         {
-            if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(pair.Key, pageKey, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(pair.Key, catKey, StringComparison.OrdinalIgnoreCase)) continue;
             foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
         }
-        parts.Add(WebUtility.UrlEncode(key) + "=" + number);
-        return $"{request.PathBase}{request.Path}?{string.Join("&", parts)}";
+        if (activeCat > 0) parts.Add(WebUtility.UrlEncode(catKey) + "=" + activeCat);
+        parts.Add(WebUtility.UrlEncode(pageKey) + "=" + number);
+        return basePath + "?" + string.Join("&", parts);
     }
 
     string ArticleUrl(int id) => $"/news/info-{id}.html";
@@ -49,6 +146,17 @@
 }
 
 <div class="sb-content-list is-@layout" style="@Model.RenderedStyle" data-builder-id="@Model.Node.Id">
+    @if (tabs.Count > 0)
+    {
+        <div class="sb-content-tabs" role="tablist">
+            <a class="sb-content-tab@(activeCat == 0 ? " is-active" : "")" href="@TabUrl(0)" role="tab" aria-selected="@(activeCat == 0 ? "true" : "false")">全部</a>
+            @foreach (var tab in tabs)
+            {
+                <a class="sb-content-tab@(activeCat == tab.Id ? " is-active" : "")" href="@TabUrl(tab.Id)" role="tab" aria-selected="@(activeCat == tab.Id ? "true" : "false")">@tab.Name</a>
+            }
+        </div>
+    }
+
     @if (items.Count == 0)
     {
         <p class="sb-empty">暂无文章</p>
