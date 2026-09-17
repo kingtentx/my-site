@@ -365,3 +365,4 @@ DataProtection-Keys/
 **/DataProtection-Keys/
 cimc-site-run*.log
 /.workbuddy/memory
+/.workbuddy
