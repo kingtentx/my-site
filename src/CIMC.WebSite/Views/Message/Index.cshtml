@@ -1,0 +1,64 @@
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>在线留言</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" />
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" />
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-form layui-card-header layuiadmin-card-header-auto">
+            <div class="layui-form-item">
+                <div class="layui-inline"><label class="layui-form-label">关键词</label><div class="layui-input-inline"><input type="text" name="keywords" placeholder="姓名、手机或邮箱" autocomplete="off" class="layui-input" /></div></div>
+                <div class="layui-inline"><label class="layui-form-label">状态</label><div class="layui-input-inline"><select name="isRead"><option value="0">全部</option><option value="1">未读</option><option value="2">已读</option></select></div></div>
+                <div class="layui-inline"><button class="layui-btn" lay-submit lay-filter="app-search"><i class="layui-icon layui-icon-search"></i> 查询</button></div>
+            </div>
+        </div>
+        <div class="layui-card-body">
+            <table class="layui-hide" id="app-table" lay-filter="app-table"></table>
+            <script type="text/html" id="readTpl">{{# if(d.isRead){ }}<span class="layui-badge layui-bg-gray">已读</span>{{# } else { }}<span class="layui-badge layui-bg-orange">未读</span>{{# } }}</script>
+            <script type="text/html" id="barTpl">
+                <a class="layui-btn layui-btn-normal layui-btn-xs" lay-event="view">查看</a>
+                @if ((bool)ViewData[PageCode.PAGE_Button_Delete]) { <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a> }
+            </script>
+        </div>
+    </div>
+</div>
+<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script>
+layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','table','form'],function(){
+    var $=layui.$,table=layui.table,form=layui.form,layer=layui.layer;
+    table.render({
+        elem:'#app-table',url:'/Message/GetList',response:{statusName:'code',statusCode:200,msgName:'message',countName:'count',dataName:'data'},
+        cols:[[
+            {field:'id',width:70,title:'ID'},{field:'userName',width:140,title:'姓名'},{field:'phone',width:150,title:'联系电话'},
+            {field:'email',minWidth:190,title:'电子邮箱'},{field:'message',minWidth:260,title:'留言内容'},
+            {field:'isRead',width:90,align:'center',title:'状态',templet:'#readTpl'},{field:'creationTime',width:170,title:'提交时间'},
+            {width:130,align:'center',title:'操作',toolbar:'#barTpl'}
+        ]],request:{pageName:'pageIndex',limitName:'pageSize'},page:true,limit:10,limits:[10,20,50]
+    });
+    table.on('tool(app-table)',function(obj){
+        if(obj.event==='view'){
+            $.get('/Message/GetInfo',{id:obj.data.id},function(res){
+                if(res.code!==200){layer.msg(res.message||'读取失败',{icon:5});return;}
+                var d=res.data||{},box=$('<div style="padding:22px;line-height:1.9;"></div>');
+                [['姓名',d.userName],['联系电话',d.phone],['电子邮箱',d.email],['提交时间',d.creationTime],['留言内容',d.message]].forEach(function(row){
+                    box.append($('<div style="margin-bottom:10px;"></div>').append($('<strong style="display:inline-block;width:82px;vertical-align:top;"></strong>').text(row[0]+'：')).append($('<span style="white-space:pre-wrap;"></span>').text(row[1]||'')));
+                });
+                layer.open({type:1,title:'留言详情',area:['680px','480px'],content:box,btn:['关闭'],end:function(){table.reload('app-table');}});
+            },'json');
+        }else if(obj.event==='del'){
+            layer.confirm('确认删除这条留言？',function(index){$.post('/Message/Delete',{id:obj.data.id},function(res){layer.close(index);if(res.code===200){layer.msg(res.message);obj.del();}else layer.msg(res.message||'删除失败',{icon:5});},'json');});
+        }
+    });
+    form.on('submit(app-search)',function(data){table.reload('app-table',{page:{curr:1},where:data.field});return false;});
+});
+</script>
+</body>
+</html>

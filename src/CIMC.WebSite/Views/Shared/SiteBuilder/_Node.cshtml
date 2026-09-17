@@ -55,7 +55,7 @@
             {"paddingTop","padding-top"},{"paddingRight","padding-right"},{"paddingBottom","padding-bottom"},{"paddingLeft","padding-left"},
             {"marginTop","margin-top"},{"marginRight","margin-right"},{"marginBottom","margin-bottom"},{"marginLeft","margin-left"},
             {"backgroundColor","background-color"},{"color","color"},{"maxWidth","max-width"},{"width","width"},{"minHeight","min-height"},
-            {"gap","gap"},{"borderRadius","border-radius"},{"textAlign","text-align"},{"borderTopWidth","border-top-width"},
+            {"gap","gap"},{"borderWidth","border-width"},{"borderStyle","border-style"},{"borderColor","border-color"},{"borderRadius","border-radius"},{"textAlign","text-align"},{"borderTopWidth","border-top-width"},
             {"borderTopStyle","border-top-style"},{"borderTopColor","border-top-color"},{"position","position"},{"top","top"},
             {"zIndex","z-index"},{"boxShadow","box-shadow"},{"fontSize","font-size"},{"fontWeight","font-weight"},
             {"lineHeight","line-height"},{"letterSpacing","letter-spacing"},{"alignItems","align-items"},{"height","height"},{"objectFit","object-fit"}
@@ -79,13 +79,13 @@
 
 @if (node.Type == "section")
 {
-    <section class="sb-public-section" style="@css" data-builder-id="@node.Id">
+    <section class="sb-public-section" sb-effects="@style" style="@css" data-builder-id="@node.Id">
         @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
     </section>
 }
 else if (node.Type == "container")
 {
-    <div class="sb-public-container" style="@css" data-builder-id="@node.Id">
+    <div class="sb-public-container" sb-effects="@style" style="@css" data-builder-id="@node.Id">
         @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
     </div>
 }
@@ -101,35 +101,35 @@ else if (node.Type == "grid")
         weights = Enumerable.Repeat(100d, columns).ToList();
     }
     var gridTemplate = string.Join(" ", weights.Select(x => Math.Max(1, x).ToString(CultureInfo.InvariantCulture) + "fr"));
-    <div class="sb-public-grid" style="grid-template-columns:@gridTemplate;@css" data-builder-id="@node.Id">
+    <div sb-effects="@style" class="sb-public-grid" style="grid-template-columns:@gridTemplate;@css" data-builder-id="@node.Id">
         @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
     </div>
 }
 else if (node.Type == "column")
 {
-    <div class="sb-public-column" style="@css" data-builder-id="@node.Id">
+    <div class="sb-public-column" sb-effects="@style" style="@css" data-builder-id="@node.Id">
         @foreach (var child in children) { @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Node.cshtml", new MySite.Web.Models.BuilderNodeRenderModel { Node = child, Page = Model.Page }) }
     </div>
 }
 else if (node.Type == "heading")
 {
     var text = Prop("text", "标题"); var level = Math.Max(1, Math.Min(4, IntProp("level", 2)));
-    if (level == 1) { <h1 class="sb-heading" style="@css">@text</h1> }
-    else if (level == 2) { <h2 class="sb-heading" style="@css">@text</h2> }
-    else if (level == 3) { <h3 class="sb-heading" style="@css">@text</h3> }
-    else { <h4 class="sb-heading" style="@css">@text</h4> }
+    if (level == 1) { <h1 class="sb-heading" sb-effects="@style" style="@css">@text</h1> }
+    else if (level == 2) { <h2 class="sb-heading" sb-effects="@style" style="@css">@text</h2> }
+    else if (level == 3) { <h3 class="sb-heading" sb-effects="@style" style="@css">@text</h3> }
+    else { <h4 class="sb-heading" sb-effects="@style" style="@css">@text</h4> }
 }
 else if (node.Type == "text")
 {
-    <div class="sb-text sb-richtext" style="@css">@Html.Raw(MySite.Web.Common.RichTextSanitizer.Sanitize(Prop("text", "文本内容")))</div>
+    <div class="sb-text sb-richtext" sb-effects="@style" style="@css">@Html.Raw(MySite.Web.Common.RichTextSanitizer.Sanitize(Prop("text", "文本内容")))</div>
 }
 else if (node.Type == "image")
 {
     var src = SafeUrl(Prop("src")); var link = SafeUrl(Prop("link"));
     if (!string.IsNullOrWhiteSpace(src))
     {
-        if (!string.IsNullOrWhiteSpace(link)) { <a href="@link"><img class="sb-image" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /></a> }
-        else { <img class="sb-image" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /> }
+        if (!string.IsNullOrWhiteSpace(link)) { <a href="@link" sb-effects="@style"><img class="sb-image" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /></a> }
+        else { <img class="sb-image" sb-effects="@style" style="@css" src="@src" alt="@Prop("alt")" loading="lazy" /> }
     }
 }
 else if (node.Type == "banner")
@@ -142,7 +142,7 @@ else if (node.Type == "banner")
     var showDots = BoolProp("showDots", true);
     if (images.Count > 0)
     {
-        <div class="banner sb-public-banner" data-banner data-autoplay="@(images.Count > 1 ? "true" : "false")" data-interval="@interval" style="height:@(height)px;@css" data-builder-id="@node.Id">
+        <div sb-effects="@style" class="banner sb-public-banner" data-banner data-autoplay="@(images.Count > 1 ? "true" : "false")" data-interval="@interval" style="height:@(height)px;@css" data-builder-id="@node.Id">
             <div class="banner-slides">
                 @for (var i = 0; i < images.Count; i++)
                 {
@@ -166,7 +166,7 @@ else if (node.Type == "banner")
                 <div class="banner-dots" data-banner-dots>
                     @for (var i = 0; i < images.Count; i++)
                     {
-                        <span class="banner-dot @(i == 0 ? "active" : "")"></span>
+                        <button type="button" class="banner-dot @(i == 0 ? "active" : "")" aria-label="切换到第 @(i + 1) 张"></button>
                     }
                 </div>
             }
@@ -176,61 +176,85 @@ else if (node.Type == "banner")
 else if (node.Type == "button")
 {
     var href = SafeUrl(Prop("href", "#")); var target = Prop("target", "_self") == "_blank" ? "_blank" : "_self"; var variant = Prop("variant", "primary");
-    <a class="sb-public-button sb-public-button-@variant" href="@href" target="@target" style="@css">@Prop("text", "按钮")</a>
+    <a class="sb-public-button sb-public-button-@variant" href="@href" target="@target" sb-effects="@style" style="@css">@Prop("text", "按钮")</a>
 }
 else if (node.Type == "icon")
 {
-    <span class="sb-public-icon" style="font-size:@(Math.Max(12, Math.Min(160, IntProp("size",32))))px;@css">@Prop("text", "★")</span>
+    <span sb-effects="@style" class="sb-public-icon" style="font-size:@(Math.Max(12, Math.Min(160, IntProp("size",32))))px;@css">@Prop("text", "★")</span>
 }
 else if (node.Type == "video")
 {
     var src = SafeUrl(Prop("src")); var poster = SafeUrl(Prop("poster")); var controls = BoolProp("controls", true);
     if (!string.IsNullOrWhiteSpace(src))
     {
-        if (controls) { <video class="sb-public-video" style="@css" src="@src" poster="@poster" controls></video> }
-        else { <video class="sb-public-video" style="@css" src="@src" poster="@poster"></video> }
+        if (controls) { <video class="sb-public-video" sb-effects="@style" style="@css" src="@src" poster="@poster" controls></video> }
+        else { <video class="sb-public-video" sb-effects="@style" style="@css" src="@src" poster="@poster"></video> }
     }
 }
 else if (node.Type == "divider")
 {
-    <hr class="sb-public-divider" style="@css" />
+    <hr class="sb-public-divider" sb-effects="@style" style="@css" />
 }
 else if (node.Type == "spacer")
 {
-    <div aria-hidden="true" style="height:@(Math.Max(4, Math.Min(400, IntProp("height",40))))px;@css"></div>
+    <div sb-effects="@style" aria-hidden="true" style="height:@(Math.Max(4, Math.Min(400, IntProp("height",40))))px;@css"></div>
 }
 else if (node.Type == "logo")
 {
     var src = SafeUrl(Prop("src")); var href = SafeUrl(Prop("href", "/"));
-    <a class="sb-public-logo" href="@href" style="@css">@if (!string.IsNullOrWhiteSpace(src)) { <img src="@src" alt="@Prop("text","Logo")" /> } else { <strong>@Prop("text","企业名称")</strong> }</a>
+    <a class="sb-public-logo" href="@href" sb-effects="@style" style="@css">@if (!string.IsNullOrWhiteSpace(src)) { <img src="@src" alt="@Prop("text","Logo")" /> } else { <strong>@Prop("text","企业名称")</strong> }</a>
 }
 else if (node.Type == "navigation")
 {
     var nav = Model.Page?.Navigation ?? new List<MySite.Web.Models.NavigationModel>();
     var vertical = Prop("direction", "horizontal") == "vertical";
-    <nav class="sb-public-nav @(vertical ? "is-vertical" : "is-horizontal")" style="@css">
+    var submenuEffectValue = Prop("submenuEffect", "slide-down");
+    var submenuEffect = new[] { "slide-down", "fade", "zoom", "none" }.Contains(submenuEffectValue) ? submenuEffectValue : "slide-down";
+    var submenuItemEffectValue = Prop("submenuItemEffect", "background");
+    var submenuItemEffect = new[] { "background", "shift", "underline", "left-bar", "none" }.Contains(submenuItemEffectValue) ? submenuItemEffectValue : "background";
+    var submenuDuration = Math.Max(100, Math.Min(1000, IntProp("submenuDuration", 200)));
+    var submenuAccentValue = Prop("submenuAccentColor", "#0054a6");
+    var submenuAccent = System.Text.RegularExpressions.Regex.IsMatch(submenuAccentValue, "^#[0-9a-fA-F]{6}$") ? submenuAccentValue : "#0054a6";
+    <nav class="sb-public-nav @(vertical ? "is-vertical" : "is-horizontal")" data-subnav-effect="@submenuEffect" data-subnav-item-effect="@submenuItemEffect" sb-effects="@style" style="@css;--sb-subnav-duration:@(submenuDuration)ms;--sb-subnav-accent:@submenuAccent">
         @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_NavigationItems.cshtml", nav)
     </nav>
 }
 else if (node.Type == "search")
 {
-    <form class="sb-public-search" action="@SafeUrl(Prop("action","/search"))" method="get" style="@css"><input name="q" placeholder="@Prop("placeholder","搜索")" /><button type="submit" aria-label="搜索">⌕</button></form>
+    <form class="sb-public-search" action="@SafeUrl(Prop("action","/search"))" method="get" sb-effects="@style" style="@css"><input name="q" placeholder="@Prop("placeholder","搜索")" /><button type="submit" aria-label="搜索">⌕</button></form>
 }
 else if (node.Type == "language")
 {
-    <span class="sb-public-language" style="@css">@Prop("text","中文 / EN")</span>
+    <span class="sb-public-language" sb-effects="@style" style="@css">@Prop("text","中文 / EN")</span>
 }
 else if (node.Type == "contact")
 {
-    <div class="sb-public-contact" style="@css">@if(!string.IsNullOrWhiteSpace(Prop("phone"))){<div>@Prop("phone")</div>}@if(!string.IsNullOrWhiteSpace(Prop("email"))){<div>@Prop("email")</div>}@if(!string.IsNullOrWhiteSpace(Prop("address"))){<div>@Prop("address")</div>}</div>
+    <div class="sb-public-contact" sb-effects="@style" style="@css">@if(!string.IsNullOrWhiteSpace(Prop("phone"))){<div>@Prop("phone")</div>}@if(!string.IsNullOrWhiteSpace(Prop("email"))){<div>@Prop("email")</div>}@if(!string.IsNullOrWhiteSpace(Prop("address"))){<div>@Prop("address")</div>}</div>
+}
+else if (node.Type == "contactForm")
+{
+    var action = SafeUrl(Prop("action", "/home/message"));
+    var showCaptcha = BoolProp("showCaptcha", true);
+    var captchaKey = DateTime.UtcNow.Ticks.ToString() + "-" + node.Id;
+    <form class="sb-contact-form" action="@action" method="post" data-message-form sb-effects="@style" style="@css">
+        <div class="sb-contact-form-row"><input type="text" name="UserName" placeholder="@Prop("namePlaceholder", "姓名")" required maxlength="100" /><input type="tel" name="Phone" placeholder="@Prop("phonePlaceholder", "联系电话")" required maxlength="50" /></div>
+        <input type="email" name="Email" placeholder="@Prop("emailPlaceholder", "电子邮箱")" maxlength="250" />
+        <textarea name="Message" rows="5" placeholder="@Prop("messagePlaceholder", "留言内容")" required maxlength="1000"></textarea>
+        @if (showCaptcha)
+        {
+            <div class="sb-contact-form-row sb-contact-captcha"><input type="text" name="ValidateCode" placeholder="验证码" required maxlength="4" autocomplete="off" /><input type="hidden" name="ValidateKey" value="@captchaKey" /><img src="/Authorize/GetImg?key=@captchaKey" alt="验证码" title="点击刷新验证码" data-captcha-image /></div>
+        }
+        <button class="sb-public-button sb-public-button-primary" type="submit">@Prop("buttonText", "提交留言")</button>
+        <p class="sb-contact-form-tip" data-message-tip aria-live="polite"></p>
+    </form>
 }
 else if (node.Type == "social")
 {
-    <div class="sb-public-social" style="@css"><strong>@Prop("text","关注我们")</strong><div>@Prop("links")</div></div>
+    <div class="sb-public-social" sb-effects="@style" style="@css"><strong>@Prop("text","关注我们")</strong><div>@Prop("links")</div></div>
 }
 else if (node.Type == "copyright")
 {
-    <div class="sb-public-copyright" style="@css">@Prop("text","版权信息")</div>
+    <div class="sb-public-copyright" sb-effects="@style" style="@css">@Prop("text","版权信息")</div>
 }
 else if (node.Type == "articleList")
 {

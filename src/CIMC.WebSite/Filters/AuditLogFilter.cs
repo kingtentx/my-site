@@ -236,6 +236,7 @@ namespace MySite.Web.Filters
                 "Product" => typeof(ContentProduct),
                 "ProductCategory" => typeof(ContentProductCategory),
                 "Job" => typeof(ContentJob),
+                "Message" => typeof(MessageBoard),
                 _ => null
             };
         }
@@ -255,6 +256,7 @@ namespace MySite.Web.Filters
                 "Product" => "ContentProduct",
                 "ProductCategory" => "ContentProductCategory",
                 "Job" => "ContentJob",
+                "Message" => "MessageBoard",
                 _ => controllerName
             };
         }
@@ -280,6 +282,7 @@ namespace MySite.Web.Filters
                 "Product" => "产品",
                 "ProductCategory" => "产品分类",
                 "Job" => "招聘",
+                "Message" => "留言",
                 "Admin" => "系统设置",
                 "Authorize" => "认证",
                 "Upload" => "文件上传",

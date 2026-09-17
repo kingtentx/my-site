@@ -94,8 +94,8 @@
             link.href = href;
             document.head.appendChild(link);
         }
-        addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091403');
-        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091403');
+        addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091702');
+        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091702');
 
         if (!document.getElementById('sbDesignerWysiwygCss')) {
             var style = document.createElement('style');
@@ -123,7 +123,7 @@
         }
 
         $('#canvas').addClass('sb-runtime');
-        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091403');
+        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091702');
     }
 
     function ensureCanvasViewport() {
@@ -784,9 +784,15 @@
     }
 
     function bindEvents() {
+        $('#propsPanel').on('click.siteBuilder','[data-action="preview-effects"]',function(){
+            var node=store.selected();
+            if(!node || !window.SiteBuilderEffects)return;
+            var element=$('#canvas [data-node-id]').filter(function(){return $(this).attr('data-node-id')===node.id;})[0];
+            if(element){element.scrollIntoView({block:'nearest'});if(!window.SiteBuilderEffects.preview(element,node.style))message('请先选择特效，并确认系统未启用“减少动态效果”');}
+        });
         $('#propsPanel').on('click.siteBuilder','[data-global-node]',function(){store.select($(this).attr('data-global-node'));});
         $('#propsPanel').on('change.siteBuilder','#sbHeaderPosition',function(){var mode=$(this).val();store.change(function(doc){doc.settings.headerPosition=mode;});});
-        $('#propsPanel').on('click.siteBuilder','[data-action]',function(e){if(store.selected()&&isLocked(store.selectedId)&&$(this).attr('data-action')!=='select-node'){e.preventDefault();e.stopImmediatePropagation();message('组件已锁定，请先解锁');}});
+        $('#propsPanel').on('click.siteBuilder','[data-action]',function(e){if(store.selected()&&isLocked(store.selectedId)&&['select-node','preview-effects'].indexOf($(this).attr('data-action'))<0){e.preventDefault();e.stopImmediatePropagation();message('组件已锁定，请先解锁');}});
         $('#componentLibrary').off('.siteBuilder').on('click.siteBuilder','[data-type]',function(){addComponent($(this).attr('data-type'));});
         $('#componentLibrary').on('click.siteBuilder','[data-preset]',function(){addPreset($(this).attr('data-preset'));});
         $('#componentLibrary').on('input.siteBuilder','#componentSearch',filterLibrary);

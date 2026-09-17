@@ -19,7 +19,7 @@
             paddingTop:'padding-top', paddingRight:'padding-right', paddingBottom:'padding-bottom', paddingLeft:'padding-left',
             marginTop:'margin-top', marginRight:'margin-right', marginBottom:'margin-bottom', marginLeft:'margin-left',
             backgroundColor:'background-color', color:'color', maxWidth:'max-width', width:'width', minHeight:'min-height',
-            gap:'gap', borderRadius:'border-radius', textAlign:'text-align', borderTopWidth:'border-top-width',
+            gap:'gap', borderWidth:'border-width', borderStyle:'border-style', borderColor:'border-color', borderRadius:'border-radius', textAlign:'text-align', borderTopWidth:'border-top-width',
             borderTopStyle:'border-top-style', borderTopColor:'border-top-color', position:'position', top:'top',
             zIndex:'z-index', boxShadow:'box-shadow', fontSize:'font-size', fontWeight:'font-weight',
             lineHeight:'line-height', letterSpacing:'letter-spacing', alignItems:'align-items', height:'height', objectFit:'object-fit'
@@ -171,7 +171,8 @@
         }
         function mockTimelineItem(i) {
             return '<article class="sb-article-timeline-item">'
-                + '<div class="sb-timeline-date">2026-09-14</div><div class="sb-timeline-dot"></div>'
+                + (showDate ? '<time class="sb-timeline-date" datetime="2026-09-14" aria-label="2026-09-14"><span class="sb-timeline-date-day">14</span><span class="sb-timeline-date-month">2026.09</span></time>' : '')
+                + '<div class="sb-timeline-dot"></div>'
                 + '<div class="sb-timeline-content">' + (showImage ? '<a><div class="sb-thumb-placeholder">封面</div></a>' : '')
                 + '<h3><a>文章标题示例 ' + (i + 1) + '</a></h3>' + (showSummary ? '<p>这是一段摘要示例，用于预览时间轴排版效果。</p>' : '') + '</div></article>';
         }
@@ -187,7 +188,7 @@
             for (var i = 0; i < count; i++) html += mockListItem(i);
             html += '</div>';
         } else if (layout === 'timeline') {
-            html += '<div class="sb-article-timeline">';
+            html += '<div class="sb-article-timeline' + (showDate ? '' : ' is-date-hidden') + '">';
             for (var i = 0; i < count; i++) html += mockTimelineItem(i);
             html += '</div>';
         } else if (layout === 'editorial') {
@@ -255,7 +256,11 @@
             }
             case 'navigation': {
                 var vertical = p.direction === 'vertical';
-                return '<nav class="sb-public-nav ' + (vertical ? 'is-vertical' : 'is-horizontal') + '" style="' + styleAttr + '">' + navigationHtml(navigation) + '</nav>';
+                var submenuEffect = ['slide-down', 'fade', 'zoom', 'none'].indexOf(p.submenuEffect) >= 0 ? p.submenuEffect : 'slide-down';
+                var submenuItemEffect = ['background', 'shift', 'underline', 'left-bar', 'none'].indexOf(p.submenuItemEffect) >= 0 ? p.submenuItemEffect : 'background';
+                var submenuDuration = Math.max(100, Math.min(1000, Number(p.submenuDuration || 200)));
+                var submenuAccentColor = /^#[0-9a-f]{6}$/i.test(String(p.submenuAccentColor || '')) ? p.submenuAccentColor : '#0054a6';
+                return '<nav class="sb-public-nav ' + (vertical ? 'is-vertical' : 'is-horizontal') + '" data-subnav-effect="' + submenuEffect + '" data-subnav-item-effect="' + submenuItemEffect + '" style="' + styleAttr + ';--sb-subnav-duration:' + submenuDuration + 'ms;--sb-subnav-accent:' + submenuAccentColor + '">' + navigationHtml(navigation) + '</nav>';
             }
             case 'search':
                 return '<form class="sb-public-search" action="' + esc(safeUrl(p.action || '/search')) + '" method="get" onsubmit="return false" style="' + styleAttr + '"><input name="q" placeholder="' + esc(p.placeholder || '搜索') + '"><button type="button">⌕</button></form>';
@@ -263,6 +268,8 @@
                 return '<span class="sb-public-language" style="' + styleAttr + '">' + esc(p.text || '中文 / EN') + '</span>';
             case 'contact':
                 return '<div class="sb-public-contact" style="' + styleAttr + '">' + ['phone','email','address'].map(function(key){return p[key] ? '<div>' + esc(p[key]) + '</div>' : '';}).join('') + '</div>';
+            case 'contactForm':
+                return '<form class="sb-contact-form" style="' + styleAttr + '" onsubmit="return false"><div class="sb-contact-form-row"><input type="text" placeholder="' + esc(p.namePlaceholder || '姓名') + '"><input type="tel" placeholder="' + esc(p.phonePlaceholder || '联系电话') + '"></div><input type="email" placeholder="' + esc(p.emailPlaceholder || '电子邮箱') + '"><textarea rows="5" placeholder="' + esc(p.messagePlaceholder || '留言内容') + '"></textarea>' + (p.showCaptcha === false ? '' : '<div class="sb-contact-form-row sb-contact-captcha"><input type="text" placeholder="验证码"><span class="sb-captcha-preview">验证码图片</span></div>') + '<button type="button" class="sb-public-button sb-public-button-primary">' + esc(p.buttonText || '提交留言') + '</button></form>';
             case 'social':
                 return '<div class="sb-public-social" style="' + styleAttr + '"><strong>' + esc(p.text == null ? '关注我们' : p.text) + '</strong><div>' + esc(p.links || '') + '</div></div>';
             case 'copyright':

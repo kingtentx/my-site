@@ -22,7 +22,7 @@ namespace MySite.Web.Controllers
         {
             "section", "container", "grid", "column",
             "heading", "text", "image", "banner", "button", "icon", "video", "divider", "spacer",
-            "articleList", "productList", "jobList",
+            "articleList", "productList", "jobList", "contactForm",
             "logo", "navigation", "search", "language", "contact", "social", "copyright"
         };
 

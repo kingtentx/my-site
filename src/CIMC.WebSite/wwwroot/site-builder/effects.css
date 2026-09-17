@@ -1,0 +1,14 @@
+/* Content stays visible when scripts are unavailable; entrance animations are progressive enhancement. */
+[data-sb-hover] {transition:translate .22s ease,scale .22s ease,box-shadow .22s ease}
+[data-sb-effects-inline] {display:inline-block;max-width:100%}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+    [data-sb-hover="lift"]:hover {translate:0 -6px}
+    [data-sb-hover="zoom"]:hover {scale:1.035}
+    [data-sb-hover="shadow"]:hover {box-shadow:0 14px 32px rgba(15,23,42,.18)}
+}
+@media (prefers-reduced-motion:no-preference) {
+    [data-sb-hover="lift"]:focus-visible {translate:0 -6px}
+    [data-sb-hover="zoom"]:focus-visible {scale:1.035}
+    [data-sb-hover="shadow"]:focus-visible {box-shadow:0 14px 32px rgba(15,23,42,.18)}
+}
+@media (prefers-reduced-motion:reduce) { [data-sb-hover] {transition:none} }

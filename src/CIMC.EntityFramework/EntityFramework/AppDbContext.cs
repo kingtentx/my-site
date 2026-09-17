@@ -51,6 +51,12 @@ namespace CIMC.EntityFrameworkCore
                 entity.HasIndex(e => e.IsActive);
                 entity.HasIndex(e => e.CategoryId);
             });
+
+            modelBuilder.Entity<MessageBoard>(entity =>
+            {
+                entity.HasIndex(e => e.IsRead);
+                entity.HasIndex(e => e.CreationTime);
+            });
         }
 
         #region 数据区域
@@ -68,6 +74,7 @@ namespace CIMC.EntityFrameworkCore
         public DbSet<ContentProduct> ContentProduct { get; set; }
         public DbSet<ContentProductCategory> ContentProductCategory { get; set; }
         public DbSet<ContentJob> ContentJob { get; set; }
+        public DbSet<MessageBoard> MessageBoard { get; set; }
 
         #endregion
     }

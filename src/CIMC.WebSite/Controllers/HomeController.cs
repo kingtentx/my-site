@@ -1,5 +1,6 @@
 using CIMC.Data;
 using CIMC.EntityFramework;
+using CIMC.Helper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
@@ -20,6 +21,8 @@ namespace MySite.Web.Controllers
         private readonly IRepository<ContentProduct> _productRepository;
         private readonly IRepository<ContentProductCategory> _productCategoryRepository;
         private readonly IRepository<ContentJob> _jobRepository;
+        private readonly IRepository<MessageBoard> _messageRepository;
+        private readonly ICacheService _cache;
 
         public HomeController(
             IRepository<WebsitePage> pageRepository,
@@ -28,7 +31,9 @@ namespace MySite.Web.Controllers
             IRepository<Article> articleRepository,
             IRepository<ContentProduct> productRepository,
             IRepository<ContentProductCategory> productCategoryRepository,
-            IRepository<ContentJob> jobRepository)
+            IRepository<ContentJob> jobRepository,
+            IRepository<MessageBoard> messageRepository,
+            ICacheService cache)
         {
             _pageRepository = pageRepository;
             _versionRepository = versionRepository;
@@ -37,6 +42,8 @@ namespace MySite.Web.Controllers
             _productRepository = productRepository;
             _productCategoryRepository = productCategoryRepository;
             _jobRepository = jobRepository;
+            _messageRepository = messageRepository;
+            _cache = cache;
         }
 
         public IActionResult Index()
@@ -215,6 +222,42 @@ namespace MySite.Web.Controllers
         {
             var model = BuildPage(p => p.PagePath == "/contact" && !p.IsDelete);
             return model == null ? View("NotFound") : View("Index", model);
+        }
+
+        [HttpPost]
+        public IActionResult Message(MessageBoard input, string validateKey, string validateCode)
+        {
+            var result = new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请完善留言信息" };
+            var cacheKey = CacheKey.ValidateCode + (validateKey ?? string.Empty);
+            var expectedCode = _cache.Get(cacheKey)?.ToString();
+            if (string.IsNullOrWhiteSpace(validateKey)
+                || string.IsNullOrWhiteSpace(validateCode)
+                || !string.Equals(validateCode.Trim(), expectedCode, StringComparison.OrdinalIgnoreCase))
+            {
+                result.Message = "验证码错误或已过期";
+                return Json(result);
+            }
+
+            if (input == null
+                || string.IsNullOrWhiteSpace(input.UserName)
+                || string.IsNullOrWhiteSpace(input.Phone)
+                || string.IsNullOrWhiteSpace(input.Message))
+            {
+                return Json(result);
+            }
+
+            _cache.Remove(cacheKey);
+            input.UserName = TrimTo(input.UserName, 100);
+            input.Phone = TrimTo(input.Phone, 50);
+            input.Email = TrimTo(input.Email, 250);
+            input.Message = TrimTo(input.Message, 1000);
+            input.IsRead = false;
+            input.CreationTime = DateTime.Now;
+            _messageRepository.Add(input);
+
+            result.Code = (int)ResultCode.Success;
+            result.Message = "留言提交成功，我们会尽快与您联系";
+            return Json(result);
         }
 
         /// <summary>
@@ -413,6 +456,12 @@ namespace MySite.Web.Controllers
             while (value.Contains("//")) value = value.Replace("//", "/");
             if (value.Length > 1) value = value.TrimEnd('/');
             return value;
+        }
+
+        private static string TrimTo(string value, int maxLength)
+        {
+            var text = (value ?? string.Empty).Trim();
+            return text.Length <= maxLength ? text : text.Substring(0, maxLength);
         }
     }
 }

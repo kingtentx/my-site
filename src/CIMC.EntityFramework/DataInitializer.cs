@@ -82,6 +82,8 @@ namespace CIMC.Data
                 "Website_Page", "Add,Edit,Delete,Design,Publish", 12);
             EnsureMenu(context, "全局区域设计", "/globalregion/index", "layui-icon-component", 2, website.Id, false,
                 "Website_Page", "Design,Publish", 13);
+            EnsureMenu(context, "在线留言", "/message/index", "layui-icon-dialogue", 2, website.Id, false,
+                "Site_Message", "Delete", 14);
 
             var content = EnsureMenu(
                 context, "内容管理", null, "layui-icon-read",

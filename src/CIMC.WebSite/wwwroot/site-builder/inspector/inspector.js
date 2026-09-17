@@ -38,8 +38,21 @@
             { key:'gap', label:'子项间距', type:'length', scope:'gap', hint:'作用于网格列之间' }
         ]},
         { key:'appearance', title:'边框与阴影', fields:[
+            { key:'borderWidth', label:'边框宽度', type:'length', units:['px'], scope:'border', hint:'设置为 0 或留空时不显示边框' },
+            { key:'borderStyle', label:'边框样式', type:'select', options:[{value:'',text:'默认'},{value:'solid',text:'实线'},{value:'dashed',text:'虚线'},{value:'dotted',text:'点线'},{value:'double',text:'双线'},{value:'none',text:'无边框'}], scope:'border' },
+            { key:'borderColor', label:'边框颜色', type:'color', scope:'border' },
             { key:'borderRadius', label:'圆角', type:'length', units:['px','%'], scope:'border' },
             { key:'boxShadow', label:'阴影', type:'text', placeholder:'如 0 2px 8px rgba(0,0,0,.08)', scope:'border' }
+        ]},
+        { key:'effects', title:'动画与特效', fields:[
+            {key:'effectEntrance',label:'滚动入场',type:'select',options:[{value:'',text:'无动画'},{value:'fade',text:'淡入'},{value:'fade-up',text:'上移淡入'},{value:'slide-left',text:'从左滑入'},{value:'slide-right',text:'从右滑入'},{value:'zoom',text:'缩放入场'}]},
+            {key:'effectHover',label:'悬停效果',type:'select',options:[{value:'',text:'无特效'},{value:'lift',text:'轻微上浮'},{value:'zoom',text:'轻微放大'},{value:'shadow',text:'浮起阴影'}]},
+            {key:'effectDuration',label:'时长（毫秒）',type:'number',min:100,max:3000,step:100,placeholder:'默认 600'},
+            {key:'effectDelay',label:'延迟（毫秒）',type:'number',min:0,max:3000,step:100,placeholder:'默认 0'},
+            {key:'effectDistance',label:'位移（px）',type:'number',min:0,max:100,placeholder:'默认 24'},
+            {key:'effectEasing',label:'播放节奏',type:'select',options:[{value:'',text:'默认（自然减速）'},{value:'ease-out',text:'自然减速'},{value:'ease-in-out',text:'平缓起止'},{value:'linear',text:'匀速'}]},
+            {key:'effectRepeat',label:'重复入场',type:'checkbox',hint:'开启后，每次滚出再滚入屏幕时播放；默认仅播放一次。'},
+            {key:'effectCounter',label:'数字递增',type:'checkbox',scope:'typography',hint:'适合“25万”“33.41万㎡”等以数字开头的标题或文字。'}
         ]},
         { key:'advanced', title:'高级定位', fields:[
             { key:'position', label:'定位方式', type:'select', options:[{value:'',text:'默认'},{value:'relative',text:'相对定位'},{value:'static',text:'普通流'},{value:'sticky',text:'吸顶（随页面滚动固定）'},{value:'fixed',text:'固定'}], scope:'position' },
@@ -208,7 +221,7 @@
             html += '<button type="button" class="sb-category-clear" data-action="clear-categories" data-area="' + area + '" data-key="' + attr(field.key) + '">清空</button>';
         }
         html += '</div><div class="sb-category-names"></div>'
-            + '<div class="sb-field-hint sb-category-tip">不勾选 = 全部文章；勾选多个时前台会生成分类切换 Tab。</div>'
+            + '<div class="sb-field-hint sb-category-tip">分类来自后台数据库；不勾选表示显示全部，可同时选择多个分类。</div>'
             + '</div>';
         return html;
     }
@@ -355,6 +368,7 @@
             var fields = group.fields.filter(function (field) { return fieldApplies(field, scopes); });
             if (!fields.length) return;
             var body = fields.map(function (field) { return renderField(field, style[field.key], 'style', node); }).join('');
+            if (group.key === 'effects') body += '<button type="button" class="sb-effects-preview" data-action="preview-effects">预览特效</button><div class="sb-effects-note">时长、延迟、位移和节奏用于滚动入场；悬停采用轻量过渡。系统启用“减少动态效果”时自动停用动画。</div>';
             if (group.key === 'spacing') {
                 body = '<div class="props-quick-spacing"><span>快速设置</span><button type="button" data-action="set-spacing" data-value="12px">紧凑</button><button type="button" data-action="set-spacing" data-value="24px">舒适</button><button type="button" data-action="set-spacing" data-value="48px">宽松</button></div>' + body;
             }
@@ -405,7 +419,11 @@
         if (breadcrumb) html += '<div class="props-breadcrumb">' + breadcrumb + '</div>';
         html += '<form class="layui-form" onsubmit="return false">';
         html += section('组件设置', general, !contentExists, 'props-general');
-        if (contentExists) html += section('内容', contentFields.map(function (field) { return renderField(field, (node.props || {})[field.key], 'props', node); }).join(''), true, 'props-content');
+        if (contentExists) html += section('内容', contentFields.map(function (field) {
+            var currentProps = node.props || {};
+            var value = Object.prototype.hasOwnProperty.call(currentProps, field.key) ? currentProps[field.key] : resetValue(node, 'props', field.key);
+            return renderField(field, value, 'props', node);
+        }).join(''), true, 'props-content');
         html += '<div class="props-style-heading"><span>样式 <em>按需展开</em></span><span class="props-style-tools"><em class="props-style-count">' + esc(styleSummary(node)) + '</em><button type="button" data-action="reset-style" title="清空本组件已设置的样式，回到组件默认外观">恢复默认样式</button></span></div>';
         html += renderStyleGroups(node, contentExists) + '</form>';
         return html;
@@ -430,6 +448,10 @@
             var raw = String($el.val() == null ? '' : $el.val()).trim();
             if (raw === '') return '';                       // 清空 = 恢复默认，不再强制写成 0
             var number = Number(raw);
+            if (isFinite(number) && area === 'style' && key.indexOf('effect') === 0) {
+                var effectField = styleGroups.filter(function(group){return group.key === 'effects';})[0].fields.filter(function(field){return field.key === key;})[0];
+                if (effectField && effectField.type === 'number') number = Math.max(effectField.min, Math.min(effectField.max, number));
+            }
             return isFinite(number) ? number : null;
         }
         void area;

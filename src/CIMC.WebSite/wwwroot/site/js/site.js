@@ -8,10 +8,12 @@
 
     ready(function () {
         initNavToggle();
+        initStickyHeader();
         initBanners();
         initLazyLoad();
         initSmoothScroll();
         highlightActiveNav();
+        initMessageForms();
     });
 
     function initNavToggle() {
@@ -26,6 +28,23 @@
                 menu.classList.remove('open');
             }
         });
+    }
+
+    function initStickyHeader() {
+        var header = document.querySelector('.site-global-header.is-sticky');
+        if (!header) { return; }
+        var scheduled = false;
+        function update() {
+            scheduled = false;
+            header.classList.toggle('is-scrolled', window.scrollY > 24);
+        }
+        function schedule() {
+            if (scheduled) { return; }
+            scheduled = true;
+            window.requestAnimationFrame(update);
+        }
+        update();
+        window.addEventListener('scroll', schedule, { passive: true });
     }
 
     function initBanners() {
@@ -118,6 +137,52 @@
             } else if (href !== '/' && currentPath.indexOf(href) === 0) {
                 link.parentElement.classList.add('active');
             }
+        });
+    }
+
+    function initMessageForms() {
+        document.querySelectorAll('[data-message-form]').forEach(function (form) {
+            var tip = form.querySelector('[data-message-tip]');
+            var captchaImage = form.querySelector('[data-captcha-image]');
+            var keyInput = form.querySelector('input[name="ValidateKey"]');
+
+            function refreshCaptcha() {
+                if (!captchaImage || !keyInput) { return; }
+                var key = Date.now().toString() + '-' + Math.random().toString(36).slice(2);
+                keyInput.value = key;
+                captchaImage.src = '/Authorize/GetImg?key=' + encodeURIComponent(key) + '&v=' + Date.now();
+            }
+
+            if (captchaImage) { captchaImage.addEventListener('click', refreshCaptcha); }
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+                if (!form.reportValidity()) { return; }
+                var button = form.querySelector('button[type="submit"]');
+                if (button) { button.disabled = true; }
+                if (tip) { tip.className = 'sb-contact-form-tip'; tip.textContent = '正在提交…'; }
+
+                fetch(form.action || '/home/message', { method: 'POST', body: new FormData(form), credentials: 'same-origin' })
+                    .then(function (response) {
+                        if (!response.ok) { throw new Error('HTTP ' + response.status); }
+                        return response.json();
+                    })
+                    .then(function (result) {
+                        var success = Number(result.code) === 200;
+                        if (tip) {
+                            tip.classList.toggle('is-success', success);
+                            tip.classList.toggle('is-error', !success);
+                            tip.textContent = result.message || (success ? '提交成功' : '提交失败');
+                        }
+                        if (success) { form.reset(); }
+                    })
+                    .catch(function () {
+                        if (tip) { tip.className = 'sb-contact-form-tip is-error'; tip.textContent = '提交失败，请稍后再试'; }
+                    })
+                    .finally(function () {
+                        if (button) { button.disabled = false; }
+                        refreshCaptcha();
+                    });
+            });
         });
     }
 })();
