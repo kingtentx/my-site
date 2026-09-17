@@ -83,10 +83,12 @@
 .sb-runtime .sb-text {
     margin: 0;
     line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 /* 富文本组件：父级继承装修器设置，内部标签只负责语义排版。 */
-.sb-runtime .sb-richtext {white-space:normal;overflow-wrap:anywhere}
+.sb-runtime .sb-richtext {line-height:1.8;white-space:normal;overflow-wrap:anywhere}
 .sb-runtime .sb-richtext > :first-child {margin-top:0}
 .sb-runtime .sb-richtext > :last-child {margin-bottom:0}
 .sb-runtime .sb-richtext p {margin:0 0 1em;line-height:inherit}

@@ -1,31 +1,23 @@
+using System;
+using System.Linq;
 using CIMC.Core.Enums;
 using CIMC.Data;
 using CIMC.EntityFramework;
 using CIMC.Helper;
-using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
+using MySite.Web.Models;
 
 namespace MySite.Web.Controllers
 {
     [Authorize]
-    public class ArticleController : AdminBaseController
+    public class ArticleController : ContentControllerBase
     {
-        private readonly IRepository<Article> _articleRepository;
-        private readonly IRepository<ContentProductCategory> _categoryRepository;
+        private readonly IRepository<Article> _repository;
         private readonly IPermissionService _permission;
 
-        public ArticleController(
-            IRepository<Article> articleRepository,
-            IRepository<ContentProductCategory> categoryRepository,
-            IPermissionService permission)
-        {
-            _articleRepository = articleRepository;
-            _categoryRepository = categoryRepository;
-            _permission = permission;
-        }
+        public ArticleController(IRepository<Article> repository, IRepository<Tag> tags, IPermissionService permission) : base(tags)
+        { _repository = repository; _permission = permission; }
 
         [PermissionFilter(MenuCode.Content_Article, PermissionType.View)]
         public IActionResult Index()
@@ -33,161 +25,70 @@ namespace MySite.Web.Controllers
             ViewData[PageCode.PAGE_Button_Add] = _permission.CheckPermission(LoginUser, MenuCode.Content_Article, PermissionType.Add);
             ViewData[PageCode.PAGE_Button_Edit] = _permission.CheckPermission(LoginUser, MenuCode.Content_Article, PermissionType.Edit);
             ViewData[PageCode.PAGE_Button_Delete] = _permission.CheckPermission(LoginUser, MenuCode.Content_Article, PermissionType.Delete);
-            return View();
+            return View(GetTags((int)TagType.Article));
         }
 
         [PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult Edit(int id = 0)
         {
-            var model = new ArticleModel { IsActive = true, Author = "中集洋山" };
-            if (id > 0)
-            {
-                var article = _articleRepository.GetOne(id);
-                if (article == null || article.IsDelete) return NotFound();
-                model = ToModel(article);
-            }
-            LoadCategories();
+            var model = new ArticleModel { IsActive = true, Author = "中集洋山", TagsList = GetTags((int)TagType.Article) };
+            if (id <= 0) return View(model);
+            var entity = _repository.GetOne(id);
+            if (entity == null) return NotFound();
+            model = ToModel(entity); model.TagsList = GetTags((int)TagType.Article);
             return View(model);
         }
 
-        [HttpPost]
-        [PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
+        [HttpPost, PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult Edit(int id, ArticleModel input)
         {
-            if (input == null || string.IsNullOrWhiteSpace(input.Title))
-                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请填写文章标题" });
-
-            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "article");
-            var allowedIds = ContentCategoryHelper.GetDescendantIds(_categoryRepository, rootId);
-            if (input.TagId > 0 && !allowedIds.Contains(input.TagId))
-                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择有效的文章分类" });
-
-            var article = id > 0 ? _articleRepository.GetOne(id) : new Article { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (article == null || article.IsDelete)
-                return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
-
-            article.Title = input.Title.Trim();
-            article.Title_EN = input.Title_EN;
-            article.Keyword = input.Keyword;
-            article.Description = input.Description;
-            article.Description_EN = input.Description_EN;
-            article.Detail = input.Detail;
-            article.Detail_EN = input.Detail_EN;
-            article.Author = string.IsNullOrWhiteSpace(input.Author) ? "中集洋山" : input.Author;
-            article.Source = string.IsNullOrWhiteSpace(input.Source) ? "中集洋山官网" : input.Source;
-            article.SourceUrl = input.SourceUrl;
-            article.LinkUrl = input.LinkUrl;
-            article.ImageUrl = input.ImageUrl;
-            article.TagType = (int)TagType.Article;
-            article.TagId = input.TagId;
-            article.Sort = input.Sort;
-            article.IsActive = input.IsActive;
-            article.IsHot = input.IsHot;
-            article.IsDelete = false;
-            article.UpdateBy = LoginUser.UserName;
-            article.UpdateTime = DateTime.Now;
-            if (id > 0) _articleRepository.Update(article); else _articleRepository.Add(article);
-
-            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "保存成功" });
+            if (input == null || string.IsNullOrWhiteSpace(input.Title)) return Json(Error("请填写文章标题"));
+            var entity = id > 0 ? _repository.GetOne(id) : new Article { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
+            if (entity == null) return Json(Error("记录不存在", ResultCode.NULL));
+            entity.Title = input.Title; entity.Title_EN = input.Title_EN; entity.Keyword = input.Keyword;
+            entity.Description = input.Description; entity.Description_EN = input.Description_EN;
+            entity.Detail = input.Detail; entity.Detail_EN = input.Detail_EN;
+            entity.Author = string.IsNullOrWhiteSpace(input.Author) ? "中集洋山" : input.Author;
+            entity.Source = string.IsNullOrWhiteSpace(input.Source) ? "中集洋山官网" : input.Source;
+            entity.SourceUrl = input.SourceUrl; entity.LinkUrl = input.LinkUrl; entity.ImageUrl = input.ImageUrl;
+            entity.TagType = (int)TagType.Article; entity.TagId = input.TagId; entity.Sort = input.Sort;
+            entity.IsActive = input.IsActive; entity.IsHot = input.IsHot; entity.IsDelete = false;
+            entity.UpdateBy = LoginUser.UserName; entity.UpdateTime = DateTime.Now;
+            if (id > 0) _repository.Update(entity); else _repository.Add(entity);
+            return Json(Ok());
         }
 
-        [HttpGet]
-        [PermissionFilter(MenuCode.Content_Article, PermissionType.View)]
+        [HttpGet, PermissionFilter(MenuCode.Content_Article, PermissionType.View)]
         public JsonResult GetList(int pageIndex = 1, int pageSize = 10)
         {
-            var keywords = HttpContext.Request.Query["keywords"].ToString().Trim();
-            int.TryParse(HttpContext.Request.Query["tagsId"].ToString(), out var tagId);
+            var keyword = Request.Query["keywords"].ToString().Trim();
+            int.TryParse(Request.Query["tagsId"], out var tagId);
             var where = LambdaHelper.True<Article>().And(p => !p.IsDelete);
-            if (!string.IsNullOrWhiteSpace(keywords)) where = where.And(p => p.Title.Contains(keywords));
+            if (!string.IsNullOrWhiteSpace(keyword)) where = where.And(p => p.Title.Contains(keyword));
             if (tagId > 0) where = where.And(p => p.TagId == tagId);
-
-            pageIndex = Math.Max(1, pageIndex);
-            pageSize = pageSize <= 0 ? 10 : pageSize;
-            var query = _articleRepository.GetList(where, p => p.CreationTime, pageIndex, pageSize, false);
-            var categories = _categoryRepository.GetList(p => !p.IsDelete).ToDictionary(p => p.Id, p => p.Name);
-            var data = query.List.Select(p => new
-            {
-                p.Id,
-                ArticleId = p.Id,
-                p.Title,
-                p.ImageUrl,
-                p.TagId,
-                TagName = categories.TryGetValue(p.TagId, out var name) ? name : "未分类",
-                p.CreationTime,
-                p.ViewCount,
-                p.ShareCount,
-                p.IsActive,
-                p.IsHot
-            }).ToList();
+            var query = _repository.GetList(where, p => p.CreationTime, Math.Max(1, pageIndex), pageSize <= 0 ? 10 : pageSize, false);
+            var data = query.List.Select(p => new { p.Id, ArticleId = p.Id, p.Title, p.ImageUrl, TagName = GetTagName(p.TagId), p.CreationTime, p.ViewCount, p.ShareCount, p.IsActive, p.IsHot });
             return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Message = "成功", Count = query.Count, Data = data });
         }
 
-        [HttpPost]
-        [PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
+        [HttpPost, PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult SetHotArticle(int id, bool isHot)
         {
-            var article = _articleRepository.GetOne(id);
-            if (article == null || article.IsDelete)
-                return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
-            article.IsHot = isHot;
-            article.UpdateTime = DateTime.Now;
-            article.UpdateBy = LoginUser.UserName;
-            _articleRepository.Update(article);
-            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "设置成功" });
+            var entity = _repository.GetOne(id); if (entity == null) return Json(Error("记录不存在", ResultCode.NULL));
+            entity.IsHot = isHot; entity.UpdateTime = DateTime.Now; entity.UpdateBy = LoginUser.UserName; _repository.Update(entity);
+            return Json(Ok("设置成功"));
         }
 
-        [HttpPost]
-        [PermissionFilter(MenuCode.Content_Article, PermissionType.Delete)]
+        [HttpPost, PermissionFilter(MenuCode.Content_Article, PermissionType.Delete)]
         public IActionResult Delete(int id, int[] ids, int isAll = 0)
         {
-            var deleteIds = isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id };
-            foreach (var deleteId in deleteIds.Where(p => p > 0))
-            {
-                var article = _articleRepository.GetOne(deleteId);
-                if (article == null || article.IsDelete) continue;
-                article.IsDelete = true;
-                article.UpdateTime = DateTime.Now;
-                article.UpdateBy = LoginUser.UserName;
-                _articleRepository.Update(article);
-            }
-            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "删除成功" });
+            foreach (var value in (isAll == 1 ? ids ?? Array.Empty<int>() : new[] { id }).Where(p => p > 0))
+            { var entity = _repository.GetOne(value); if (entity == null) continue; entity.IsDelete = true; entity.UpdateTime = DateTime.Now; entity.UpdateBy = LoginUser.UserName; _repository.Update(entity); }
+            return Json(Ok("删除成功"));
         }
 
-        private void LoadCategories()
-        {
-            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "article");
-            ViewBag.Categories = ContentCategoryHelper.GetDescendants(_categoryRepository, rootId, true);
-        }
-
-        private static ArticleModel ToModel(Article article)
-        {
-            return new ArticleModel
-            {
-                Id = article.Id,
-                Title = article.Title,
-                Title_EN = article.Title_EN,
-                Keyword = article.Keyword,
-                Description = article.Description,
-                Description_EN = article.Description_EN,
-                Detail = article.Detail,
-                Detail_EN = article.Detail_EN,
-                Author = article.Author,
-                Source = article.Source,
-                SourceUrl = article.SourceUrl,
-                LinkUrl = article.LinkUrl,
-                ImageUrl = article.ImageUrl,
-                TagType = article.TagType,
-                TagId = article.TagId,
-                Sort = article.Sort,
-                ViewCount = article.ViewCount,
-                ShareCount = article.ShareCount,
-                IsActive = article.IsActive,
-                IsHot = article.IsHot,
-                CreationTime = article.CreationTime,
-                UpdateTime = article.UpdateTime,
-                CreationBy = article.CreationBy,
-                UpdateBy = article.UpdateBy
-            };
-        }
+        private static ResultModel Ok(string message = "保存成功") => new ResultModel { Code = (int)ResultCode.Success, Message = message };
+        private static ResultModel Error(string message, ResultCode code = ResultCode.ParmsError) => new ResultModel { Code = (int)code, Message = message };
+        private static ArticleModel ToModel(Article p) => new ArticleModel { Id=p.Id,Title=p.Title,Title_EN=p.Title_EN,Keyword=p.Keyword,Description=p.Description,Description_EN=p.Description_EN,Detail=p.Detail,Detail_EN=p.Detail_EN,Author=p.Author,Source=p.Source,SourceUrl=p.SourceUrl,LinkUrl=p.LinkUrl,ImageUrl=p.ImageUrl,TagType=p.TagType,TagId=p.TagId,Sort=p.Sort,ViewCount=p.ViewCount,ShareCount=p.ShareCount,IsActive=p.IsActive,IsHot=p.IsHot,CreationTime=p.CreationTime,UpdateTime=p.UpdateTime,CreationBy=p.CreationBy,UpdateBy=p.UpdateBy };
     }
 }

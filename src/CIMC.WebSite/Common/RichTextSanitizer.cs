@@ -19,10 +19,6 @@ public static class RichTextSanitizer
         "ul", "ol", "li", "blockquote", "h1", "h2", "h3", "h4", "a"
     };
 
-    private static readonly Regex AllowedTagPattern = new(
-        @"</?(?:p|br|strong|b|em|i|u|s|strike|ul|ol|li|blockquote|h[1-4]|a)\b",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
     private static readonly Regex HtmlTokenPattern = new(
         @"<!--[\s\S]*?-->|<![^>]*>|</?[A-Za-z][^>]*>",
         RegexOptions.Compiled);
@@ -37,12 +33,6 @@ public static class RichTextSanitizer
         if (string.IsNullOrWhiteSpace(value))
         {
             return string.Empty;
-        }
-
-        // 兼容历史页面：旧文本组件保存的是纯文本，不要求用户手工迁移。
-        if (!AllowedTagPattern.IsMatch(value))
-        {
-            return PlainTextToHtml(value);
         }
 
         var result = new StringBuilder(value.Length + 32);
@@ -62,29 +52,6 @@ public static class RichTextSanitizer
         if (index < value.Length)
         {
             AppendEncodedText(result, value[index..]);
-        }
-
-        return result.ToString();
-    }
-
-    private static string PlainTextToHtml(string value)
-    {
-        var normalized = value.Replace("\r\n", "\n").Replace('\r', '\n');
-        var lines = normalized.Split('\n');
-        var result = new StringBuilder(normalized.Length + 32);
-
-        foreach (var line in lines)
-        {
-            result.Append("<p>");
-            if (line.Length == 0)
-            {
-                result.Append("<br>");
-            }
-            else
-            {
-                AppendEncodedText(result, line);
-            }
-            result.Append("</p>");
         }
 
         return result.ToString();

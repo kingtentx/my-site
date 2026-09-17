@@ -64,6 +64,17 @@
     }
 
     var navigation = [];
+    function linkUrl(link) {
+        if (!link || typeof link !== 'object') return '';
+        if (link.type === 'page') {
+            var page = (root.PageOptions || []).filter(function (item) { return Number(item.id) === Number(link.pageId); })[0];
+            return page ? safeUrl(page.path) : '';
+        }
+        if (link.type === 'external' && /^https?:\/\//i.test(String(link.url || '').trim())) return safeUrl(link.url);
+        return '';
+    }
+    function hrefAttribute(link) { var url = linkUrl(link); return url ? ' href="' + esc(url) + '"' : ''; }
+    function bannerEffects(part, effects) { return ' data-banner-part="' + part + '" data-sb-effects="' + esc(JSON.stringify(effects || {})) + '"'; }
     function navigationHtml(items) {
         return (items || []).map(function (item) {
             return '<div class="sb-public-nav-item' + (item.isCurrent ? ' is-current' : '') + '"><a href="' + esc(safeUrl(item.path || '#')) + '">'
@@ -83,8 +94,8 @@
         });
         html += '</div>';
         if (p.title || p.description || p.buttonText) {
-            html += '<div class="sb-banner-shade"></div><div class="sb-banner-copy"><h1>' + esc(p.title || '') + '</h1><p>' + esc(p.description || '') + '</p>';
-            if(p.buttonText) html += '<a class="sb-public-button" href="' + esc(safeUrl(p.buttonHref || '#')) + '">' + esc(p.buttonText) + '</a>';
+            html += '<div class="sb-banner-shade"></div><div class="sb-banner-copy"><h1' + bannerEffects('title',p.titleEffects) + '>' + esc(p.title || '') + '</h1><p' + bannerEffects('description',p.descriptionEffects) + '>' + esc(p.description || '') + '</p>';
+            if(p.buttonText) html += '<a class="sb-public-button"' + hrefAttribute(p.buttonLink) + bannerEffects('button',p.buttonEffects) + ' target="' + (p.buttonTarget === '_blank' ? '_blank' : '_self') + '">' + esc(p.buttonText) + '</a>';
             html += '</div>';
         }
         if (images.length > 1 && p.showArrows !== false) {
@@ -261,11 +272,10 @@
             }
             case 'text': {
                 var value = p.text == null ? '文本内容' : p.text;
-                var rich = root.RichText && typeof root.RichText.sanitize === 'function'
-                    ? root.RichText.sanitize(value)
-                    : '<p>' + esc(value) + '</p>';
-                return '<div class="sb-text sb-richtext" style="' + styleAttr + '">' + rich + '</div>';
+                return '<div class="sb-text" style="' + styleAttr + '">' + esc(value) + '</div>';
             }
+            case 'richText':
+                return '<div class="sb-richtext">' + root.RichText.sanitize(p.html || '') + '</div>';
             case 'image': {
                 var src = safeUrl(p.src);
                 if (!src) return '<div class="sb-placeholder" style="' + styleAttr + '">请选择图片</div>';
@@ -277,7 +287,7 @@
             case 'banner':
                 return bannerPreview(p, css);
             case 'button':
-                return '<a class="sb-public-button sb-public-button-' + esc(p.variant || 'primary') + '" href="' + esc(safeUrl(p.href || '#')) + '" target="' + (p.target === '_blank' ? '_blank' : '_self') + '" style="' + styleAttr + '">' + esc(p.text || '按钮') + '</a>';
+                return '<a class="sb-public-button sb-public-button-' + esc(p.variant || 'primary') + '"' + hrefAttribute(p.link) + ' target="' + (p.target === '_blank' ? '_blank' : '_self') + '" style="' + styleAttr + '">' + esc(p.text || '按钮') + '</a>';
             case 'icon':
                 return '<span class="sb-public-icon" style="font-size:' + Math.max(12, Math.min(160, Number(p.size || 32))) + 'px;' + styleAttr + '">' + esc(p.text || '★') + '</span>';
             case 'video': {

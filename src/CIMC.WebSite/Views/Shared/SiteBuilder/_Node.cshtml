@@ -4,6 +4,7 @@
 @using System.Globalization
 @using Newtonsoft.Json.Linq
 @model MySite.Web.Models.BuilderNodeRenderModel
+@inject CIMC.EntityFramework.IRepository<CIMC.Data.WebsitePage> LinkPageRepository
 @{
     var node = Model.Node;
     var props = node.Props ?? new Dictionary<string, object>();
@@ -21,6 +22,12 @@
     {
         return props.TryGetValue(key, out var value) && value != null && bool.TryParse(value.ToString(), out var result) ? result : fallback;
     }
+    Dictionary<string, object> EffectsProp(string key)
+    {
+        if (!props.TryGetValue(key, out var value) || value == null) return new Dictionary<string, object>();
+        return value is JObject json ? json.ToObject<Dictionary<string, object>>() : value as Dictionary<string, object> ?? new Dictionary<string, object>();
+    }
+    string LinkProp(string key) => MySite.Web.Common.BuilderLinkHelper.Resolve(props.TryGetValue(key, out var value) ? value : null, LinkPageRepository);
     List<string> StringListProp(string key)
     {
         if (!props.TryGetValue(key, out var value) || value == null) return new List<string>();
@@ -121,7 +128,11 @@ else if (node.Type == "heading")
 }
 else if (node.Type == "text")
 {
-    <div class="sb-text sb-richtext" sb-effects="@style" style="@css">@Html.Raw(MySite.Web.Common.RichTextSanitizer.Sanitize(Prop("text", "文本内容")))</div>
+    <div class="sb-text" sb-effects="@style" style="@css">@Prop("text", "文本内容")</div>
+}
+else if (node.Type == "richText")
+{
+    <div class="sb-richtext">@Html.Raw(MySite.Web.Common.RichTextSanitizer.Sanitize(Prop("html")))</div>
 }
 else if (node.Type == "image")
 {
@@ -154,7 +165,14 @@ else if (node.Type == "banner")
             @if (!string.IsNullOrWhiteSpace(Prop("title")) || !string.IsNullOrWhiteSpace(Prop("description")) || !string.IsNullOrWhiteSpace(Prop("buttonText")))
             {
                 <div class="sb-banner-shade"></div>
-                <div class="sb-banner-copy"><h1>@Prop("title")</h1><p>@Prop("description")</p>@if(!string.IsNullOrWhiteSpace(Prop("buttonText"))){<a class="sb-public-button" href="@SafeUrl(Prop("buttonHref","#"))">@Prop("buttonText")</a>}</div>
+                <div class="sb-banner-copy">
+                    <h1 data-banner-part="title" sb-effects="@EffectsProp("titleEffects")">@Prop("title")</h1>
+                    <p data-banner-part="description" sb-effects="@EffectsProp("descriptionEffects")">@Prop("description")</p>
+                    @if(!string.IsNullOrWhiteSpace(Prop("buttonText")))
+                    {
+                        <a class="sb-public-button" data-banner-part="button" sb-effects="@EffectsProp("buttonEffects")" href="@LinkProp("buttonLink")" target="@(Prop("buttonTarget") == "_blank" ? "_blank" : "_self")" rel="noopener noreferrer">@Prop("buttonText")</a>
+                    }
+                </div>
             }
             @if (images.Count > 1 && showArrows)
             {
@@ -175,8 +193,8 @@ else if (node.Type == "banner")
 }
 else if (node.Type == "button")
 {
-    var href = SafeUrl(Prop("href", "#")); var target = Prop("target", "_self") == "_blank" ? "_blank" : "_self"; var variant = Prop("variant", "primary");
-    <a class="sb-public-button sb-public-button-@variant" href="@href" target="@target" sb-effects="@style" style="@css">@Prop("text", "按钮")</a>
+    var href = LinkProp("link"); var target = Prop("target", "_self") == "_blank" ? "_blank" : "_self"; var variant = Prop("variant", "primary");
+    <a class="sb-public-button sb-public-button-@variant" href="@href" target="@target" rel="noopener noreferrer" sb-effects="@style" style="@css">@Prop("text", "按钮")</a>
 }
 else if (node.Type == "icon")
 {

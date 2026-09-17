@@ -1,0 +1,52 @@
+@model MySite.Web.Models.AlbumModel
+@{ Layout = null; }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>批量上传产品</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/resource/css/site.css" media="all">
+    <style>
+        .batch-upload-box{margin-left:110px;padding:28px;border:2px dashed #d2d2d2;border-radius:6px;background:#fafafa;text-align:center;transition:.25s}.batch-upload-box:hover{border-color:#009688;background:#f0faf8}
+        .uploaded-preview{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-top:18px;text-align:left}.uploaded-item{position:relative;padding:8px;border:1px solid #e6e6e6;border-radius:4px;background:#fff}.uploaded-item img{display:block;width:100%;height:110px;object-fit:contain}.uploaded-item button{width:100%;margin-top:6px}
+    </style>
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">批量上传产品</div>
+        <div class="layui-card-body" style="padding:15px;">
+            <form class="layui-form" lay-filter="form-group">
+                <div class="layui-form-item">
+                    <div class="batch-upload-box">
+                        <button type="button" class="layui-btn" id="upload"><i class="layui-icon layui-icon-upload-drag"></i>选择并上传多张图片</button>
+                        <div class="layui-form-mid layui-word-aux" style="float:none">可重复选择，每次支持多张图片；上传成功后可在下方检查并移除。</div>
+                        <div class="uploaded-preview" id="list"></div>
+                    </div>
+                </div>
+                <div class="layui-form-item"><label class="layui-form-label">产品分类</label><div class="layui-input-block up_index w300"><select name="TagId" lay-verify="required"><option value="">请选择</option>@foreach (var tag in Model.TagsList) { <option value="@tag.Id">@tag.TagName</option> }</select></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">产品标题</label><div class="layui-input-block"><input name="Title" class="layui-input w500" placeholder="未填写时使用“图片”"></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">排序</label><div class="layui-input-inline"><input type="number" name="Sort" class="layui-input" value="0"></div><div class="layui-form-mid layui-word-aux">数字越小越靠前</div></div>
+                <div class="layui-form-item"><label class="layui-form-label">是否发布</label><div class="layui-input-block"><input type="radio" name="IsActive" value="true" title="是" checked><input type="radio" name="IsActive" value="false" title="否"></div></div>
+                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="save">立即保存</button><a class="layui-btn layui-btn-primary" href="/Album/Index">返回列表</a></div></div></div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script>
+layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','form','upload'],function(){
+    var $=layui.$,form=layui.form,layer=layui.layer,urls=[];
+    function render(){var html='';urls.forEach(function(url,index){html+='<div class="uploaded-item"><img src="'+url+'" alt="已上传图片"><button type="button" class="layui-btn layui-btn-danger layui-btn-sm" data-index="'+index+'">移除</button></div>';});$('#list').html(html);}
+    layui.upload.render({elem:'#upload',url:'/Upload/UploadImage',field:'file',multiple:true,accept:'images',done:function(res){if(res&&res.url){urls.push(res.url);render();}else layer.msg(res.message||'上传失败',{icon:5});}});
+    $('#list').on('click','button',function(){urls.splice(Number($(this).attr('data-index')),1);render();});
+    form.on('submit(save)',function(data){if(!urls.length){layer.msg('请至少上传一张图片');return false;}data.field.ImageList=urls;$.ajax({type:'post',url:'/Album/BatchUpload',data:data.field,traditional:true,success:function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/Album/Index';});else layer.msg(res.message,{icon:5});}});return false;});
+});
+</script>
+</body>
+</html>

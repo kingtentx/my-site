@@ -21,7 +21,7 @@ namespace MySite.Web.Controllers
         private static readonly HashSet<string> AllowedNodeTypes = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
         {
             "section", "container", "grid", "column",
-            "heading", "text", "image", "banner", "button", "icon", "video", "divider", "spacer",
+            "heading", "text", "richText", "image", "banner", "button", "icon", "video", "divider", "spacer",
             "articleList", "productList", "jobList", "contactForm",
             "logo", "navigation", "search", "language", "contact", "social", "copyright"
         };
@@ -262,6 +262,16 @@ namespace MySite.Web.Controllers
             ViewBag.PageName = page.PageName;
             ViewBag.PagePath = page.PagePath;
             return View();
+        }
+
+        [HttpGet]
+        [PermissionFilter(MenuCode.Website_Page, PermissionType.Design)]
+        public JsonResult LinkOptions()
+        {
+            var pages = _pageRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true)
+                .Where(p => !IsGlobalPage(p))
+                .Select(p => new { id = p.Id, name = p.PageName, path = p.PagePath, published = p.Status == 1 });
+            return Json(new { code = (int)ResultCode.Success, data = pages });
         }
 
         [HttpGet]
@@ -601,6 +611,7 @@ namespace MySite.Web.Controllers
 
             node.Props = node.Props ?? new Dictionary<string, object>();
             node.Style = node.Style ?? new Dictionary<string, object>();
+            if (node.Type == "richText") node.Style.Clear();
             node.Bindings = node.Bindings ?? new Dictionary<string, object>();
             node.Actions = node.Actions ?? new Dictionary<string, object>();
             node.Children = node.Children ?? new List<BuilderNodeModel>();

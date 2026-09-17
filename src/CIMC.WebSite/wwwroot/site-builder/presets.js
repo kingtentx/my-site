@@ -21,7 +21,7 @@
                             n('column', null, null, [
                                 n('heading',{text:'用更灵活的页面构建能力表达品牌价值',level:1},{marginBottom:'20px'}),
                                 n('text',{text:'通过区段、容器、网格和基础组件自由组合，不再受固定模板限制。'},{marginBottom:'28px'}),
-                                n('button',{text:'了解更多',href:'#',variant:'primary'})
+                                n('button',{text:'了解更多',link:{type:'none'},variant:'primary'})
                             ]),
                             n('column', null, null, [n('image',{src:'',alt:'Hero 图片'})])
                         ])
@@ -48,7 +48,7 @@
                 return n('section',null,{paddingTop:'16px',paddingBottom:'16px',backgroundColor:'#ffffff'},[n('container',null,null,[n('grid',{columns:3},{gap:'20px'},[
                     n('column',null,null,[n('logo',{text:'企业名称',href:'/'})]),
                     n('column',null,{textAlign:'center'},[n('navigation',{menuKey:'main'})]),
-                    n('column',null,{textAlign:'right'},[n('search',{placeholder:'搜索'}),n('button',{text:'联系我们',href:'/contact',variant:'outline'})])
+                    n('column',null,{textAlign:'right'},[n('search',{placeholder:'搜索'}),n('button',{text:'联系我们',link:{type:'none'},variant:'outline'})])
                 ])])]);
             }
         },

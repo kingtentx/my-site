@@ -46,12 +46,6 @@ namespace MySite.Web.Controllers
 
             var query = await _menuRepository.GetListAsync(where, p => p.Sort, true);
             var data = _mapper.Map<List<MenuModel>>(query);
-            foreach (var item in data.Where(p => p.PermissionKey == "Content_ProductCategory"))
-            {
-                item.Title = "内容分类";
-                item.Path = "/contentcategory/index";
-            }
-
             result.Code = (int)ResultCode.Success;
             result.Message = "成功";
             result.Count = query.Count;
@@ -64,13 +58,6 @@ namespace MySite.Web.Controllers
         public async Task<JsonResult> GetMenuData()
         {
             var menulist = await _menuRepository.GetListAsync(p => p.IsShow && p.PermissionKey != "Site_Navigation");
-            var categoryMenu = menulist.FirstOrDefault(p => p.PermissionKey == "Content_ProductCategory");
-            if (categoryMenu != null)
-            {
-                categoryMenu.Title = "内容分类";
-                categoryMenu.Path = "/contentcategory/index";
-            }
-
             var treeList = new List<TreeSelectModel>();
             foreach (var parentNode in menulist.Where(t => t.Pid == 0))
             {

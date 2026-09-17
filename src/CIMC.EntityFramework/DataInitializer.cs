@@ -20,9 +20,6 @@ namespace CIMC.Data
     /// 写入规则（2026-09-14 明确）：<b>种子数据只在对应数据不存在时才写入</b>。
     /// 每一步都先查存在性再决定是否插入，已存在的记录一律不改写，
     /// 因此重复启动、并发启动都不会产生重复行，也不会覆盖后台的修改。
-    /// 内容分类（文章/产品/招聘）的种子数据由
-    /// <c>MySite.Web.ContentCategoryHelper.EnsureSeed</c> 在启动时单独处理，
-    /// 规则相同——分类表非空即不写。
     /// </summary>
     public class DataInitializer
     {
@@ -91,14 +88,23 @@ namespace CIMC.Data
 
             EnsureMenu(context, "新闻管理", "/article/index", "layui-icon-list", 2, content.Id, false,
                 "Content_Article", "Add,Edit,Delete", 31);
-            EnsureMenu(context, "产品分类", "/productcategory/index", "layui-icon-cols", 2, content.Id, false,
-                "Content_ProductCategory", "Add,Edit,Delete", 32);
-            EnsureMenu(context, "产品管理", "/product/index", "layui-icon-component", 2, content.Id, false,
-                "Content_Product", "Add,Edit,Delete", 33);
+            EnsureMenu(context, "产品管理", "/album/index", "layui-icon-picture", 2, content.Id, false,
+                "Content_Album", "Add,Edit,Delete", 32);
             EnsureMenu(context, "招聘管理", "/job/index", "layui-icon-friends", 2, content.Id, false,
-                "Content_Job", "Add,Edit,Delete", 34);
+                "Content_Job", "Add,Edit,Delete", 33);
+            EnsureMenu(context, "分类管理", "/tag/index", "layui-icon-tabs", 2, content.Id, false,
+                "Content_Tags", "Add,Edit,Delete", 34);
             EnsureMenu(context, "素材管理", "/images/index", "layui-icon-picture", 2, content.Id, false,
                 "Content_Images", "Add,Edit,Delete", 35);
+
+            var obsoleteContentMenus = context.Menu.Where(p => p.Path == "/product/index"
+                || p.Path == "/productcategory/index" || p.Path == "/contentcategory/index"
+                || p.PermissionKey == "Content_Product" || p.PermissionKey == "Content_ProductCategory").ToList();
+            if (obsoleteContentMenus.Count > 0) context.Menu.RemoveRange(obsoleteContentMenus);
+            var obsoleteContentPermissions = context.RoleMenu.Where(p => p.Permission == "Content_Product"
+                || p.Permission == "Content_ProductCategory"
+                || (p.Permission != null && (p.Permission.StartsWith("Content_Product_") || p.Permission.StartsWith("Content_ProductCategory_")))).ToList();
+            if (obsoleteContentPermissions.Count > 0) context.RoleMenu.RemoveRange(obsoleteContentPermissions);
 
             // 页面树已承担网站导航；旧导航管理和旧 Footer 设置都不再存在。
             var obsoleteMenus = context.Menu

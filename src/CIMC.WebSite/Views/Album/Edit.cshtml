@@ -1,0 +1,88 @@
+@model MySite.Web.Models.AlbumModel
+@{ Layout = null; }
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>产品编辑</title>
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/resource/css/site.css" media="all">
+    <style>
+        .product-image-card{width:300px;height:200px;border:2px dashed #d2d2d2;border-radius:6px;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#f9f9f9;transition:.25s}
+        .product-image-card.has-image{border-style:solid;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+        .product-image-card img{display:none;width:100%;height:100%;object-fit:contain}.product-image-card.has-image img{display:block}
+        .product-image-empty{text-align:center;color:#999}.product-image-empty i{display:block;margin-bottom:8px;font-size:40px;color:#c2c2c2}.product-image-card.has-image .product-image-empty{display:none}
+        .product-image-actions{margin-top:10px}.image-url-preview{max-width:620px;margin-top:8px;color:#888;font-size:12px;word-break:break-all}
+    </style>
+</head>
+<body>
+<div class="layui-fluid">
+    <div class="layui-card">
+        <div class="layui-card-header">@(Model.Id > 0 ? "修改产品" : "添加产品")</div>
+        <div class="layui-card-body" style="padding:15px;">
+            <form class="layui-form" lay-filter="form-group">
+                <div class="layui-form-item">
+                    <label class="layui-form-label">产品图片</label>
+                    <div class="layui-input-block">
+                        <div id="imageCard" class="product-image-card @(string.IsNullOrWhiteSpace(Model.ImageUrl) ? "" : "has-image")">
+                            <img id="preview" src="@Model.ImageUrl" alt="产品图片">
+                            <div class="product-image-empty"><i class="layui-icon layui-icon-upload-drag"></i><span>上传或从素材库选择图片</span></div>
+                        </div>
+                        <div class="product-image-actions">
+                            <button type="button" class="layui-btn" id="upload"><i class="layui-icon layui-icon-upload"></i>上传图片</button>
+                            <button type="button" class="layui-btn layui-btn-primary" id="library"><i class="layui-icon layui-icon-picture"></i>素材库选择</button>
+                            <button type="button" class="layui-btn layui-btn-primary" id="removeImage"><i class="layui-icon layui-icon-delete"></i>移除</button>
+                        </div>
+                        <div class="image-url-preview" id="imageUrlPreview">@Model.ImageUrl</div>
+                        <input type="hidden" name="ImageUrl" id="imageUrl" value="@Model.ImageUrl">
+                        <div class="layui-form-mid layui-word-aux">支持 jpg、jpeg、gif、png、webp，建议使用清晰的产品主图。</div>
+                    </div>
+                </div>
+                <div class="layui-form-item">
+                    <label class="layui-form-label">产品分类</label>
+                    <div class="layui-input-block up_index w300">
+                        <select name="TagId" lay-verify="required">
+                            <option value="">请选择</option>
+                            @foreach (var tag in Model.TagsList)
+                            {
+                                <option value="@tag.Id" selected="@(tag.Id == Model.TagId ? "selected" : null)">@tag.TagName</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="layui-form-item"><label class="layui-form-label">产品标题</label><div class="layui-input-block"><input class="layui-input w500" name="Title" lay-verify="required" placeholder="请输入产品标题" value="@Model.Title"></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">产品标题(EN)</label><div class="layui-input-block"><input class="layui-input w500" name="Title_EN" placeholder="Please enter title" value="@Model.Title_EN"></div></div>
+                <div class="layui-form-item layui-form-text"><label class="layui-form-label">产品描述</label><div class="layui-input-block"><textarea class="layui-textarea w500" name="Description" placeholder="请输入产品描述">@Model.Description</textarea></div></div>
+                <div class="layui-form-item layui-form-text"><label class="layui-form-label">产品描述(EN)</label><div class="layui-input-block"><textarea class="layui-textarea w500" name="Description_EN" placeholder="Please enter description">@Model.Description_EN</textarea></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">跳转链接</label><div class="layui-input-block"><input class="layui-input w500" name="LinkUrl" placeholder="可选，填写产品详情或外部链接" value="@Model.LinkUrl"></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">排序</label><div class="layui-input-inline"><input type="number" name="Sort" class="layui-input" value="@Model.Sort"></div><div class="layui-form-mid layui-word-aux">数字越小越靠前</div></div>
+                <div class="layui-form-item layui-form-text"><label class="layui-form-label">详情/参数</label><div class="layui-input-block"><div id="detail">@Html.Raw(Model.Detail)</div></div></div>
+                <div class="layui-form-item layui-form-text"><label class="layui-form-label">详情/参数(EN)</label><div class="layui-input-block"><div id="detailEn">@Html.Raw(Model.Detail_EN)</div></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">作者</label><div class="layui-input-block"><input class="layui-input w500" name="Author" placeholder="请输入作者" value="@Model.Author"></div></div>
+                <div class="layui-form-item"><label class="layui-form-label">是否发布</label><div class="layui-input-block"><input type="radio" name="IsActive" value="true" title="是" checked="@(Model.IsActive ? "checked" : null)"><input type="radio" name="IsActive" value="false" title="否" checked="@(!Model.IsActive ? "checked" : null)"></div></div>
+                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="save">立即保存</button><a class="layui-btn layui-btn-primary" href="/Album/Index">返回列表</a></div></div></div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script src="~/resource/wangeditor-4.7.9/wangEditor.min.js"></script>
+<script>
+layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','form','upload'],function(){
+    var $=layui.$,form=layui.form,layer=layui.layer,upload=layui.upload,E=window.wangEditor;
+    function setImage(url){url=url||'';$('#imageUrl').val(url);$('#imageUrlPreview').text(url);$('#preview').attr('src',url);$('#imageCard').toggleClass('has-image',!!url);}
+    upload.render({elem:'#upload',url:'/Upload/UploadImage',field:'file',accept:'images',done:function(res){if(res&&res.url){setImage(res.url);layer.msg('上传成功');}else layer.msg(res.message||'上传失败',{icon:5});}});
+    $('#library').on('click',function(){layer.open({type:2,title:'选择图片素材',area:['900px','680px'],content:'/Admin/ImageSelector'});});
+    $('#removeImage').on('click',function(){setImage('');});
+    window.addEventListener('message',function(e){if(e.data&&e.data.type==='imageSelected')setImage(e.data.url||'');});
+    function createEditor(id){var editor=new E(id);editor.config.uploadFileName='file';editor.config.uploadImgServer='/Upload/UploadImage';editor.config.uploadImgHooks={customInsert:function(insert,res){if(res&&res.url)insert(res.url);}};editor.create();return editor;}
+    var detail=createEditor('#detail'),detailEn=createEditor('#detailEn');
+    form.on('submit(save)',function(data){data.field.Detail=detail.txt.html();data.field.Detail_EN=detailEn.txt.html();$.post('/Album/Edit?id=@Model.Id',data.field,function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/Album/Index';});else layer.msg(res.message,{icon:5});});return false;});
+});
+</script>
+</body>
+</html>

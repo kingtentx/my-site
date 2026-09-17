@@ -16,11 +16,11 @@
             { key:'minHeight', label:'最小高度', type:'length', units:['px','vh','auto'], scope:'size' },
             { key:'height', label:'固定高度', type:'length', units:['px','vh','auto'], scope:'size' },
             { key:'objectFit', label:'图片填充', type:'select', options:[{value:'',text:'默认'},{value:'cover',text:'裁剪铺满'},{value:'contain',text:'完整显示'}], scope:'fit' },
-            { key:'textAlign', label:'内容对齐', type:'select', options:[{value:'',text:'默认'},{value:'left',text:'左对齐'},{value:'center',text:'居中'},{value:'right',text:'右对齐'}], scope:'align' },
-            { key:'color', label:'文字颜色', type:'color', scope:'color' },
             { key:'alignItems', label:'列的垂直对齐', type:'select', options:[{value:'',text:'默认（拉伸）'},{value:'start',text:'顶部对齐'},{value:'center',text:'垂直居中'},{value:'end',text:'底部对齐'}], scope:'grid' }
         ]},
         { key:'typography', title:'字体排版', fields:[
+            { key:'textAlign', label:'内容对齐', type:'select', options:[{value:'',text:'默认'},{value:'left',text:'左对齐'},{value:'center',text:'居中'},{value:'right',text:'右对齐'}], scope:'typography' },
+            { key:'color', label:'文字颜色', type:'color', scope:'typography' },
             { key:'fontSize', label:'字号', type:'length', units:['px','rem','em'], scope:'typography' },
             { key:'fontWeight', label:'字重', type:'select', options:[{value:'',text:'默认'},{value:'400',text:'常规'},{value:'500',text:'中等'},{value:'600',text:'半粗'},{value:'700',text:'加粗'}], scope:'typography' },
             { key:'lineHeight', label:'行高', type:'text', placeholder:'如 1.8 或 24px', scope:'typography' },
@@ -61,14 +61,14 @@
         ]}
     ];
 
-    var ALL_SCOPES = ['background','size','fit','align','color','grid','typography','spacing','gap','border','position'];
+    var ALL_SCOPES = ['background','size','fit','grid','typography','spacing','gap','border','position'];
 
     function fieldDef(key, label, type, extra) { var x = { key:key, label:label, type:type || 'text' }; if (extra) Object.keys(extra).forEach(function (k) { x[k] = extra[k]; }); return x; }
     function attr(value) { return esc(value == null ? '' : value); }
     function scopesOf(node) {
         var def = node && Registry.get(node.type);
         var list = def && def.styleScope;
-        return Array.isArray(list) && list.length ? list : ALL_SCOPES;
+        return Array.isArray(list) ? list : ALL_SCOPES;
     }
     function fieldApplies(field, scopes) { return !field.scope || scopes.indexOf(field.scope) >= 0; }
 
@@ -222,11 +222,12 @@
     }
 
     // ── 分类选择器 ────────────────────────────────────────────────────────────
-    // 数据来源：后台 /contentcategory/getoptions（文章 / 产品 / 招聘共用一套分类树）。
+    // 数据来源：后台 /tag/getoptions（文章 / 产品 / 招聘共用分类标签）。
     // 两种形态：
     //   1. select[data-category-type]  单选下拉（保留给旧组件）；
     //   2. .sb-category-field          多选，点「选择分类」弹窗勾选，值写成 id 数组。
     var categoryCache = {};
+    var categoryPending = {};
 
     function renderCategory(field, value, area) {
         var contentType = field.contentType || 'article';
@@ -297,37 +298,101 @@
      * onLoaded 只在真正发起网络请求并拿到数据时回调一次（后续走缓存不再触发），
      * 调用方可借此重绘画布，让设计器预览里的分类 Tab 显示真实名称。
      */
+    function requestCategory(contentType, onLoaded) {
+        contentType = String(contentType || '').toLowerCase();
+        if (!contentType) return;
+        if (categoryCache[contentType]) {
+            fillCategoryOptions(contentType, categoryCache[contentType]);
+            refreshCategoryFields();
+            return;
+        }
+        if (categoryPending[contentType]) {
+            if (typeof onLoaded === 'function') categoryPending[contentType].push(onLoaded);
+            return;
+        }
+        categoryPending[contentType] = typeof onLoaded === 'function' ? [onLoaded] : [];
+        $.get('/tag/getoptions', { contentType: contentType }).done(function (res) {
+            var code = res ? Number(res.code) : -1;
+            if (code !== 0 && code !== 200) return;   // 后台成功码是 200，兼容 0
+            categoryCache[contentType] = res.data || {};
+            root.CategoryData = root.CategoryData || {};
+            root.CategoryData[contentType] = res.data || {};
+            fillCategoryOptions(contentType, categoryCache[contentType]);
+            refreshCategoryFields();
+            (categoryPending[contentType] || []).forEach(function (callback) { callback(contentType); });
+        }).fail(function () {
+            $('#propsPanel select[data-category-type="' + contentType + '"]').append('<option value="" disabled>分类加载失败</option>');
+        }).always(function () {
+            delete categoryPending[contentType];
+        });
+    }
+
+    function preloadCategories(contentTypes, onLoaded) {
+        var seen = {};
+        (contentTypes || []).forEach(function (contentType) {
+            contentType = String(contentType || '').toLowerCase();
+            if (!contentType || seen[contentType]) return;
+            seen[contentType] = true;
+            requestCategory(contentType, onLoaded);
+        });
+    }
+
     function populateCategories(onLoaded) {
         var $targets = $('#propsPanel select[data-category-type], #propsPanel .sb-category-field[data-category-type]');
-        if (!$targets.length) return;
-        var types = {};
-        $targets.each(function () { types[$(this).attr('data-category-type')] = true; });
-        Object.keys(types).forEach(function (contentType) {
-            if (categoryCache[contentType]) { fillCategoryOptions(contentType, categoryCache[contentType]); refreshCategoryFields(); return; }
-            $.get('/contentcategory/getoptions', { contentType: contentType }).done(function (res) {
-                var code = res ? Number(res.code) : -1;
-                if (code !== 0 && code !== 200) return;   // 后台成功码是 200，兼容 0
-                categoryCache[contentType] = res.data || {};
-                root.CategoryData = root.CategoryData || {};
-                root.CategoryData[contentType] = res.data || {};
-                fillCategoryOptions(contentType, categoryCache[contentType]);
-                refreshCategoryFields();
-                if (typeof onLoaded === 'function') onLoaded(contentType);
-            }).fail(function () {
-                $('#propsPanel select[data-category-type="' + contentType + '"]').append('<option value="" disabled>分类加载失败</option>');
-            });
+        var types = [];
+        $targets.each(function () { types.push($(this).attr('data-category-type')); });
+        preloadCategories(types, onLoaded);
+    }
+
+    function renderLink(field, value, area) {
+        value = value && typeof value === 'object' ? value : {type:'none'};
+        var type = value.type || 'none';
+        var attrs = ' data-area="' + area + '" data-key="' + attr(field.key) + '"';
+        var html = '<div class="sb-compound-field" data-compound="link"><select lay-ignore' + attrs + ' data-part="type">';
+        [{value:'none',text:'不跳转'},{value:'page',text:'站内页面'},{value:'external',text:'站外链接'}].forEach(function (opt) {
+            html += '<option value="' + opt.value + '"' + (type === opt.value ? ' selected' : '') + '>' + opt.text + '</option>';
         });
+        html += '</select>';
+        if (type === 'page') {
+            html += '<select lay-ignore' + attrs + ' data-part="pageId"><option value="0">请选择页面</option>';
+            var found = false;
+            (root.PageOptions || []).forEach(function (page) {
+                var selected = Number(value.pageId) === Number(page.id); found = found || selected;
+                html += '<option value="' + attr(page.id) + '"' + (selected ? ' selected' : '') + '>' + esc(page.name + (page.published ? '' : '（未发布）')) + '</option>';
+            });
+            if (value.pageId && !found) html += '<option value="' + attr(value.pageId) + '" selected>页面不可用，请重新选择</option>';
+            html += '</select><div class="sb-field-hint">按页面名称绑定，页面地址修改后链接自动更新。目标页面发布后可访问。</div>';
+            if (root.PageOptionsError) html += '<div class="sb-field-hint">页面列表加载失败，请重新打开装修页。</div>';
+        } else if (type === 'external') {
+            html += '<input class="layui-input" type="url"' + attrs + ' data-part="url" value="' + attr(value.url || '') + '" placeholder="https://example.com">';
+        }
+        return html + '</div>';
+    }
+
+    function renderEffects(field, value, area) {
+        value = value || {};
+        var html = '<div class="sb-compound-field" data-compound="effects">';
+        styleGroups.filter(function (g) { return g.key === 'effects'; })[0].fields.filter(function (f) { return f.key !== 'effectCounter'; }).forEach(function (effect) {
+            var control = renderField(effect, value[effect.key], area, null);
+            control = control.replace(/data-key="([^"]+)"/g, 'data-key="' + attr(field.key) + '" data-part="$1"')
+                .replace(/field-props-/g, 'field-props-' + field.key + '-');
+            html += control;
+        });
+        return html + '<button type="button" class="sb-effects-preview" data-action="preview-banner-effects" data-effect-key="' + attr(field.key) + '" data-effect-target="' + attr(field.target) + '">预览' + esc(field.label) + '</button></div>';
     }
 
     function renderField(field, value, area, node) {
         var key = field.key, type = field.type || 'text';
+        if (type === 'effects') return section(field.label, renderEffects(field, value, area), false, 'props-banner-effects');
         var blockTypes = ['image-list', 'grid-columns', 'categories'];
         var canReset = !!node && area !== 'node' && blockTypes.indexOf(type) < 0;
         var wrap = canReset;                       // 需要重置按钮时才套一层行容器，保证按钮与控件同行且不遮挡输入
         var html = '<div class="layui-form-item"><label class="layui-form-label" for="field-' + area + '-' + key + '">' + esc(field.label || key) + '</label><div class="layui-input-block">'
             + (wrap ? '<div class="sb-field-row' + (type === 'textarea' ? ' is-tall' : '') + '">' : '');
-        if (type === 'textarea') {
-            html += '<textarea class="layui-textarea" data-area="' + area + '" data-key="' + key + '" rows="' + (field.rows || 3) + '" placeholder="' + attr(field.placeholder || '') + '">' + esc(value || '') + '</textarea>';
+        if (type === 'link') {
+            html += renderLink(field, value, area);
+        } else if (type === 'textarea') {
+            html += '<textarea class="layui-textarea"' + (field.richText ? ' data-richtext="true"' : '') + ' data-area="' + area + '" data-key="' + key + '" rows="' + (field.rows || 3) + '" placeholder="' + attr(field.placeholder || '') + '">' + esc(value || '') + '</textarea>';
         } else if (type === 'select') {
             html += '<select lay-ignore data-area="' + area + '" data-key="' + key + '">';
             (field.options || []).forEach(function (item) { html += '<option value="' + attr(item.value) + '"' + (String(item.value) === String(value == null ? '' : value) ? ' selected' : '') + '>' + esc(item.text) + '</option>'; });
@@ -408,8 +473,9 @@
 
     function styleSummary(node) {
         var style = node.style || {};
+        var scopes = scopesOf(node);
         var count = 0;
-        styleGroups.forEach(function (group) { group.fields.forEach(function (field) { if (style[field.key] !== undefined && style[field.key] !== null && style[field.key] !== '') count++; }); });
+        styleGroups.forEach(function (group) { group.fields.forEach(function (field) { if (fieldApplies(field, scopes) && style[field.key] !== undefined && style[field.key] !== null && style[field.key] !== '') count++; }); });
         return count ? ('已设置 ' + count + ' 项') : '未设置样式';
     }
 
@@ -451,14 +517,28 @@
             var value = Object.prototype.hasOwnProperty.call(currentProps, field.key) ? currentProps[field.key] : resetValue(node, 'props', field.key);
             return renderField(field, value, 'props', node);
         }).join(''), true, 'props-content');
-        html += '<div class="props-style-heading"><span>样式 <em>按需展开</em></span><span class="props-style-tools"><em class="props-style-count">' + esc(styleSummary(node)) + '</em><button type="button" data-action="reset-style" title="清空本组件已设置的样式，回到组件默认外观">恢复默认样式</button></span></div>';
-        html += renderStyleGroups(node, contentExists) + '</form>';
+        if (!def.hideStyle) {
+            html += '<div class="props-style-heading"><span>样式 <em>按需展开</em></span><span class="props-style-tools"><em class="props-style-count">' + esc(styleSummary(node)) + '</em><button type="button" data-action="reset-style" title="清空本组件已设置的样式，回到组件默认外观">恢复默认样式</button></span></div>';
+            html += renderStyleGroups(node, contentExists);
+        }
+        html += '</form>';
         return html;
     }
 
     function readValue(el) {
         var $el = $(el);
         var area = $el.attr('data-area'), key = $el.attr('data-key') || '';
+        if ($el.attr('data-part')) {
+            var result = {};
+            $el.closest('[data-compound]').find('input[data-part],select[data-part]').each(function () {
+                var control = $(this), part = control.attr('data-part');
+                result[part] = control.attr('type') === 'checkbox' ? control.is(':checked') : control.attr('type') === 'number' || part === 'pageId' ? (control.val() === '' ? '' : Number(control.val())) : control.val();
+            });
+            if (result.type === 'none') return {type:'none'};
+            if (result.type === 'page') return {type:'page',pageId:Number(result.pageId) || 0};
+            if (result.type === 'external') return {type:'external',url:String(result.url || '').trim()};
+            return result;
+        }
         if ($el.attr('data-category-type')) {
             var v = Number($el.val());
             return isFinite(v) ? v : 0;
@@ -493,9 +573,11 @@
         resetValue: resetValue,
         styleGroups: styleGroups,
         populateCategories: populateCategories,
+        preloadCategories: preloadCategories,
         normalizeCategoryIds: normalizeCategoryIds,
         categoryNameOf: categoryNameOf,
         styleKeysFor: function (node) {
+            if ((Registry.get(node.type) || {}).hideStyle) return [];
             var scopes = scopesOf(node);
             var keys = [];
             styleGroups.forEach(function (group) {

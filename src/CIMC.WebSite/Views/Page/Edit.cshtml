@@ -75,7 +75,7 @@
                     <label class="layui-form-label">是否首页</label><div class="layui-input-inline" style="width:160px;"><input type="checkbox" name="IsHome" value="true" lay-skin="switch" lay-text="是|否" @Html.Raw(Model.IsHome ? " checked" : "")></div>
                     <label class="layui-form-label">是否启用</label><div class="layui-input-inline" style="width:220px;"><input type="radio" name="IsActive" value="true" title="启用" @Html.Raw(Model.IsActive ? " checked" : "")><input type="radio" name="IsActive" value="false" title="禁用" @Html.Raw(!Model.IsActive ? " checked" : "")></div>
                 </div>
-                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="form-page">保存页面</button><a href="/page/index" class="layui-btn layui-btn-primary">返回列表</a></div></div></div>
+                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left: 0; z-index: 20000"><button class="layui-btn" lay-submit lay-filter="form-page">立即保存</button><a href="/page/index" class="layui-btn layui-btn-primary">返回列表</a></div></div></div>
             </form>
         </div>
     </div>

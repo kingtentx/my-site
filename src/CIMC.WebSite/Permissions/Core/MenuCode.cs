@@ -27,8 +27,6 @@ namespace MySite.Web
         public const string Content_Category = "Content_Category";//分类管理
         public const string Content_Attachments = "Content_Attachments";//附件管理
         public const string Content_Images = "Content_Images";//素材管理
-        public const string Content_Product = "Content_Product";//产品管理
-        public const string Content_ProductCategory = "Content_ProductCategory";//产品分类
         #endregion
     }
 }

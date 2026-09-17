@@ -1,178 +1,36 @@
+using System;
+using System.Linq;
+using CIMC.Core.Enums;
 using CIMC.Data;
 using CIMC.EntityFramework;
 using CIMC.Helper;
-using MySite.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Linq;
+using MySite.Web.Models;
 
 namespace MySite.Web.Controllers
 {
     [Authorize]
-    public class JobController : AdminBaseController
+    public class JobController : ContentControllerBase
     {
-        private readonly IRepository<ContentJob> _repository;
-        private readonly IRepository<ContentProductCategory> _categoryRepository;
-        private readonly IPermissionService _permission;
-
-        public JobController(
-            IRepository<ContentJob> repository,
-            IRepository<ContentProductCategory> categoryRepository,
-            IPermissionService permission)
-        {
-            _repository = repository;
-            _categoryRepository = categoryRepository;
-            _permission = permission;
-        }
+        private readonly IRepository<Job> _repository; private readonly IPermissionService _permission;
+        public JobController(IRepository<Job> repository, IRepository<Tag> tags, IPermissionService permission) : base(tags) { _repository=repository; _permission=permission; }
 
         [PermissionFilter(MenuCode.Content_Job, PermissionType.View)]
-        public IActionResult Index()
-        {
-            ViewData[PageCode.PAGE_Button_Add] = _permission.CheckPermission(LoginUser, MenuCode.Content_Job, PermissionType.Add);
-            ViewData[PageCode.PAGE_Button_Edit] = _permission.CheckPermission(LoginUser, MenuCode.Content_Job, PermissionType.Edit);
-            ViewData[PageCode.PAGE_Button_Delete] = _permission.CheckPermission(LoginUser, MenuCode.Content_Job, PermissionType.Delete);
-            return View();
-        }
+        public IActionResult Index() { ViewData[PageCode.PAGE_Button_Add]=_permission.CheckPermission(LoginUser,MenuCode.Content_Job,PermissionType.Add); ViewData[PageCode.PAGE_Button_Edit]=_permission.CheckPermission(LoginUser,MenuCode.Content_Job,PermissionType.Edit); ViewData[PageCode.PAGE_Button_Delete]=_permission.CheckPermission(LoginUser,MenuCode.Content_Job,PermissionType.Delete); return View(GetTags((int)TagType.Job)); }
 
         [PermissionFilter(MenuCode.Content_Job, PermissionType.Edit)]
-        public IActionResult Edit(int id = 0)
-        {
-            var model = new JobModel { IsActive = true, RecruitCount = 1, JobType = "全职" };
-            if (id > 0)
-            {
-                var entity = _repository.GetOne(id);
-                if (entity == null || entity.IsDelete) return NotFound();
-                model = ToModel(entity);
-            }
-            LoadCategories();
-            return View(model);
-        }
+        public IActionResult Edit(int id=0) { var model=new JobModel{IsActive=true,Author="中集洋山",UpdateTime=DateTime.Now,TagsList=GetTags((int)TagType.Job)}; if(id<=0)return View(model); var entity=_repository.GetOne(id); if(entity==null)return NotFound(); model=ToModel(entity); model.TagsList=GetTags((int)TagType.Job); return View(model); }
 
-        [HttpPost]
-        [PermissionFilter(MenuCode.Content_Job, PermissionType.Edit)]
-        public IActionResult Edit(int id, JobModel input)
-        {
-            if (input == null || string.IsNullOrWhiteSpace(input.JobTitle))
-                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请填写岗位名称" });
+        [HttpPost, PermissionFilter(MenuCode.Content_Job, PermissionType.Edit)]
+        public IActionResult Edit(int id, JobModel input) { if(input==null||string.IsNullOrWhiteSpace(input.JobName))return Json(Result("请填写岗位名称",ResultCode.ParmsError)); var entity=id>0?_repository.GetOne(id):new Job{CreationTime=DateTime.Now,CreationBy=LoginUser.UserName}; if(entity==null)return Json(Result("记录不存在",ResultCode.NULL)); entity.JobName=input.JobName;entity.JobName_EN=input.JobName_EN;entity.Author=string.IsNullOrWhiteSpace(input.Author)?"中集洋山":input.Author;entity.Detail=input.Detail;entity.Detail_EN=input.Detail_EN;entity.TagType=(int)TagType.Job;entity.TagId=input.TagId;entity.IsActive=input.IsActive;entity.IsDelete=false;entity.UpdateBy=LoginUser.UserName;entity.UpdateTime=input.UpdateTime??DateTime.Now;if(id>0)_repository.Update(entity);else _repository.Add(entity);return Json(Result("保存成功",ResultCode.Success)); }
 
-            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "job");
-            var allowedIds = ContentCategoryHelper.GetDescendantIds(_categoryRepository, rootId);
-            if (input.CategoryId > 0 && !allowedIds.Contains(input.CategoryId))
-                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择有效的招聘分类" });
+        [HttpGet, PermissionFilter(MenuCode.Content_Job, PermissionType.View)]
+        public JsonResult GetList(int pageIndex=1,int pageSize=10) { var keyword=Request.Query["keywords"].ToString().Trim();int.TryParse(Request.Query["tagId"],out var tagId);if(tagId==0)int.TryParse(Request.Query["tagsId"],out tagId);var where=LambdaHelper.True<Job>().And(p=>!p.IsDelete);if(!string.IsNullOrWhiteSpace(keyword))where=where.And(p=>p.JobName.Contains(keyword));if(tagId>0)where=where.And(p=>p.TagId==tagId);var query=_repository.GetList(where,p=>p.CreationTime,Math.Max(1,pageIndex),pageSize<=0?10:pageSize,false);var data=query.List.Select(p=>new{p.Id,p.JobName,TagName=GetTagName(p.TagId),p.UpdateTime,p.IsActive});return Json(new ResultModel<object>{Code=(int)ResultCode.Success,Message="成功",Count=query.Count,Data=data}); }
 
-            var entity = id > 0 ? _repository.GetOne(id) : new ContentJob { CreationTime = DateTime.Now, CreationBy = LoginUser.UserName };
-            if (entity == null || entity.IsDelete)
-                return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "记录不存在" });
-
-            entity.CategoryId = input.CategoryId;
-            entity.JobTitle = input.JobTitle.Trim();
-            entity.Department = input.Department;
-            entity.WorkLocation = input.WorkLocation;
-            entity.SalaryRange = input.SalaryRange;
-            entity.RecruitCount = input.RecruitCount <= 0 ? 1 : input.RecruitCount;
-            entity.JobType = string.IsNullOrWhiteSpace(input.JobType) ? "全职" : input.JobType;
-            entity.Responsibilities = input.Responsibilities;
-            entity.Requirements = input.Requirements;
-            entity.ContactName = input.ContactName;
-            entity.ContactPhone = input.ContactPhone;
-            entity.ContactEmail = input.ContactEmail;
-            entity.Sort = input.Sort;
-            entity.IsActive = input.IsActive;
-            entity.IsDelete = false;
-            entity.PublishTime = entity.IsActive ? entity.PublishTime ?? DateTime.Now : null;
-            entity.UpdateBy = LoginUser.UserName;
-            entity.UpdateTime = DateTime.Now;
-            if (id > 0) _repository.Update(entity); else _repository.Add(entity);
-
-            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "保存成功" });
-        }
-
-        [HttpGet]
-        [PermissionFilter(MenuCode.Content_Job, PermissionType.View)]
-        public JsonResult GetList(int pageIndex = 1, int pageSize = 10)
-        {
-            var keywords = HttpContext.Request.Query["keywords"].ToString().Trim();
-            int.TryParse(HttpContext.Request.Query["categoryId"].ToString(), out var categoryId);
-            var where = LambdaHelper.True<ContentJob>().And(p => !p.IsDelete);
-            if (!string.IsNullOrWhiteSpace(keywords))
-                where = where.And(p => p.JobTitle.Contains(keywords) || p.Department.Contains(keywords));
-            if (categoryId > 0) where = where.And(p => p.CategoryId == categoryId);
-
-            pageIndex = Math.Max(1, pageIndex);
-            pageSize = pageSize <= 0 ? 10 : pageSize;
-            var query = _repository.GetList(where, p => p.Sort, pageIndex, pageSize, true);
-            var categories = _categoryRepository.GetList(p => !p.IsDelete).ToDictionary(p => p.Id, p => p.Name);
-            var data = query.List.Select(p => new
-            {
-                p.Id,
-                p.CategoryId,
-                CategoryName = categories.TryGetValue(p.CategoryId, out var name) ? name : "未分类",
-                p.JobTitle,
-                p.Department,
-                p.WorkLocation,
-                p.SalaryRange,
-                p.RecruitCount,
-                p.JobType,
-                p.Sort,
-                p.IsActive,
-                p.PublishTime,
-                p.CreationTime
-            }).ToList();
-            return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Message = "成功", Count = query.Count, Data = data });
-        }
-
-        [HttpPost]
-        [PermissionFilter(MenuCode.Content_Job, PermissionType.Delete)]
-        public IActionResult Delete(int id, int[] ids = null, int isAll = 0)
-        {
-            var deleteIds = (isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id }).Where(p => p > 0).Distinct().ToList();
-            if (!deleteIds.Any())
-                return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "请选择要删除的数据" });
-
-            foreach (var deleteId in deleteIds)
-            {
-                var entity = _repository.GetOne(deleteId);
-                if (entity == null || entity.IsDelete) continue;
-                entity.IsDelete = true;
-                entity.UpdateTime = DateTime.Now;
-                entity.UpdateBy = LoginUser.UserName;
-                _repository.Update(entity);
-            }
-            return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "删除成功" });
-        }
-
-        private void LoadCategories()
-        {
-            var rootId = ContentCategoryHelper.GetRootId(_categoryRepository, "job");
-            ViewBag.Categories = ContentCategoryHelper.GetDescendants(_categoryRepository, rootId, true);
-        }
-
-        private static JobModel ToModel(ContentJob entity)
-        {
-            return new JobModel
-            {
-                Id = entity.Id,
-                CategoryId = entity.CategoryId,
-                JobTitle = entity.JobTitle,
-                Department = entity.Department,
-                WorkLocation = entity.WorkLocation,
-                SalaryRange = entity.SalaryRange,
-                RecruitCount = entity.RecruitCount,
-                JobType = entity.JobType,
-                Responsibilities = entity.Responsibilities,
-                Requirements = entity.Requirements,
-                ContactName = entity.ContactName,
-                ContactPhone = entity.ContactPhone,
-                ContactEmail = entity.ContactEmail,
-                Sort = entity.Sort,
-                IsActive = entity.IsActive,
-                PublishTime = entity.PublishTime,
-                CreationTime = entity.CreationTime,
-                CreationBy = entity.CreationBy,
-                UpdateTime = entity.UpdateTime,
-                UpdateBy = entity.UpdateBy
-            };
-        }
+        [HttpPost, PermissionFilter(MenuCode.Content_Job, PermissionType.Delete)]
+        public IActionResult Delete(int id,int[] ids,int isAll=0) { foreach(var value in(isAll==1?ids??Array.Empty<int>():new[]{id}).Where(p=>p>0)){var entity=_repository.GetOne(value);if(entity==null)continue;entity.IsDelete=true;entity.UpdateTime=DateTime.Now;entity.UpdateBy=LoginUser.UserName;_repository.Update(entity);}return Json(Result("删除成功",ResultCode.Success)); }
+        private static ResultModel Result(string message,ResultCode code)=>new ResultModel{Code=(int)code,Message=message};
+        private static JobModel ToModel(Job p)=>new JobModel{Id=p.Id,JobName=p.JobName,JobName_EN=p.JobName_EN,Author=p.Author,Detail=p.Detail,Detail_EN=p.Detail_EN,TagType=p.TagType,TagId=p.TagId,IsActive=p.IsActive,IsDelete=p.IsDelete,CreationTime=p.CreationTime,UpdateTime=p.UpdateTime,CreateBy=p.CreationBy,UpdateBy=p.UpdateBy};
     }
 }

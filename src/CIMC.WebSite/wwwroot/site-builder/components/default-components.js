@@ -8,16 +8,16 @@
 
     // 样式能力令牌：组件声明自己支持哪些样式维度，属性面板据此裁剪；
     // 未声明的组件按“全量”处理，保证新增组件不会因为忘记声明而丢失样式项。
-    var SCOPE_BOX = ['background', 'size', 'align', 'color', 'spacing', 'border', 'position'];
-    var SCOPE_TEXT = ['background', 'size', 'align', 'color', 'typography', 'spacing', 'border', 'position'];
-    var SCOPE_MEDIA = ['background', 'size', 'fit', 'align', 'spacing', 'border', 'position'];
+    var SCOPE_BOX = ['background', 'size', 'spacing', 'border', 'position'];
+    var SCOPE_TEXT = ['background', 'size', 'typography', 'spacing', 'border', 'position'];
+    var SCOPE_MEDIA = ['background', 'size', 'fit', 'spacing', 'border', 'position'];
     var SCOPE_PLAIN = ['background', 'size', 'spacing', 'border', 'position'];
-    var SCOPE_GRID = ['background', 'size', 'align', 'color', 'gap', 'grid', 'spacing', 'border', 'position'];
+    var SCOPE_GRID = ['background', 'size', 'gap', 'grid', 'spacing', 'border', 'position'];
     // Banner 的高度、图片填充属于组件语义参数，统一放在「内容」里配置，样式区不再重复出现同名字段。
-    var SCOPE_BANNER = ['background', 'align', 'color', 'spacing', 'border', 'position'];
+    var SCOPE_BANNER = ['background', 'spacing', 'border', 'position'];
     // 间距组件的高度由「内容 · 高度」决定。
     var SCOPE_SPACER = ['background', 'spacing', 'border', 'position'];
-    var SCOPE_ICON = ['background', 'color', 'align', 'typography', 'spacing', 'border', 'position'];
+    var SCOPE_ICON = ['background', 'typography', 'spacing', 'border', 'position'];
 
     reg({ type: 'section', name: '区段', group: 'layout', icon: 'layui-icon-template-1', desc: '页面大区块，通常一个页面由多个区段组成', container: true, styleScope: SCOPE_BOX, defaults: {}, styleDefaults: { paddingTop: '48px', paddingBottom: '48px', backgroundColor: '#ffffff' }, inspector: [] });
     reg({ type: 'container', name: '容器', group: 'layout', icon: 'layui-icon-screen-full', desc: '按设计宽度居中并控制左右留白', container: true, styleScope: SCOPE_BOX, defaults: {}, styleDefaults: { maxWidth: '1200px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '20px', paddingRight: '20px' }, inspector: [] });
@@ -25,10 +25,11 @@
     reg({ type: 'column', name: '列', group: 'layout', icon: 'layui-icon-tabs', desc: '网格内的列容器', container: true, styleScope: SCOPE_BOX, defaults: {}, styleDefaults: { minHeight: '40px' }, inspector: [] });
 
     reg({ type: 'heading', name: '标题', group: 'basic', icon: 'layui-icon-fonts-strong', desc: 'H1~H4 级标题', styleScope: SCOPE_TEXT, defaults: { text: '请输入标题', level: 2 }, inspector: [f('text', '标题文字'), f('level', '标题级别', 'select', { options: [{ value: 1, text: 'H1' }, { value: 2, text: 'H2' }, { value: 3, text: 'H3' }, { value: 4, text: 'H4' }] })] });
-    reg({ type: 'text', name: '文本', group: 'basic', icon: 'layui-icon-edit', desc: '富文本内容，支持段落、标题、加粗、列表、引用与链接', styleScope: SCOPE_TEXT, defaults: { text: '请输入文本内容' }, inspector: [f('text', '富文本内容', 'textarea', { rows: 6, richText: true, hint: '支持正文/标题、加粗、斜体、下划线、删除线、列表、引用与超链接；历史纯文本会自动兼容' })] });
+    reg({ type: 'text', name: '文本', group: 'basic', icon: 'layui-icon-edit', desc: '普通多行文本，通过字体排版设置外观', styleScope: SCOPE_TEXT, defaults: { text: '请输入文本内容' }, inspector: [f('text', '文本内容', 'textarea', { rows: 6 })] });
+    reg({ type: 'richText', name: '富文本', group: 'basic', icon: 'layui-icon-fonts-html', desc: '使用编辑器编排段落、标题、列表与链接', styleScope: [], hideStyle: true, defaults: { html: '<p>请输入富文本内容</p>' }, inspector: [f('html', '富文本内容', 'textarea', { rows: 8, richText: true })] });
     reg({ type: 'image', name: '图片', group: 'basic', icon: 'layui-icon-picture', desc: '单张图片，可设置跳转链接', styleScope: SCOPE_MEDIA, defaults: { src: '', alt: '', link: '' }, inspector: [f('src', '图片', 'image'), f('alt', '替代文本', 'text', { hint: '用于 SEO 与图片加载失败提示' }), f('link', '跳转链接', 'text', { placeholder: '留空表示不可点击' })] });
-    reg({ type: 'banner', name: 'Banner', group: 'basic', icon: 'layui-icon-carousel', desc: '多图轮播，2 张及以上自动播放', styleScope: SCOPE_BANNER, defaults: { images: [], height: 420, interval: 5000, showArrows: true, showDots: true, objectFit: 'cover' }, inspector: [f('images', '轮播图片', 'image-list', { hint: '选择 2 张及以上时前台自动轮播' }), f('height', 'Banner 高度(px)', 'number', { min: 120, max: 900, default: 420 }), f('interval', '轮播间隔(ms)', 'number', { min: 1000, max: 30000, step: 500, default: 5000 }), f('objectFit', '图片填充', 'select', { options: [{ value: 'cover', text: '覆盖裁剪' }, { value: 'contain', text: '完整显示' }] }), f('showArrows', '显示左右箭头', 'checkbox'), f('showDots', '显示圆点指示', 'checkbox'), f('title', '主标题'), f('description', '介绍文字', 'textarea'), f('buttonText', '按钮文字'), f('buttonHref', '按钮链接', 'text', { placeholder: '留空则不显示按钮' })] });
-    reg({ type: 'button', name: '按钮', group: 'basic', icon: 'layui-icon-link', desc: '行动按钮，支持跳转与打开方式', styleScope: SCOPE_TEXT, defaults: { text: '了解更多', href: '#', target: '_self', variant: 'primary' }, inspector: [f('text', '按钮文字'), f('href', '跳转链接', 'text', { placeholder: '如 /contact 或 https://…' }), f('target', '打开方式', 'select', { options: [{ value: '_self', text: '当前窗口' }, { value: '_blank', text: '新窗口' }] }), f('variant', '按钮样式', 'select', { options: [{ value: 'primary', text: '主按钮' }, { value: 'outline', text: '描边按钮' }, { value: 'text', text: '文字按钮' }] })] });
+    reg({ type: 'banner', name: 'Banner', group: 'basic', icon: 'layui-icon-carousel', desc: '多图轮播，2 张及以上自动播放', styleScope: SCOPE_BANNER, defaults: { images: [], height: 420, interval: 5000, showArrows: true, showDots: true, objectFit: 'cover' }, inspector: [f('images', '轮播图片', 'image-list', { hint: '选择 2 张及以上时前台自动轮播' }), f('height', 'Banner 高度(px)', 'number', { min: 120, max: 900, default: 420 }), f('interval', '轮播间隔(ms)', 'number', { min: 1000, max: 30000, step: 500, default: 5000 }), f('objectFit', '图片填充', 'select', { options: [{ value: 'cover', text: '覆盖裁剪' }, { value: 'contain', text: '完整显示' }] }), f('showArrows', '显示左右箭头', 'checkbox'), f('showDots', '显示圆点指示', 'checkbox'), f('title', '主标题'), f('description', '介绍文字', 'textarea'), f('buttonText', '按钮文字'), f('buttonLink', '跳转链接', 'link')] });
+    reg({ type: 'button', name: '按钮', group: 'basic', icon: 'layui-icon-link', desc: '行动按钮，支持跳转与打开方式', styleScope: SCOPE_TEXT, defaults: { text: '了解更多', link: { type: 'none' }, target: '_self', variant: 'primary' }, inspector: [f('text', '按钮文字'), f('link', '跳转链接', 'link'), f('target', '打开方式', 'select', { options: [{ value: '_self', text: '当前窗口' }, { value: '_blank', text: '新窗口' }] }), f('variant', '按钮样式', 'select', { options: [{ value: 'primary', text: '主按钮' }, { value: 'outline', text: '描边按钮' }, { value: 'text', text: '文字按钮' }] })] });
     reg({ type: 'icon', name: '图标', group: 'basic', icon: 'layui-icon-star', desc: '单字符图标或符号', styleScope: SCOPE_ICON, defaults: { text: '★', size: 32 }, inspector: [f('text', '图标/字符'), f('size', '尺寸(px)', 'number', { min: 12, max: 160, default: 32 })] });
     reg({ type: 'video', name: '视频', group: 'basic', icon: 'layui-icon-video', desc: 'mp4 等直链视频', styleScope: SCOPE_MEDIA, defaults: { src: '', poster: '', controls: true }, inspector: [f('src', '视频地址', 'text', { placeholder: '如 /upload/demo.mp4' }), f('poster', '封面图片', 'image'), f('controls', '显示播放控件', 'checkbox')] });
     reg({ type: 'divider', name: '分隔线', group: 'basic', icon: 'layui-icon-more', desc: '横向分隔线', styleScope: SCOPE_PLAIN, defaults: {}, styleDefaults: { borderTopWidth: '1px', borderTopStyle: 'solid', borderTopColor: '#e5e7eb', marginTop: '20px', marginBottom: '20px' }, inspector: [] });
@@ -53,20 +54,26 @@
     reg({ type: 'social', name: '社交链接', group: 'global', icon: 'layui-icon-share', desc: '社交账号入口', styleScope: SCOPE_TEXT, defaults: { text: '关注我们', links: '' }, inspector: [f('text', '标题'), f('links', '链接配置', 'textarea', { hint: '每行一个，格式：名称|链接' })] });
     reg({ type: 'copyright', name: '版权信息', group: 'global', icon: 'layui-icon-auz', desc: '页脚版权文字', styleScope: SCOPE_TEXT, defaults: { text: '© 2026 企业名称 版权所有' }, inspector: [f('text', '版权文字', 'textarea')] });
 
-    // ── 文本组件富文本能力 ──────────────────────────────────────────────────
+    // Link and Banner child effects share the same inspector controls.
+    ['button', 'banner'].forEach(function (type) {
+        var def = R.get(type), key = type === 'banner' ? 'buttonLink' : 'link';
+        def.defaults[key] = { type: 'none' };
+        if (type === 'banner') {
+            ['title', 'description', 'button'].forEach(function (part, index) {
+                def.defaults[part + 'Effects'] = {};
+                def.inspector.push(f(part + 'Effects', ['主标题特效', '介绍文字特效', '按钮特效'][index], 'effects', { target: part }));
+            });
+            def.defaults.buttonTarget = '_self';
+            def.inspector.push(f('buttonTarget', '按钮打开方式', 'select', { options: [{value:'_self',text:'当前窗口'},{value:'_blank',text:'新窗口'}] }));
+        }
+    });
+
+    // ── 富文本组件编辑器 ──────────────────────────────────────────────────
     // 不引入额外第三方编辑器，直接复用浏览器 contenteditable，避免装修器体积和部署依赖增加。
     // 允许的标签与服务端 RichTextSanitizer 保持一致，保存和发布时形成双重防护。
     (function () {
         var allowed = { p:1, br:1, strong:1, b:1, em:1, i:1, u:1, s:1, strike:1, ul:1, ol:1, li:1, blockquote:1, h1:1, h2:1, h3:1, h4:1, a:1 };
         var blocked = { script:1, style:1, iframe:1, object:1, embed:1, svg:1, math:1, form:1, input:1, button:1, textarea:1, select:1, option:1 };
-
-        function plainTextToHtml(value) {
-            return String(value == null ? '' : value).replace(/\r\n?/g, '\n').split('\n').map(function (line) {
-                var span = document.createElement('span');
-                span.textContent = line;
-                return '<p>' + (span.innerHTML || '<br>') + '</p>';
-            }).join('');
-        }
 
         function safeHref(value) {
             var text = String(value == null ? '' : value).trim();
@@ -79,7 +86,6 @@
         function sanitize(value) {
             value = String(value == null ? '' : value);
             if (!value.trim()) return '';
-            if (!/<\/?(?:p|br|strong|b|em|i|u|s|strike|ul|ol|li|blockquote|h[1-4]|a)\b/i.test(value)) return plainTextToHtml(value);
 
             var template = document.createElement('template');
             template.innerHTML = value;
@@ -119,15 +125,12 @@
 
         root.RichText = {
             sanitize: sanitize,
-            plainTextToHtml: plainTextToHtml,
             safeHref: safeHref
         };
 
         function currentTextEditor(panel) {
             if (!panel) return null;
-            var title = panel.querySelector('.props-title strong');
-            if (!title || String(title.textContent || '').trim() !== '文本') return null;
-            return panel.querySelector('textarea[data-area="props"][data-key="text"]');
+            return panel.querySelector('textarea[data-richtext="true"]');
         }
 
         function buildToolbar(editor, source, wrapper) {

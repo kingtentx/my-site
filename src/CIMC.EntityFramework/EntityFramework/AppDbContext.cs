@@ -36,21 +36,9 @@ namespace CIMC.EntityFrameworkCore
                 entity.HasIndex(e => new { e.PageId, e.VersionNo });
             });
 
-            modelBuilder.Entity<ContentProduct>(entity =>
-            {
-                entity.HasIndex(e => e.CategoryId);
-            });
-
-            modelBuilder.Entity<ContentProductCategory>(entity =>
-            {
-                entity.HasIndex(e => e.Pid);
-            });
-
-            modelBuilder.Entity<ContentJob>(entity =>
-            {
-                entity.HasIndex(e => e.IsActive);
-                entity.HasIndex(e => e.CategoryId);
-            });
+            modelBuilder.Entity<Album>().HasIndex(e => new { e.TagType, e.TagId, e.Sort });
+            modelBuilder.Entity<Job>().HasIndex(e => new { e.TagType, e.TagId, e.IsActive });
+            modelBuilder.Entity<Tag>().HasIndex(e => new { e.TagType, e.Sort });
 
             modelBuilder.Entity<MessageBoard>(entity =>
             {
@@ -71,9 +59,9 @@ namespace CIMC.EntityFrameworkCore
         public DbSet<WebsitePage> WebsitePage { get; set; }
         public DbSet<WebsitePageVersion> WebsitePageVersion { get; set; }
         public DbSet<WebsiteSiteConfig> WebsiteSiteConfig { get; set; }
-        public DbSet<ContentProduct> ContentProduct { get; set; }
-        public DbSet<ContentProductCategory> ContentProductCategory { get; set; }
-        public DbSet<ContentJob> ContentJob { get; set; }
+        public DbSet<Album> Album { get; set; }
+        public DbSet<Job> Job { get; set; }
+        public DbSet<Tag> Tag { get; set; }
         public DbSet<MessageBoard> MessageBoard { get; set; }
 
         #endregion

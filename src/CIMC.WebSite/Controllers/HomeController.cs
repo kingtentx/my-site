@@ -18,9 +18,9 @@ namespace MySite.Web.Controllers
         private readonly IRepository<WebsitePageVersion> _versionRepository;
         private readonly IRepository<WebsiteSiteConfig> _siteConfigRepository;
         private readonly IRepository<Article> _articleRepository;
-        private readonly IRepository<ContentProduct> _productRepository;
-        private readonly IRepository<ContentProductCategory> _productCategoryRepository;
-        private readonly IRepository<ContentJob> _jobRepository;
+        private readonly IRepository<Album> _productRepository;
+        private readonly IRepository<Tag> _productCategoryRepository;
+        private readonly IRepository<Job> _jobRepository;
         private readonly IRepository<MessageBoard> _messageRepository;
         private readonly ICacheService _cache;
 
@@ -29,9 +29,9 @@ namespace MySite.Web.Controllers
             IRepository<WebsitePageVersion> versionRepository,
             IRepository<WebsiteSiteConfig> siteConfigRepository,
             IRepository<Article> articleRepository,
-            IRepository<ContentProduct> productRepository,
-            IRepository<ContentProductCategory> productCategoryRepository,
-            IRepository<ContentJob> jobRepository,
+            IRepository<Album> productRepository,
+            IRepository<Tag> productCategoryRepository,
+            IRepository<Job> jobRepository,
             IRepository<MessageBoard> messageRepository,
             ICacheService cache)
         {
@@ -126,7 +126,7 @@ namespace MySite.Web.Controllers
             ViewBag.FooterDocument = model.FooterDocument;
             ViewBag.NewsList = _articleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).Take(6).ToList();
             ViewBag.ProductList = _productRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true).Take(8).ToList();
-            ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true).ToList();
+            ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.CreationTime, false).ToList();
             return View("Index", model);
         }
 
@@ -143,13 +143,13 @@ namespace MySite.Web.Controllers
             model ??= BuildPage(p => p.PagePath == "/products" && !p.IsDelete);
             if (model == null) return View("NotFound");
 
-            List<ContentProduct> products;
+            List<Album> products;
             if (!string.IsNullOrWhiteSpace(category))
             {
-                var categoryEntity = _productCategoryRepository.GetOne(c => c.Name == category && !c.IsDelete && c.IsActive);
+                var categoryEntity = _productCategoryRepository.GetOne(c => c.TagName == category && c.TagType == (int)CIMC.Core.Enums.TagType.Image && c.IsActive);
                 products = categoryEntity == null
-                    ? new List<ContentProduct>()
-                    : _productRepository.GetList(p => !p.IsDelete && p.IsActive && p.CategoryId == categoryEntity.Id, p => p.Sort, true);
+                    ? new List<Album>()
+                    : _productRepository.GetList(p => !p.IsDelete && p.IsActive && p.TagId == categoryEntity.Id, p => p.Sort, true);
             }
             else
             {
@@ -157,7 +157,7 @@ namespace MySite.Web.Controllers
             }
 
             ViewBag.ProductList = products.Take(20).ToList();
-            ViewBag.Categories = _productCategoryRepository.GetList(c => !c.IsDelete && c.IsActive && c.Pid == 0, c => c.Sort, true);
+            ViewBag.Categories = _productCategoryRepository.GetList(c => c.IsActive && c.TagType == (int)CIMC.Core.Enums.TagType.Image, c => c.Sort, true);
             ViewBag.CurrentCategory = category;
             return View("Index", model);
         }
@@ -169,15 +169,10 @@ namespace MySite.Web.Controllers
             if (product == null || product.IsDelete || !product.IsActive) return NotFound();
             LoadCommonViewBag(Request.Path.Value);
 
-            if (!string.IsNullOrEmpty(product.ImageList))
-            {
-                try { ViewBag.ProductImages = JsonConvert.DeserializeObject<List<string>>(product.ImageList) ?? new List<string>(); }
-                catch { ViewBag.ProductImages = new List<string>(); }
-            }
-            else ViewBag.ProductImages = new List<string>();
+            ViewBag.ProductImages = string.IsNullOrWhiteSpace(product.ImageUrl) ? new List<string>() : new List<string> { product.ImageUrl };
 
-            ViewBag.ProductCategory = product.CategoryId > 0
-                ? _productCategoryRepository.GetOne(c => c.Id == product.CategoryId && !c.IsDelete && c.IsActive)
+            ViewBag.ProductCategory = product.TagId > 0
+                ? _productCategoryRepository.GetOne(c => c.Id == product.TagId && c.IsActive)
                 : null;
             return View(product);
         }
@@ -214,7 +209,7 @@ namespace MySite.Web.Controllers
         {
             var model = BuildPage(p => p.PagePath == "/jobs" && !p.IsDelete);
             if (model == null) return View("NotFound");
-            ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true);
+            ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.CreationTime, false);
             return View("Index", model);
         }
 
@@ -307,7 +302,7 @@ namespace MySite.Web.Controllers
             ViewBag.FooterDocument = model.FooterDocument;
             ViewBag.NewsList = _articleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).Take(6).ToList();
             ViewBag.ProductList = _productRepository.GetList(p => !p.IsDelete && p.IsActive, p => p.Sort, true).Take(8).ToList();
-            ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true).ToList();
+            ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.CreationTime, false).ToList();
             return model;
         }
 

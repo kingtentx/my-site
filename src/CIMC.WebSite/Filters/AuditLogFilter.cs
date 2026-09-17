@@ -233,9 +233,9 @@ namespace MySite.Web.Filters
                 "Page" => typeof(WebsitePage),
                 "GlobalRegion" => typeof(WebsitePage),
                 "SiteConfig" => typeof(WebsiteSiteConfig),
-                "Product" => typeof(ContentProduct),
-                "ProductCategory" => typeof(ContentProductCategory),
-                "Job" => typeof(ContentJob),
+                "Album" => typeof(Album),
+                "Tag" => typeof(Tag),
+                "Job" => typeof(Job),
                 "Message" => typeof(MessageBoard),
                 _ => null
             };
@@ -253,9 +253,9 @@ namespace MySite.Web.Filters
                 "Page" => "WebsitePage",
                 "GlobalRegion" => "WebsitePage",
                 "SiteConfig" => "WebsiteSiteConfig",
-                "Product" => "ContentProduct",
-                "ProductCategory" => "ContentProductCategory",
-                "Job" => "ContentJob",
+                "Album" => "Album",
+                "Tag" => "Tag",
+                "Job" => "Job",
                 "Message" => "MessageBoard",
                 _ => controllerName
             };
@@ -279,8 +279,8 @@ namespace MySite.Web.Filters
                 "Page" => "页面",
                 "GlobalRegion" => "全局区域",
                 "SiteConfig" => "站点配置",
-                "Product" => "产品",
-                "ProductCategory" => "产品分类",
+                "Album" => "产品",
+                "Tag" => "内容分类",
                 "Job" => "招聘",
                 "Message" => "留言",
                 "Admin" => "系统设置",

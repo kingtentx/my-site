@@ -1,3 +1,4 @@
+@model List<MySite.Web.Models.TagModel>
 @{
     Layout = null;
 }
@@ -21,7 +22,7 @@
                 </div>
                 <div class="layui-inline">
                     <label class="layui-form-label">招聘分类</label>
-                    <div class="layui-input-inline" style="width:200px;"><select name="categoryId" id="selCategory"><option value="0">全部招聘</option></select></div>
+                    <div class="layui-input-inline" style="width:200px;"><select name="tagId" id="selCategory"><option value="0">全部招聘</option>@foreach(var tag in Model){<option value="@tag.Id">@tag.TagName</option>}</select></div>
                 </div>
                 <div class="layui-inline"><button class="layui-btn" lay-submit lay-filter="app-search"><i class="layui-icon layui-icon-search"></i> 查询</button></div>
             </div>
@@ -44,21 +45,12 @@
 <script>
 layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','table','form'],function(){
     var $=layui.$,form=layui.form,table=layui.table,layer=layui.layer;
-    $.get('/ContentCategory/GetOptions',{contentType:'job'},function(res){
-        if(res.code!==200||!res.data)return;var html='<option value="0">'+(res.data.allText||'全部招聘')+'</option>';
-        (res.data.options||[]).forEach(function(item){html+='<option value="'+item.value+'">'+item.text+'</option>';});
-        $('#selCategory').html(html);form.render('select');
-    },'json');
-
     table.render({
         elem:'#app-table',url:'/Job/GetList',response:{statusName:'code',statusCode:200,msgName:'message',countName:'count',dataName:'data'},
         cols:[[
-            {type:'checkbox'},{field:'id',width:60,title:'ID'},{field:'jobTitle',minWidth:170,title:'岗位名称'},
-            {field:'categoryName',width:130,title:'招聘分类'},{field:'department',width:130,title:'部门'},
-            {field:'workLocation',width:110,title:'地点'},{field:'salaryRange',width:120,title:'薪资'},
-            {field:'recruitCount',width:75,title:'人数'},{field:'jobType',width:80,title:'类型'},
-            {field:'sort',width:70,title:'排序'},{field:'isActive',width:90,align:'center',title:'状态',templet:'#activeTpl'},
-            {field:'publishTime',width:165,title:'发布时间'},{width:150,align:'center',title:'操作',toolbar:'#barTpl'}
+            {type:'checkbox'},{field:'id',width:60,title:'ID'},{field:'jobName',minWidth:240,title:'岗位名称'},
+            {field:'tagName',width:150,title:'招聘分类'},{field:'isActive',width:100,align:'center',title:'状态',templet:'#activeTpl'},
+            {field:'updateTime',width:180,title:'发布时间'},{width:150,align:'center',title:'操作',toolbar:'#barTpl'}
         ]],
         request:{pageName:'pageIndex',limitName:'pageSize'},page:true,limit:10,limits:[10,20,50]
     });

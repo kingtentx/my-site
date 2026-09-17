@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace MySite.Web.Models
 {
@@ -97,5 +99,7 @@ namespace MySite.Web.Models
         /// 更新人
         /// </summary>
         public string UpdateBy { get; set; }
+        public List<TagModel> TagsList { get; set; } = new List<TagModel>();
+        public string TagName => TagsList.FirstOrDefault(p => p.Id == TagId)?.TagName ?? string.Empty;
     }
 }

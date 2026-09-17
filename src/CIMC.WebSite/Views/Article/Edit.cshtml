@@ -1,9 +1,5 @@
-@using CIMC.Data
-@{
-    Layout = null;
-    var categories = ViewBag.Categories as List<ContentProductCategory> ?? new List<ContentProductCategory>();
-}
 @model ArticleModel
+@{ Layout = null; }
 <!DOCTYPE html>
 <html>
 <head>
@@ -37,9 +33,9 @@
                     <div class="layui-input-inline" style="width:260px;">
                         <select name="TagId">
                             <option value="0">未分类</option>
-                            @foreach (var category in categories)
+                            @foreach (var category in Model.TagsList)
                             {
-                                <option value="@category.Id" selected="@(category.Id == Model.TagId ? "selected" : null)">@category.Name</option>
+                                <option value="@category.Id" selected="@(category.Id == Model.TagId ? "selected" : null)">@category.TagName</option>
                             }
                         </select>
                     </div>
@@ -93,7 +89,18 @@
                 <div class="form-section">文章内容</div>
                 <div class="layui-form-item layui-form-text"><label class="layui-form-label">中文内容</label><div class="layui-input-block"><div id="txtDetail">@Html.Raw(Model.Detail)</div></div></div>
                 <div class="layui-form-item layui-form-text"><label class="layui-form-label">英文内容</label><div class="layui-input-block"><div id="txtDetailEN">@Html.Raw(Model.Detail_EN)</div></div></div>
-                <div class="layui-form-item"><div class="layui-input-block"><button class="layui-btn" lay-submit lay-filter="save">保存文章</button><a href="/article/index" class="layui-btn layui-btn-primary">返回列表</a>@if(Model.Id>0){<a href="/news/preview-@(Model.Id).html" target="_blank" class="layui-btn layui-btn-normal">预览</a>}</div></div>
+                <div class="layui-form-item layui-layout-admin">
+                    <div class="layui-input-block">
+                        <div class="layui-footer" style="left: 0; z-index: 20000">
+                            <button class="layui-btn" lay-submit lay-filter="save">立即保存</button>
+                            <a href="/article/index" class="layui-btn layui-btn-primary">返回列表</a>
+                            @if (Model.Id > 0)
+                            {
+                                <a href="/news/preview-@(Model.Id).html" target="_blank" class="layui-btn layui-btn-normal">预览页面</a>
+                            }
+                        </div>
+                    </div>
+                </div>
             </form>
         </div>
     </div>

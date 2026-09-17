@@ -28,7 +28,7 @@ namespace MySite.Web.Models
                             Node("grid", Props("columns",3), Style("gap","20px"),
                                 Node("column", null, null, Node("logo", Props("text","企业名称","href","/"), null)),
                                 Node("column", null, Style("textAlign","center"), Node("navigation", Props("direction","horizontal"), null)),
-                                Node("column", null, Style("textAlign","right"), Node("button", Props("text","联系我们","href","/contact","variant","outline"), null)))))
+                                Node("column", null, Style("textAlign","right"), Node("button", Props("text","联系我们","link",new { type = "none" },"variant","outline"), null)))))
                 }
             };
         }

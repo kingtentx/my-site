@@ -94,8 +94,10 @@
             link.href = href;
             document.head.appendChild(link);
         }
-        addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091702');
-        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091702');
+        // Keep these versions identical to public/preview pages. Otherwise the browser can
+        // retain different generations of the same rules and the canvas stops being WYSIWYG.
+        addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091710');
+        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091801');
 
         if (!document.getElementById('sbDesignerWysiwygCss')) {
             var style = document.createElement('style');
@@ -123,7 +125,7 @@
         }
 
         $('#canvas').addClass('sb-runtime');
-        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091707');
+        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091801');
     }
 
     function ensureCanvasViewport() {
@@ -584,7 +586,7 @@
         var request = ++categoryRequest;
         $('#sbCategoryBody').html('<div class="sb-material-empty">正在加载分类...</div>');
         $.ajax({
-            url: '/contentcategory/getoptions',
+            url: '/tag/getoptions',
             type: 'GET',
             dataType: 'json',
             data: { contentType: categoryState.contentType },
@@ -641,6 +643,21 @@
         store.select(nodeId);
     }
 
+    function categoryTypesInDocument(documentModel) {
+        var found = {};
+        function walk(nodes) {
+            (nodes || []).forEach(function (node) {
+                if (!node) return;
+                if (node.type === 'articleList') found.article = true;
+                else if (node.type === 'productList') found.product = true;
+                else if (node.type === 'jobList') found.job = true;
+                walk(node.children);
+            });
+        }
+        walk(documentModel && documentModel.nodes);
+        return Object.keys(found);
+    }
+
     function render() {
         if (renderPending) return;
         renderPending = true;
@@ -668,7 +685,7 @@
                     var folds = [], sameNode = inspectorNodeId === store.selectedId;
                     var panelScroll = $('#propsPanel').scrollTop();
                     var activeField = document.activeElement, focus = null;
-                    if (sameNode && $(activeField).closest('#propsPanel').length && $(activeField).attr('data-key')) focus = {area:$(activeField).attr('data-area'),key:$(activeField).attr('data-key'),type:$(activeField).attr('type'),start:activeField.selectionStart,end:activeField.selectionEnd};
+                    if (sameNode && $(activeField).closest('#propsPanel').length && $(activeField).attr('data-key')) focus = {area:$(activeField).attr('data-area'),key:$(activeField).attr('data-key'),part:$(activeField).attr('data-part'),type:$(activeField).attr('type'),start:activeField.selectionStart,end:activeField.selectionEnd};
                     if (sameNode) $('#propsPanel details').each(function(){folds.push(this.open);});
                     $('#propsPanel').html(SB.Inspector.render(store.selected(), store.document));
                     renderGlobalSettings();
@@ -676,10 +693,13 @@
                     SB.Inspector.populateCategories(function(){ lastRenderedDocument = null; render(); });
                     if (sameNode) $('#propsPanel details').each(function(index){if(index < folds.length)this.open = folds[index];});
                     $('#propsPanel').scrollTop(sameNode ? panelScroll : 0);
-                    if (focus) $('#propsPanel [data-area][data-key]').filter(function(){return $(this).attr('data-area')===focus.area&&$(this).attr('data-key')===focus.key&&$(this).attr('type')===focus.type;}).first().each(function(){this.focus({preventScroll:true});if(focus.start!=null&&this.setSelectionRange)this.setSelectionRange(focus.start,focus.end);});
+                    if (focus) $('#propsPanel [data-area][data-key]').filter(function(){return $(this).attr('data-area')===focus.area&&$(this).attr('data-key')===focus.key&&$(this).attr('data-part')===focus.part&&$(this).attr('type')===focus.type;}).first().each(function(){this.focus({preventScroll:true});if(focus.start!=null&&this.setSelectionRange)this.setSelectionRange(focus.start,focus.end);});
                     inspectorNodeId = store.selectedId;
                     if (window.layui && layui.form) layui.form.render();
                 }
+                // Preload every data component's categories, not only the currently selected
+                // inspector. This keeps all Tab previews consistent with the published page.
+                SB.Inspector.preloadCategories(categoryTypesInDocument(store.document), function(){ lastRenderedDocument = null; render(); });
                 applyCanvasViewport(true);
                 $('#btnUndo').prop('disabled', store.history.length <= 1);
                 $('#btnRedo').prop('disabled', store.future.length === 0);
@@ -750,6 +770,11 @@
     }
 
     function load() {
+        $.get('/Page/LinkOptions').done(function (res) {
+            SB.PageOptions = res && Number(res.code) === 200 && Array.isArray(res.data) ? res.data : [];
+            SB.PageOptionsError = !(res && Number(res.code) === 200);
+            lastRenderedDocument = null; render();
+        }).fail(function () { SB.PageOptionsError = true; render(); });
         $.get('/Home/BuilderNavigation', {path:String(config.pagePath || '').indexOf('/__global/') === 0 ? '/' : config.pagePath}).done(function(items){
             if (Array.isArray(items)) { SB.DesignerRenderer.setNavigation(items); lastRenderedDocument=null;render(); }
         }).fail(function(){message('导航加载失败，请刷新后重试');});
@@ -784,6 +809,14 @@
     }
 
     function bindEvents() {
+        $('#propsPanel').on('click.siteBuilder','[data-action="preview-banner-effects"]',function(){
+            var node=store.selected();
+            if(!node || !window.SiteBuilderEffects)return;
+            var target=$(this).attr('data-effect-target'), key=$(this).attr('data-effect-key');
+            var element=$('#canvas [data-node-id]').filter(function(){return $(this).attr('data-node-id')===node.id;}).find('[data-banner-part="'+target+'"]').get(0);
+            if(element){element.scrollIntoView({block:'nearest'});if(!window.SiteBuilderEffects.preview(element,(node.props||{})[key]))message('请选择特效，并确认系统未启用“减少动态效果”');}
+            else message('请先填写对应内容并选择 Banner 图片');
+        });
         $('#propsPanel').on('click.siteBuilder','[data-action="preview-effects"]',function(){
             var node=store.selected();
             if(!node || !window.SiteBuilderEffects)return;

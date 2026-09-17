@@ -6,8 +6,8 @@
 @using System.Linq
 @using System.Net
 @model MySite.Web.Models.BuilderNodeRenderModel
-@inject IRepository<ContentJob> JobRepository
-@inject IRepository<ContentProductCategory> CategoryRepository
+@inject IRepository<Job> JobRepository
+@inject IRepository<Tag> CategoryRepository
 @{
     var props = Model.Node.Props ?? new Dictionary<string, object>();
     int GetInt(string key, int fallback) => props.TryGetValue(key, out var value) && value != null && int.TryParse(value.ToString(), out var number) ? number : fallback;
@@ -31,9 +31,8 @@
                 if (item != null && int.TryParse(item.ToString(), out var parsed) && parsed > 0 && !selectedIds.Contains(parsed)) selectedIds.Add(parsed);
         }
     }
-    var activeJobs = JobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true).ToList();
-    var rootId = MySite.Web.ContentCategoryHelper.GetRootId(CategoryRepository, "job");
-    var tabs = new List<ContentProductCategory>();
+    var activeJobs = JobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.CreationTime, false).ToList();
+    var tabs = new List<Tag>();
     if (showTabs)
     {
         if (selectedIds.Count > 1)
@@ -41,26 +40,13 @@
             foreach (var id in selectedIds)
             {
                 var category = CategoryRepository.GetOne(id);
-                if (category != null && !category.IsDelete) tabs.Add(category);
+                if (category != null && category.IsActive && category.TagType == (int)CIMC.Core.Enums.TagType.Job) tabs.Add(category);
             }
         }
         else if (selectedIds.Count == 0)
         {
-            int CountIn(int categoryId)
-            {
-                var scope = MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true);
-                return activeJobs.Count(j => scope.Contains(j.CategoryId));
-            }
-            tabs = MySite.Web.ContentCategoryHelper.GetDescendants(CategoryRepository, rootId, true)
-                .Where(p => p.Pid == rootId && CountIn(p.Id) > 0).ToList();
-            if (!tabs.Any())
-            {
-                foreach (var categoryId in activeJobs.Select(j => j.CategoryId).Where(v => v > 0).Distinct())
-                {
-                    var category = CategoryRepository.GetOne(categoryId);
-                    if (category != null && !category.IsDelete) tabs.Add(category);
-                }
-            }
+            var used = activeJobs.Select(p => p.TagId).Where(v => v > 0).Distinct().ToHashSet();
+            tabs = CategoryRepository.GetList(p => p.IsActive && p.TagType == (int)CIMC.Core.Enums.TagType.Job, p => p.Sort, true).Where(p => used.Contains(p.Id)).ToList();
         }
     }
     var request = ViewContext.HttpContext.Request;
@@ -69,10 +55,8 @@
     var catKey = "cat_" + nodeKey;
     var activeCat = int.TryParse(request.Query[catKey].ToString(), out var requestedCat) ? Math.Max(0, requestedCat) : 0;
     if (activeCat > 0 && !tabs.Any(t => t.Id == activeCat)) activeCat = 0;
-    var filterIds = activeCat > 0
-        ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, activeCat, true)
-        : selectedIds.SelectMany(id => MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, id, true)).Distinct().ToList();
-    var allItems = activeJobs.Where(j => filterIds.Count == 0 || filterIds.Contains(j.CategoryId)).ToList();
+    var filterIds = activeCat > 0 ? new List<int> { activeCat } : selectedIds;
+    var allItems = activeJobs.Where(j => filterIds.Count == 0 || filterIds.Contains(j.TagId)).ToList();
     var current = int.TryParse(request.Query[pageKey].ToString(), out var requested) ? Math.Max(1, requested) : 1;
     var pages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
     current = Math.Min(current, pages);
@@ -109,7 +93,7 @@
             <a class="sb-content-tab@(activeCat == 0 ? " is-active" : "")" href="@TabUrl(0)" role="tab" aria-selected="@(activeCat == 0 ? "true" : "false")">全部</a>
             @foreach (var tab in tabs)
             {
-                <a class="sb-content-tab@(activeCat == tab.Id ? " is-active" : "")" href="@TabUrl(tab.Id)" role="tab" aria-selected="@(activeCat == tab.Id ? "true" : "false")">@tab.Name</a>
+                <a class="sb-content-tab@(activeCat == tab.Id ? " is-active" : "")" href="@TabUrl(tab.Id)" role="tab" aria-selected="@(activeCat == tab.Id ? "true" : "false")">@tab.TagName</a>
             }
         </div>
     }
@@ -119,7 +103,7 @@
         <div class="sb-job-list">
             @foreach (var item in items)
             {
-                <details class="sb-job-card"><summary><strong>@item.JobTitle</strong><span>@(item.Department ?? "-")</span>@if(showLocation){<span>@(item.WorkLocation ?? "-")</span>}@if(showSalary){<span>@(item.SalaryRange ?? "面议")</span>}</summary><div class="sb-job-detail"><h4>岗位职责</h4><div>@Html.Raw(string.IsNullOrWhiteSpace(item.Responsibilities) ? "<p>暂无岗位职责说明</p>" : item.Responsibilities)</div><h4>任职要求</h4><div>@Html.Raw(string.IsNullOrWhiteSpace(item.Requirements) ? "<p>暂无任职要求说明</p>" : item.Requirements)</div></div></details>
+                <details class="sb-job-card"><summary><strong>@item.JobName</strong>@if(showLocation){<span>@(CategoryRepository.GetOne(item.TagId)?.TagName ?? "-")</span>}@if(showSalary){<span>@(item.UpdateTime?.ToString("yyyy-MM-dd") ?? "")</span>}</summary><div class="sb-job-detail"><div>@Html.Raw(string.IsNullOrWhiteSpace(item.Detail) ? "<p>暂无岗位说明</p>" : item.Detail)</div></div></details>
             }
         </div>
         @if (enablePagination && pages > 1)

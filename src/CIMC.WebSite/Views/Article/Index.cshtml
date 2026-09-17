@@ -1,3 +1,4 @@
+@model List<MySite.Web.Models.TagModel>
 @{
     Layout = null;
 }
@@ -22,7 +23,7 @@
                 </div>
                 <div class="layui-inline">
                     <label class="layui-form-label">文章分类</label>
-                    <div class="layui-input-inline" style="width:220px;"><select name="tagsId" id="selCategory"><option value="0">全部文章</option></select></div>
+                    <div class="layui-input-inline" style="width:220px;"><select name="tagsId" id="selCategory"><option value="0">全部文章</option>@foreach(var tag in Model){<option value="@tag.Id">@tag.TagName</option>}</select></div>
                 </div>
                 <div class="layui-inline"><button class="layui-btn" lay-submit lay-filter="app-search"><i class="layui-icon layui-icon-search"></i> 查询</button></div>
             </div>
@@ -47,13 +48,6 @@
 <script>
 layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','table','form'],function(){
     var $=layui.$,form=layui.form,table=layui.table,layer=layui.layer;
-    $.get('/ContentCategory/GetOptions',{contentType:'article'},function(res){
-        if(res.code!==200||!res.data)return;
-        var html='<option value="0">'+(res.data.allText||'全部文章')+'</option>';
-        (res.data.options||[]).forEach(function(item){html+='<option value="'+item.value+'">'+item.text+'</option>';});
-        $('#selCategory').html(html);form.render('select');
-    },'json');
-
     table.render({
         elem:'#app-table',url:'/Article/GetList',where:{tagsId:0},
         response:{statusName:'code',statusCode:200,msgName:'message',countName:'count',dataName:'data'},
