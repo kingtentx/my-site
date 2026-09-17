@@ -123,7 +123,7 @@
         }
 
         $('#canvas').addClass('sb-runtime');
-        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091702');
+        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091707');
     }
 
     function ensureCanvasViewport() {
@@ -799,7 +799,7 @@
         $('#componentLibrary').on('click.siteBuilder','[data-library-view]',function(){libraryView=$(this).attr('data-library-view');$('#componentLibrary [data-library-view]').removeClass('active');$(this).addClass('active');filterLibrary();});
         $('#componentLibrary').on('click.siteBuilder','[data-outline-id]',function(){store.select($(this).attr('data-outline-id'));});
         $('#componentLibrary').on('click.siteBuilder','[data-library-filter]',function(){libraryFilter=$(this).attr('data-library-filter')||'all';$('#componentLibrary [data-library-filter]').removeClass('active');$(this).addClass('active');filterLibrary();});
-        $('#canvas').on('click.siteBuilder','.sb-node',function(e){if($(e.target).closest('.sb-grid-resize-handle').length)return;e.preventDefault();e.stopPropagation();store.select($(this).attr('data-node-id'));});
+        $('#canvas').on('click.siteBuilder','.sb-node',function(e){if($(e.target).closest('.sb-grid-resize-handle').length)return;e.preventDefault();e.stopPropagation();var summary=$(e.target).closest('.sb-designer-job-list .sb-job-card > summary');if(summary.length){var details=summary.parent()[0];details.open=!details.open;}store.select($(this).attr('data-node-id'));});
         $('#canvas').on('click.siteBuilder',function(e){if(e.target===this||$(e.target).hasClass('sb-root-drop'))store.select(null);});
         $('#canvas').on('click.siteBuilder','a,button',function(e){e.preventDefault();});
         $('#canvas').on('mousedown.siteBuilder','.sb-grid-resize-handle',function(e){beginGridResize(e,this);});

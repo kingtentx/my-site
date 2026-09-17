@@ -15,6 +15,8 @@
     var pageSize = Math.Max(1, Math.Min(100, GetInt("pageSize", 10)));
     var showLocation = GetBool("showLocation", true);
     var showSalary = GetBool("showSalary", true);
+    var showTabs = GetBool("showTabs", true);
+    var enablePagination = GetBool("enablePagination", true);
     var selectedIds = new List<int>();
     if (props.TryGetValue("categoryIds", out var idsObj) && idsObj != null)
     {
@@ -29,27 +31,88 @@
                 if (item != null && int.TryParse(item.ToString(), out var parsed) && parsed > 0 && !selectedIds.Contains(parsed)) selectedIds.Add(parsed);
         }
     }
-    var filterIds = selectedIds.SelectMany(id => MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, id, true)).Distinct().ToList();
-    var allItems = JobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true).Where(j => filterIds.Count == 0 || filterIds.Contains(j.CategoryId)).ToList();
+    var activeJobs = JobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.Sort, true).ToList();
+    var rootId = MySite.Web.ContentCategoryHelper.GetRootId(CategoryRepository, "job");
+    var tabs = new List<ContentProductCategory>();
+    if (showTabs)
+    {
+        if (selectedIds.Count > 1)
+        {
+            foreach (var id in selectedIds)
+            {
+                var category = CategoryRepository.GetOne(id);
+                if (category != null && !category.IsDelete) tabs.Add(category);
+            }
+        }
+        else if (selectedIds.Count == 0)
+        {
+            int CountIn(int categoryId)
+            {
+                var scope = MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, categoryId, true);
+                return activeJobs.Count(j => scope.Contains(j.CategoryId));
+            }
+            tabs = MySite.Web.ContentCategoryHelper.GetDescendants(CategoryRepository, rootId, true)
+                .Where(p => p.Pid == rootId && CountIn(p.Id) > 0).ToList();
+            if (!tabs.Any())
+            {
+                foreach (var categoryId in activeJobs.Select(j => j.CategoryId).Where(v => v > 0).Distinct())
+                {
+                    var category = CategoryRepository.GetOne(categoryId);
+                    if (category != null && !category.IsDelete) tabs.Add(category);
+                }
+            }
+        }
+    }
     var request = ViewContext.HttpContext.Request;
-    var key = "page_" + new string((Model.Node.Id ?? "jobs").Where(char.IsLetterOrDigit).ToArray());
-    var current = int.TryParse(request.Query[key].ToString(), out var requested) ? Math.Max(1, requested) : 1;
+    var nodeKey = new string((Model.Node.Id ?? "jobs").Where(char.IsLetterOrDigit).ToArray());
+    var pageKey = "page_" + nodeKey;
+    var catKey = "cat_" + nodeKey;
+    var activeCat = int.TryParse(request.Query[catKey].ToString(), out var requestedCat) ? Math.Max(0, requestedCat) : 0;
+    if (activeCat > 0 && !tabs.Any(t => t.Id == activeCat)) activeCat = 0;
+    var filterIds = activeCat > 0
+        ? MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, activeCat, true)
+        : selectedIds.SelectMany(id => MySite.Web.ContentCategoryHelper.GetDescendantIds(CategoryRepository, id, true)).Distinct().ToList();
+    var allItems = activeJobs.Where(j => filterIds.Count == 0 || filterIds.Contains(j.CategoryId)).ToList();
+    var current = int.TryParse(request.Query[pageKey].ToString(), out var requested) ? Math.Max(1, requested) : 1;
     var pages = Math.Max(1, (int)Math.Ceiling(allItems.Count / (double)pageSize));
     current = Math.Min(current, pages);
     var items = allItems.Skip((current - 1) * pageSize).Take(pageSize).ToList();
+    var basePath = $"{request.PathBase}{request.Path}";
+    string TabUrl(int categoryId)
+    {
+        var parts = new List<string>();
+        foreach (var pair in request.Query)
+        {
+            if (string.Equals(pair.Key, pageKey, StringComparison.OrdinalIgnoreCase) || string.Equals(pair.Key, catKey, StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
+        }
+        if (categoryId > 0) parts.Add(WebUtility.UrlEncode(catKey) + "=" + categoryId);
+        return parts.Count == 0 ? basePath : basePath + "?" + string.Join("&", parts);
+    }
     string PageUrl(int number)
     {
         var parts = new List<string>();
         foreach (var pair in request.Query)
         {
-            if (string.Equals(pair.Key, key, StringComparison.OrdinalIgnoreCase)) continue;
+            if (string.Equals(pair.Key, pageKey, StringComparison.OrdinalIgnoreCase) || string.Equals(pair.Key, catKey, StringComparison.OrdinalIgnoreCase)) continue;
             foreach (var value in pair.Value) parts.Add(WebUtility.UrlEncode(pair.Key) + "=" + WebUtility.UrlEncode(value));
         }
-        parts.Add(WebUtility.UrlEncode(key) + "=" + number);
-        return $"{request.PathBase}{request.Path}?{string.Join("&", parts)}";
+        if (activeCat > 0) parts.Add(WebUtility.UrlEncode(catKey) + "=" + activeCat);
+        parts.Add(WebUtility.UrlEncode(pageKey) + "=" + number);
+        return basePath + "?" + string.Join("&", parts);
     }
 }
 <div class="sb-content-list @(props.TryGetValue("layout", out var layout) && layout?.ToString() == "compact" ? "is-compact" : "")" sb-effects="@Model.Node.Style" style="@Model.RenderedStyle" data-builder-id="@Model.Node.Id">
+    @if (tabs.Count > 0)
+    {
+        <div class="sb-content-tabs" role="tablist">
+            <a class="sb-content-tab@(activeCat == 0 ? " is-active" : "")" href="@TabUrl(0)" role="tab" aria-selected="@(activeCat == 0 ? "true" : "false")">全部</a>
+            @foreach (var tab in tabs)
+            {
+                <a class="sb-content-tab@(activeCat == tab.Id ? " is-active" : "")" href="@TabUrl(tab.Id)" role="tab" aria-selected="@(activeCat == tab.Id ? "true" : "false")">@tab.Name</a>
+            }
+        </div>
+    }
     @if (items.Count == 0) { <p class="sb-empty">暂无招聘职位</p> }
     else
     {
@@ -59,9 +122,9 @@
                 <details class="sb-job-card"><summary><strong>@item.JobTitle</strong><span>@(item.Department ?? "-")</span>@if(showLocation){<span>@(item.WorkLocation ?? "-")</span>}@if(showSalary){<span>@(item.SalaryRange ?? "面议")</span>}</summary><div class="sb-job-detail"><h4>岗位职责</h4><div>@Html.Raw(string.IsNullOrWhiteSpace(item.Responsibilities) ? "<p>暂无岗位职责说明</p>" : item.Responsibilities)</div><h4>任职要求</h4><div>@Html.Raw(string.IsNullOrWhiteSpace(item.Requirements) ? "<p>暂无任职要求说明</p>" : item.Requirements)</div></div></details>
             }
         </div>
-        @if (pages > 1)
+        @if (enablePagination && pages > 1)
         {
-            <nav class="component-pagination">@if(current > 1){<a href="@PageUrl(current - 1)">上一页</a>}@for(var i=1;i<=pages;i++){if(i==current){<span class="active">@i</span>}else{<a href="@PageUrl(i)">@i</a>}}@if(current < pages){<a href="@PageUrl(current + 1)">下一页</a>}</nav>
+            <nav class="component-pagination" aria-label="招聘分页">@if(current > 1){<a href="@PageUrl(current - 1)">上一页</a>}@for(var i=1;i<=pages;i++){if(i==current){<span class="active">@i</span>}else{<a href="@PageUrl(i)">@i</a>}}@if(current < pages){<a href="@PageUrl(current + 1)">下一页</a>}</nav>
         }
     }
 </div>

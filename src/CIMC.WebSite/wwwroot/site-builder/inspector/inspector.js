@@ -173,23 +173,50 @@
         return html + '</div>';
     }
 
-    function renderGridColumns(field, value, area) {
-        var count = Math.max(1, Math.min(6, Number(value || 2)));
+    function gridWidthsOf(node, count) {
+        var raw = node && node.props ? node.props.columnWidths : null;
+        if (typeof raw === 'string') {
+            try { raw = JSON.parse(raw); } catch (e) { raw = raw.split(/[,，;；\s]+/); }
+        }
+        var widths = Array.isArray(raw) ? raw.map(Number).filter(function (x) { return isFinite(x) && x > 0; }) : [];
+        if (widths.length !== count) widths = Array.apply(null, {length:count}).map(function () { return 100 / count; });
+        var total = widths.reduce(function (sum, x) { return sum + x; }, 0) || 100;
+        return widths.map(function (x) { return x / total * 100; });
+    }
+    function sameGridWidths(left, right) {
+        return left.length === right.length && left.every(function (value, index) { return Math.abs(value - right[index]) < 0.25; });
+    }
+    function gridWidthLabel(value) {
+        var rounded = Math.round(value * 10) / 10;
+        return String(rounded).replace(/\.0$/, '');
+    }
+    function selectedOptionClass(selected) { return selected ? ' class="active" aria-pressed="true"' : ' aria-pressed="false"'; }
+    function optionCheck() { return '<span class="sb-option-check" aria-hidden="true">✓</span>'; }
+
+    function renderGridColumns(field, value, area, node) {
+        var count = Math.max(1, Math.min(6, Math.round(Number(value || 2))));
+        var currentWidths = gridWidthsOf(node, count);
+        var equalWidths = Array.apply(null, {length:count}).map(function () { return 100 / count; });
+        var isEqual = sameGridWidths(currentWidths, equalWidths);
+        var currentPreset = false;
         var html = '<div class="sb-grid-column-control">'
             + '<input class="layui-input sb-grid-column-number" type="number" data-area="' + area + '" data-key="' + attr(field.key) + '" value="' + count + '" min="1" max="6">'
             + '<div class="sb-grid-column-buttons">';
         for (var i = 1; i <= 6; i++) {
-            html += '<button type="button" data-action="set-grid-columns" data-columns="' + i + '" class="' + (i === count ? 'active' : '') + '">' + i + '列</button>';
+            html += '<button type="button" data-action="set-grid-columns" data-columns="' + i + '"' + selectedOptionClass(i === count) + '>' + optionCheck() + i + '列</button>';
         }
         html += '</div>';
         if (count === 2 || count === 3) {
-            html += '<div class="sb-grid-column-tools sb-ratio-presets">';
+            html += '<div class="sb-grid-option-label">常用列宽比例</div><div class="sb-grid-column-tools sb-ratio-presets">';
             (count === 2 ? [[50,50],[30,70],[70,30]] : [[25,50,25],[20,60,20],[33.3,33.4,33.3]]).forEach(function(widths){
-                html += '<button type="button" data-action="set-grid-ratio" data-widths="' + widths.join(',') + '">' + widths.join(' / ') + '</button>';
+                var selected = sameGridWidths(currentWidths, widths);
+                if (selected) currentPreset = true;
+                html += '<button type="button" data-action="set-grid-ratio" data-widths="' + widths.join(',') + '"' + selectedOptionClass(selected) + '>' + optionCheck() + widths.join(' / ') + '</button>';
             });
             html += '</div>';
         }
-        html += '<div class="sb-grid-column-tools"><button type="button" data-action="equal-grid-columns">平均分配列宽</button></div>'
+        html += '<div class="sb-grid-current-ratio"><span>当前列宽</span><strong>' + esc(currentWidths.map(gridWidthLabel).join(' / ')) + '</strong>' + (currentPreset ? '' : '<em>' + (isEqual ? '平均' : '自定义') + '</em>') + '</div>'
+            + '<div class="sb-grid-column-tools"><button type="button" class="sb-grid-equal-action" data-action="equal-grid-columns">平均分配列宽</button></div>'
             + '<div class="sb-grid-column-tip">可直接选择 1~6 列；在画布中拖动列之间的蓝色分隔线，可自由调整每列宽度。减少列数时，原列内容会合并到相邻列。</div></div>';
         return html;
     }
@@ -318,7 +345,7 @@
         } else if (type === 'image-list') {
             html += renderImageList(field, value, area);
         } else if (type === 'grid-columns') {
-            html += renderGridColumns(field, value, area);
+            html += renderGridColumns(field, value, area, node);
         } else if (type === 'category') {
             html += renderCategory(field, value, area);
         } else if (type === 'categories') {

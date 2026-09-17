@@ -203,6 +203,53 @@
         return html + '</div>';
     }
 
+    // Use the public component structure so layout options are visible before publishing.
+    function previewCategoryNames(p, contentType) {
+        var data = (root.CategoryData && root.CategoryData[contentType]) || {};
+        var ids = normalizeIdList(p.categoryIds);
+        return (data.options || []).filter(function (option) {
+            return ids.length ? ids.indexOf(Number(option.value)) >= 0 : Number(option.parentId) === Number(data.rootId);
+        }).map(function (option) { return String(option.text || '').trim(); });
+    }
+
+    function productListPreview(p, css) {
+        var columns = Math.max(1, Math.min(6, Math.floor(Number(p.columns) || 4)));
+        var count = Math.max(1, Math.min(50, Math.floor(Number(p.pageSize) || 8)));
+        var names = previewCategoryNames(p, 'product');
+        var html = '<div class="sb-content-list sb-designer-product-list" style="' + esc(css) + '">';
+        html += categoryTabPreview(p, 'product');
+        html += '<div class="sb-product-grid" style="--sb-cols:' + columns + '">';
+        for (var i = 0; i < count; i++) {
+            var name = names.length ? names[i % names.length] : '产品';
+            html += '<article class="sb-content-card"><a><div class="sb-product-preview-image" role="img" aria-label="产品图片示例"><span>产品图片</span></div>'
+                + '<div class="sb-content-card-body"><h3>' + esc(name) + '示例 ' + (i + 1) + '</h3>'
+                + (p.showSummary === true ? '<p>产品介绍示例，展示产品特点、适用场景与服务优势。</p>' : '')
+                + '</div></a></article>';
+        }
+        html += '</div>';
+        if (p.enablePagination !== false) html += '<nav class="component-pagination"><a>上一页</a><span class="active">1</span><a>2</a><a>3</a><a>下一页</a></nav>';
+        return html + '</div>';
+    }
+
+    function jobListPreview(p, css) {
+        var count = Math.max(1, Math.min(50, Math.floor(Number(p.pageSize) || 10)));
+        var names = previewCategoryNames(p, 'job');
+        var titles = ['机械设计工程师', '生产管理专员', '质量工程师', '市场销售经理'];
+        var html = '<div class="sb-content-list sb-designer-job-list' + (p.layout === 'compact' ? ' is-compact' : '') + '" style="' + esc(css) + '">';
+        html += categoryTabPreview(p, 'job');
+        html += '<div class="sb-job-list">';
+        for (var i = 0; i < count; i++) {
+            html += '<details class="sb-job-card"><summary><strong>' + esc(titles[i % titles.length]) + '（示例 ' + (i + 1) + '）</strong><span>' + esc(names.length ? names[i % names.length] : '业务部门') + '</span>'
+                + (p.showLocation !== false ? '<span>上海</span>' : '')
+                + (p.showSalary !== false ? '<span>8,000–15,000 元/月</span>' : '')
+                + '</summary><div class="sb-job-detail"><h4>岗位职责</h4><div><p>参与业务项目实施，协同团队完成工作目标，持续提升产品与服务质量。</p></div>'
+                + '<h4>任职要求</h4><div><p>具备相关专业知识与工作经验，善于沟通协作，有责任心和学习能力。</p></div></div></details>';
+        }
+        html += '</div>';
+        if (p.enablePagination !== false) html += '<nav class="component-pagination"><a>上一页</a><span class="active">1</span><a>2</a><a>3</a><a>下一页</a></nav>';
+        return html + '</div>';
+    }
+
     function leafPreview(node) {
         var p = node.props || {};
         var css = styleText(node.style);
@@ -247,9 +294,9 @@
             case 'articleList':
                 return articleListPreview(p, css);
             case 'productList':
-                return '<div class="sb-placeholder" style="' + styleAttr + '">产品列表 · ' + Number(p.pageSize || 8) + ' 条 · ' + Number(p.columns || 4) + ' 列</div>';
+                return productListPreview(p, css);
             case 'jobList':
-                return '<div class="sb-placeholder" style="' + styleAttr + '">招聘列表 · ' + Number(p.pageSize || 10) + ' 条</div>';
+                return jobListPreview(p, css);
             case 'logo': {
                 var logoSrc = safeUrl(p.src);
                 return '<a class="sb-public-logo" href="' + esc(safeUrl(p.href || '/')) + '" style="' + styleAttr + '">' + (logoSrc ? '<img src="' + esc(logoSrc) + '" alt="' + esc(p.text || 'Logo') + '">' : '<strong>' + esc(p.text || '企业名称') + '</strong>') + '</a>';
