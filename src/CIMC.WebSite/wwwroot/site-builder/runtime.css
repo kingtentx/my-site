@@ -62,6 +62,10 @@
     min-width: 0;
     overflow-wrap: anywhere;
 }
+/* 布局容器作为 grid/flex 子项时默认 min-width:auto，会被长文本撑破；统一置 0 才能随列宽收缩。 */
+.sb-runtime .sb-public-section,
+.sb-runtime .sb-public-container,
+.sb-runtime .sb-public-grid > * { min-width: 0; }
 
 .sb-runtime .sb-banner-shade {position:absolute;inset:0;background:linear-gradient(90deg,rgba(3,22,48,.76),rgba(3,22,48,.46) 42%,rgba(3,22,48,.08));z-index:1;pointer-events:none}
 .sb-runtime .sb-banner-copy {position:absolute;z-index:2;inset:0;max-width:var(--sb-design-width,1200px);margin:auto;padding:0 20px;display:flex;flex-direction:column;justify-content:center;align-items:flex-start;color:white}
@@ -79,16 +83,39 @@
     margin: 0;
     line-height: 1.25;
     font-weight: 600;
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: break-word;
 }
 .sb-runtime h1.sb-heading { font-size: 2em; }
 .sb-runtime h2.sb-heading { font-size: 1.5em; }
 .sb-runtime h3.sb-heading { font-size: 1.17em; }
 .sb-runtime h4.sb-heading { font-size: 1em; }
 
+/* 文本/标题一律约束在所在元素宽度内：宽度自适应、绝不溢出挤压相邻列。
+   换行策略由 is-wrap-* 控制（对应属性面板「换行方式」）。
+   注意：overflow-wrap 是可继承属性，这里显式用 break-word 覆盖 .sb-public-column 的 anywhere，
+   避免英文单词被从中间随意断开；只有 break 模式才允许任意字符处断行。 */
 .sb-runtime .sb-text {
     margin: 0;
     line-height: 1.8;
     white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: normal;
+    max-width: 100%;
+    min-width: 0;
+}
+/* 不换行：始终单行，超出部分省略号（配合 min-width:0 在 grid/flex 里也能正确收缩） */
+.sb-runtime .sb-text.is-wrap-nowrap,
+.sb-runtime .sb-heading.is-wrap-nowrap {
+    white-space: pre;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* 强制断行：长数字串/URL 可在任意字符处断开，保证窄列也不溢出 */
+.sb-runtime .sb-text.is-wrap-break,
+.sb-runtime .sb-heading.is-wrap-break {
+    word-break: break-all;
     overflow-wrap: anywhere;
 }
 
@@ -131,21 +158,29 @@
 .sb-runtime .sb-public-logo {
     display: inline-flex;
     align-items: center;
+    max-width: 100%;
     text-decoration: none;
     color: inherit;
 }
-.sb-runtime .sb-public-logo img { display: block; max-width: 200px; max-height: 56px; }
+.sb-runtime .sb-public-logo img { display: block; max-width: 100%; height: auto; }
 
 .sb-runtime .sb-public-nav {
     --sb-subnav-duration: 200ms;
     --sb-subnav-accent: #0054a6;
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: var(--sb-nav-gap, 24px);
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 .sb-runtime .sb-public-nav.is-vertical { flex-direction: column; align-items: flex-start; gap: 10px; }
+.sb-runtime .sb-public-nav.is-horizontal { flex-wrap: nowrap; }
+.sb-runtime .sb-public-nav.align-left { justify-content: flex-start; }
+.sb-runtime .sb-public-nav.align-center { justify-content: center; }
+.sb-runtime .sb-public-nav.align-right { justify-content: flex-end; }
 .sb-runtime .sb-public-nav-item { position: relative; }
-.sb-runtime .sb-public-nav a { position:relative;display:inline-flex;align-items:center;padding:8px 14px;text-decoration:none;color:inherit;white-space:nowrap;transition:color .2s ease; }
+.sb-runtime .sb-public-nav a { position:relative;display:inline-flex;align-items:center;padding:var(--sb-nav-padding-y,8px) var(--sb-nav-padding-x,14px);text-decoration:none;color:inherit;white-space:nowrap;transition:color .2s ease; }
 .sb-runtime .sb-public-nav.is-horizontal > .sb-public-nav-item > a::after {
     content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:#0054a6;
     scale:0 1;transform-origin:center;transition:scale .2s ease;
@@ -153,6 +188,34 @@
 .sb-runtime .sb-public-nav.is-horizontal > .sb-public-nav-item:hover > a::after,
 .sb-runtime .sb-public-nav.is-horizontal > .sb-public-nav-item.is-current > a::after { scale:1 1; }
 .sb-runtime .sb-public-nav-item.is-current > a { color: #1677ff; font-weight: 600; }
+/* 主导航条目风格变体（is-item-*，与列表 Tab 的 is-tab-* 同理避开 layout 类撞名）。
+   pill/block/left-bar/plain 关闭默认下划线；强调色统一取 --sb-subnav-accent（「强调颜色」字段）。 */
+.sb-runtime .sb-public-nav.is-item-pill { gap: var(--sb-nav-gap,6px); }
+.sb-runtime .sb-public-nav.is-item-pill > .sb-public-nav-item > a { padding:var(--sb-nav-padding-y,6px) var(--sb-nav-padding-x,16px); border-radius:999px; transition:color .2s ease,background-color .2s ease; }
+.sb-runtime .sb-public-nav.is-item-pill > .sb-public-nav-item > a::after { display:none; }
+.sb-runtime .sb-public-nav.is-item-pill > .sb-public-nav-item:hover > a,
+.sb-runtime .sb-public-nav.is-item-pill > .sb-public-nav-item:focus-within > a,
+.sb-runtime .sb-public-nav.is-item-pill > .sb-public-nav-item.is-current > a { background:#e8f0fe; color:var(--sb-subnav-accent); }
+.sb-runtime .sb-public-nav.is-item-block { gap: var(--sb-nav-gap,4px); }
+.sb-runtime .sb-public-nav.is-item-block > .sb-public-nav-item > a { padding:var(--sb-nav-padding-y,8px) var(--sb-nav-padding-x,18px); border-radius:6px; transition:color .2s ease,background-color .2s ease; }
+.sb-runtime .sb-public-nav.is-item-block > .sb-public-nav-item > a::after { display:none; }
+.sb-runtime .sb-public-nav.is-item-block > .sb-public-nav-item:hover > a,
+.sb-runtime .sb-public-nav.is-item-block > .sb-public-nav-item:focus-within > a,
+.sb-runtime .sb-public-nav.is-item-block > .sb-public-nav-item.is-current > a { background:var(--sb-subnav-accent); color:#fff; }
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item > a { padding-left:20px; }
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item > a::after { display:none; }
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item > a::before {
+    content:""; position:absolute; left:6px; top:50%; translate:0 -50%;
+    width:3px; height:0; border-radius:2px; background:var(--sb-subnav-accent);
+    transition:height .2s ease;
+}
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item:hover > a::before,
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item:focus-within > a::before,
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item.is-current > a::before { height:14px; }
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item:hover > a,
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item:focus-within > a,
+.sb-runtime .sb-public-nav.is-item-left-bar > .sb-public-nav-item.is-current > a { color:var(--sb-subnav-accent); }
+.sb-runtime .sb-public-nav.is-item-plain > .sb-public-nav-item > a::after { display:none; }
 .sb-runtime .sb-public-subnav {
     display: block;
     position: absolute;
@@ -620,7 +683,7 @@
 
 @container sb-page (max-width: 900px) {
     .sb-runtime .sb-public-grid { grid-template-columns: 1fr !important; }
-    .sb-runtime .sb-public-nav.is-horizontal { flex-wrap: wrap; gap: 12px; }
+    .sb-runtime .sb-public-nav.is-horizontal { flex-wrap: nowrap; gap: var(--sb-nav-gap,12px); }
     .sb-runtime .sb-article-grid,
     .sb-runtime .sb-product-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
     .sb-runtime .sb-article-editorial-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }

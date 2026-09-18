@@ -147,12 +147,21 @@
     // TAB_ALIGN_OPTIONS 以及服务端 _ArticleList / _ProductList / _JobList 保持一致。
     var TAB_STYLES = ['pill', 'underline', 'segmented', 'card', 'plain'];
     var TAB_ALIGNS = ['left', 'center', 'right'];
+    // 文本/标题换行方式，与 default-components.js 的 TEXT_WRAP_OPTIONS、服务端 _Node.cshtml 保持一致。
+    var TEXT_WRAPS = ['auto', 'nowrap', 'break'];
     function tabWrapClass(p) {
         var style = String((p && p.tabStyle) || 'pill').toLowerCase();
         if (TAB_STYLES.indexOf(style) < 0) style = 'pill';
         var align = String((p && p.tabAlign) || 'left').toLowerCase();
         if (TAB_ALIGNS.indexOf(align) < 0) align = 'left';
         return 'sb-content-tabs is-tab-' + style + ' align-' + align;
+    }
+
+    /** 文本/标题换行方式：auto（默认，自适应所在元素宽度）/ nowrap（超出省略）/ break（强制断行）。 */
+    function textWrapClass(p) {
+        var wrap = String((p && p.textWrap) || 'auto').toLowerCase();
+        if (TEXT_WRAPS.indexOf(wrap) < 0) wrap = 'auto';
+        return 'is-wrap-' + wrap;
     }
 
     /**
@@ -295,11 +304,13 @@
         switch (node.type) {
             case 'heading': {
                 var level = Math.max(1, Math.min(4, Number(p.level || 2)));
-                return '<h' + level + ' class="sb-heading" style="' + styleAttr + '">' + esc(p.text || '标题') + '</h' + level + '>';
+                return '<h' + level + ' class="sb-heading ' + textWrapClass(p) + '" style="' + styleAttr + '">' + esc(p.text || '标题') + '</h' + level + '>';
             }
             case 'text': {
-                var value = p.text == null ? '文本内容' : p.text;
-                return '<div class="sb-text" style="' + styleAttr + '">' + esc(value) + '</div>';
+                var value = p.text == null ? '文本内容' : String(p.text);
+                // 字面 \n 与真实换行统一渲染成 <br>，与前台 _Node.cshtml 保持一致
+                var textHtml = esc(value).replace(/\\n/g, '\n').replace(/\r\n?/g, '\n').replace(/\n/g, '<br>');
+                return '<div class="sb-text ' + textWrapClass(p) + '" style="' + styleAttr + '">' + textHtml + '</div>';
             }
             case 'richText':
                 return '<div class="sb-richtext">' + root.RichText.sanitize(p.html || '') + '</div>';
@@ -336,15 +347,30 @@
                 return jobListPreview(p, css);
             case 'logo': {
                 var logoSrc = safeUrl(p.src);
-                return '<a class="sb-public-logo" href="' + esc(safeUrl(p.href || '/')) + '" style="' + styleAttr + '">' + (logoSrc ? '<img src="' + esc(logoSrc) + '" alt="' + esc(p.text || 'Logo') + '">' : '<strong>' + esc(p.text || '企业名称') + '</strong>') + '</a>';
+                var logoWidth = Number(p.logoWidth); if (!isFinite(logoWidth)) logoWidth = 200;
+                var logoMaxHeight = Number(p.logoMaxHeight); if (!isFinite(logoMaxHeight)) logoMaxHeight = 56;
+                logoWidth = Math.max(24, Math.min(800, logoWidth));
+                logoMaxHeight = Math.max(16, Math.min(240, logoMaxHeight));
+                var logoImageStyle = 'width:' + logoWidth + 'px;max-width:100%;height:auto;max-height:' + logoMaxHeight + 'px;object-fit:contain';
+                return '<a class="sb-public-logo" href="' + esc(safeUrl(p.href || '/')) + '" style="' + styleAttr + '">' + (logoSrc ? '<img src="' + esc(logoSrc) + '" alt="' + esc(p.text || 'Logo') + '" style="' + logoImageStyle + '">' : '<strong>' + esc(p.text || '企业名称') + '</strong>') + '</a>';
             }
             case 'navigation': {
                 var vertical = p.direction === 'vertical';
+                var alignment = ['left', 'center', 'right'].indexOf(p.alignment) >= 0 ? p.alignment : 'center';
+                var itemGap = Number(p.itemGap); if (!isFinite(itemGap)) itemGap = 16;
+                var itemPaddingX = Number(p.itemPaddingX); if (!isFinite(itemPaddingX)) itemPaddingX = 10;
+                var itemPaddingY = Number(p.itemPaddingY); if (!isFinite(itemPaddingY)) itemPaddingY = 8;
+                itemGap = Math.max(0, Math.min(80, itemGap));
+                itemPaddingX = Math.max(0, Math.min(40, itemPaddingX));
+                itemPaddingY = Math.max(0, Math.min(24, itemPaddingY));
+                // 与 default-components.js 的 NAV_ITEM_STYLE_OPTIONS、_Node.cshtml 白名单三处同步
+                var NAV_ITEM_STYLES = ['underline', 'pill', 'block', 'left-bar', 'plain'];
+                var itemStyle = NAV_ITEM_STYLES.indexOf(p.itemStyle) >= 0 ? p.itemStyle : 'underline';
                 var submenuEffect = ['slide-down', 'fade', 'zoom', 'none'].indexOf(p.submenuEffect) >= 0 ? p.submenuEffect : 'slide-down';
                 var submenuItemEffect = ['background', 'shift', 'underline', 'left-bar', 'none'].indexOf(p.submenuItemEffect) >= 0 ? p.submenuItemEffect : 'background';
                 var submenuDuration = Math.max(100, Math.min(1000, Number(p.submenuDuration || 200)));
                 var submenuAccentColor = /^#[0-9a-f]{6}$/i.test(String(p.submenuAccentColor || '')) ? p.submenuAccentColor : '#0054a6';
-                return '<nav class="sb-public-nav ' + (vertical ? 'is-vertical' : 'is-horizontal') + '" data-subnav-effect="' + submenuEffect + '" data-subnav-item-effect="' + submenuItemEffect + '" style="' + styleAttr + ';--sb-subnav-duration:' + submenuDuration + 'ms;--sb-subnav-accent:' + submenuAccentColor + '">' + navigationHtml(navigation) + '</nav>';
+                return '<nav class="sb-public-nav is-item-' + itemStyle + ' ' + (vertical ? 'is-vertical' : 'is-horizontal') + ' align-' + alignment + '" data-subnav-effect="' + submenuEffect + '" data-subnav-item-effect="' + submenuItemEffect + '" style="' + styleAttr + ';--sb-nav-gap:' + itemGap + 'px;--sb-nav-padding-x:' + itemPaddingX + 'px;--sb-nav-padding-y:' + itemPaddingY + 'px;--sb-subnav-duration:' + submenuDuration + 'ms;--sb-subnav-accent:' + submenuAccentColor + '">' + navigationHtml(navigation) + '</nav>';
             }
             case 'search':
                 return '<form class="sb-public-search" action="' + esc(safeUrl(p.action || '/search')) + '" method="get" onsubmit="return false" style="' + styleAttr + '"><input name="q" placeholder="' + esc(p.placeholder || '搜索') + '"><button type="button">⌕</button></form>';

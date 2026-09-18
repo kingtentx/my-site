@@ -97,7 +97,7 @@
         // Keep these versions identical to public/preview pages. Otherwise the browser can
         // retain different generations of the same rules and the canvas stops being WYSIWYG.
         addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091710');
-        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091806');
+        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091809');
 
         if (!document.getElementById('sbDesignerWysiwygCss')) {
             var style = document.createElement('style');

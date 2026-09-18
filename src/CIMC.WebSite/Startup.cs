@@ -20,6 +20,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.WebEncoders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
@@ -29,6 +30,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Unicode;
 
 namespace MySite.Web
 {
@@ -201,6 +204,13 @@ namespace MySite.Web
             #endregion
 
             services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+            // Razor 默认只允许 Basic Latin，中文会在“查看网页源代码”时显示为十六进制字符实体。
+            // 放行全部 Unicode 仅改变非 ASCII 字符的呈现形式；<、>、&、引号等危险字符仍由 HTML 编码器转义。
+            services.Configure<WebEncoderOptions>(options =>
+            {
+                options.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All);
+            });
 
             services.AddControllersWithViews()
                 .AddViewLocalization(Microsoft.AspNetCore.Mvc.Razor.LanguageViewLocationExpanderFormat.Suffix)

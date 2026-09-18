@@ -29,10 +29,31 @@
         { value: 'card', text: '卡片式' },
         { value: 'plain', text: '纯文字' }
     ];
+    var TEXT_WRAP_OPTIONS = [
+        { value: 'auto', text: '自动换行（自适应宽度）' },
+        { value: 'nowrap', text: '不换行（超出省略号）' },
+        { value: 'break', text: '强制断行' }
+    ];
+    /** 文本/标题共用：换行方式。默认 auto = 在所在元素宽度内自动折行，永不溢出。 */
+    function textWrapField() {
+        return f('textWrap', '换行方式', 'select', {
+            options: TEXT_WRAP_OPTIONS,
+            hint: '自动换行：随所在列宽度自动折行；不换行：始终单行，超出部分显示省略号；强制断行：长串可在任意字符处断开'
+        });
+    }
+
     var TAB_ALIGN_OPTIONS = [
         { value: 'left', text: '左对齐' },
         { value: 'center', text: '居中' },
         { value: 'right', text: '右对齐' }
+    ];
+    // 导航菜单主导航条目风格（与 designer-renderer.js 的 NAV_ITEM_STYLES、_Node.cshtml 白名单三处同步）
+    var NAV_ITEM_STYLE_OPTIONS = [
+        { value: 'underline', text: '下划线（默认）' },
+        { value: 'pill', text: '胶囊高亮' },
+        { value: 'block', text: '色块条' },
+        { value: 'left-bar', text: '左侧竖条' },
+        { value: 'plain', text: '纯文字' }
     ];
     function tabStyleField() { return f('tabStyle', 'Tab 展示样式', 'select', { options: TAB_STYLE_OPTIONS, hint: '分类 Tab 的外观，需开启「显示分类 Tab」' }); }
     function tabAlignField() { return f('tabAlign', 'Tab 排列位置', 'select', { options: TAB_ALIGN_OPTIONS }); }
@@ -42,8 +63,8 @@
     reg({ type: 'grid', name: '网格', group: 'layout', icon: 'layui-icon-table', desc: '1~6 列布局，列宽可在画布中拖动调整', container: true, styleScope: SCOPE_GRID, defaults: { columns: 2, columnWidths: [50, 50] }, styleDefaults: { gap: '24px' }, inspector: [f('columns', '网格列数', 'grid-columns', { min: 1, max: 6 })] });
     reg({ type: 'column', name: '列', group: 'layout', icon: 'layui-icon-tabs', desc: '网格内的列容器', container: true, styleScope: SCOPE_BOX, defaults: {}, styleDefaults: { minHeight: '40px' }, inspector: [] });
 
-    reg({ type: 'heading', name: '标题', group: 'basic', icon: 'layui-icon-fonts-strong', desc: 'H1~H4 级标题', styleScope: SCOPE_TEXT, defaults: { text: '请输入标题', level: 2 }, inspector: [f('text', '标题文字'), f('level', '标题级别', 'select', { options: [{ value: 1, text: 'H1' }, { value: 2, text: 'H2' }, { value: 3, text: 'H3' }, { value: 4, text: 'H4' }] })] });
-    reg({ type: 'text', name: '文本', group: 'basic', icon: 'layui-icon-edit', desc: '普通多行文本，通过字体排版设置外观', styleScope: SCOPE_TEXT, defaults: { text: '请输入文本内容' }, inspector: [f('text', '文本内容', 'textarea', { rows: 6 })] });
+    reg({ type: 'heading', name: '标题', group: 'basic', icon: 'layui-icon-fonts-strong', desc: 'H1~H4 级标题', styleScope: SCOPE_TEXT, defaults: { text: '请输入标题', level: 2, textWrap: 'auto' }, inspector: [f('text', '标题文字'), f('level', '标题级别', 'select', { options: [{ value: 1, text: 'H1' }, { value: 2, text: 'H2' }, { value: 3, text: 'H3' }, { value: 4, text: 'H4' }] }), textWrapField()] });
+    reg({ type: 'text', name: '文本', group: 'basic', icon: 'layui-icon-edit', desc: '普通多行文本，通过字体排版设置外观', styleScope: SCOPE_TEXT, defaults: { text: '请输入文本内容', textWrap: 'auto' }, inspector: [f('text', '文本内容', 'textarea', { rows: 6 }), textWrapField()] });
     reg({ type: 'richText', name: '富文本', group: 'basic', icon: 'layui-icon-fonts-html', desc: '使用编辑器编排段落、标题、列表与链接', styleScope: [], hideStyle: true, defaults: { html: '<p>请输入富文本内容</p>' }, inspector: [f('html', '富文本内容', 'textarea', { rows: 8, richText: true })] });
     reg({ type: 'image', name: '图片', group: 'basic', icon: 'layui-icon-picture', desc: '单张图片，可设置跳转链接', styleScope: SCOPE_MEDIA, defaults: { src: '', alt: '', link: '' }, inspector: [f('src', '图片', 'image'), f('alt', '替代文本', 'text', { hint: '用于 SEO 与图片加载失败提示' }), f('link', '跳转链接', 'text', { placeholder: '留空表示不可点击' })] });
     reg({ type: 'banner', name: 'Banner', group: 'basic', icon: 'layui-icon-carousel', desc: '多图轮播，2 张及以上自动播放', styleScope: SCOPE_BANNER, defaults: { images: [], height: 420, interval: 5000, showArrows: true, showDots: true, objectFit: 'cover' }, inspector: [f('images', '轮播图片', 'image-list', { hint: '选择 2 张及以上时前台自动轮播' }), f('height', 'Banner 高度(px)', 'number', { min: 120, max: 900, default: 420 }), f('interval', '轮播间隔(ms)', 'number', { min: 1000, max: 30000, step: 500, default: 5000 }), f('objectFit', '图片填充', 'select', { options: [{ value: 'cover', text: '覆盖裁剪' }, { value: 'contain', text: '完整显示' }] }), f('showArrows', '显示左右箭头', 'checkbox'), f('showDots', '显示圆点指示', 'checkbox'), f('title', '主标题'), f('description', '介绍文字', 'textarea'), f('buttonText', '按钮文字'), f('buttonLink', '跳转链接', 'link')] });
@@ -57,9 +78,20 @@
     reg({ type: 'productList', name: '产品列表', group: 'data', icon: 'layui-icon-component', desc: '绑定后台产品数据，支持分类切换与分页', styleScope: SCOPE_BOX, defaults: { categoryIds: [], showTabs: true, pageSize: 8, columns: 4, showSummary: false, enablePagination: true, tabStyle: 'pill', tabAlign: 'left' }, inspector: [f('categoryIds', '选择分类', 'categories', { contentType: 'product', allText: '全部产品', hint: '点「选择分类」从产品分类中勾选；不勾选 = 全部产品，可多选' }), f('showTabs', '显示分类 Tab', 'checkbox', { hint: '选择「全部」或多个分类时，列表上方生成可切换的分类 Tab；只选一个分类时不显示' }), tabStyleField(), tabAlignField(), f('pageSize', '每页数量', 'number', { min: 1, max: 50 }), f('columns', '列数', 'number', { min: 1, max: 6 }), f('showSummary', '显示摘要', 'checkbox'), f('enablePagination', '开启分页', 'checkbox')] });
     reg({ type: 'jobList', name: '招聘列表', group: 'data', icon: 'layui-icon-friends', desc: '绑定后台招聘数据，支持分类切换与分页', styleScope: SCOPE_BOX, defaults: { categoryIds: [], showTabs: true, pageSize: 10, showSalary: true, showLocation: true, enablePagination: true, tabStyle: 'pill', tabAlign: 'left' }, inspector: [f('categoryIds', '选择分类', 'categories', { contentType: 'job', allText: '全部招聘', hint: '点「选择分类」从招聘分类中勾选；不勾选 = 全部招聘，可多选' }), f('showTabs', '显示分类 Tab', 'checkbox', { hint: '选择「全部」或多个分类时，列表上方生成可切换的分类 Tab；只选一个分类时不显示' }), tabStyleField(), tabAlignField(), f('pageSize', '每页数量', 'number', { min: 1, max: 50 }), f('showSalary', '显示薪资', 'checkbox'), f('showLocation', '显示地点', 'checkbox'), f('layout', '列表样式', 'select', { options: [{ value: '', text: '标准列表' }, { value: 'compact', text: '简洁岗位列表' }] }), f('enablePagination', '开启分页', 'checkbox')] });
 
-    reg({ type: 'logo', name: 'Logo', group: 'global', icon: 'layui-icon-picture-fine', desc: '站点 Logo 或站点名称', styleScope: SCOPE_TEXT, defaults: { src: '', text: '企业名称', href: '/' }, inspector: [f('src', 'Logo', 'image', { hint: '未选择时显示下面的站点名称' }), f('text', '站点名称'), f('href', '首页链接', 'text', { placeholder: '如 /' })] });
-    reg({ type: 'navigation', name: '导航菜单', group: 'global', icon: 'layui-icon-menu-fill', desc: '取自已发布页面树', styleScope: SCOPE_TEXT, defaults: { direction: 'horizontal', submenuEffect: 'slide-down', submenuItemEffect: 'background', submenuDuration: 200, submenuAccentColor: '#0054a6' }, inspector: [
+    reg({ type: 'logo', name: 'Logo', group: 'global', icon: 'layui-icon-picture-fine', desc: '站点 Logo 或站点名称', styleScope: SCOPE_TEXT, defaults: { src: '', text: '企业名称', href: '/', logoWidth: 200, logoMaxHeight: 56 }, inspector: [
+        f('src', 'Logo', 'image', { hint: '未选择时显示下面的站点名称' }),
+        f('text', '站点名称'),
+        f('href', '首页链接', 'text', { placeholder: '如 /' }),
+        f('logoWidth', 'Logo 宽度(px)', 'number', { min: 24, max: 800, step: 1, default: 200, hint: '图片会保持原始比例，并且不会撑出所在列；需要更宽时可同时拖动画布中的列宽分隔线' }),
+        f('logoMaxHeight', 'Logo 最大高度(px)', 'number', { min: 16, max: 240, step: 1, default: 56, hint: '用于限制页头高度；宽度和最大高度会共同约束 Logo' })
+    ] });
+    reg({ type: 'navigation', name: '导航菜单', group: 'global', icon: 'layui-icon-menu-fill', desc: '取自已发布页面树', styleScope: SCOPE_TEXT, defaults: { direction: 'horizontal', alignment: 'center', itemGap: 16, itemPaddingX: 10, itemPaddingY: 8, itemStyle: 'underline', submenuEffect: 'slide-down', submenuItemEffect: 'background', submenuDuration: 200, submenuAccentColor: '#0054a6' }, inspector: [
         f('direction', '排列方式', 'select', { options: [{ value: 'horizontal', text: '横向' }, { value: 'vertical', text: '纵向' }], hint: '菜单内容来自「页面管理」中已发布且开启导航的页面' }),
+        f('alignment', '菜单对齐', 'select', { options: [{ value: 'left', text: '左对齐' }, { value: 'center', text: '居中' }, { value: 'right', text: '右对齐' }] }),
+        f('itemGap', '条目间距(px)', 'number', { min: 0, max: 80, step: 1, default: 16, hint: '导航固定单行；单行容纳不下时可减小此值，或调宽导航所在列' }),
+        f('itemPaddingX', '条目左右内边距(px)', 'number', { min: 0, max: 40, step: 1, default: 10, hint: '导航固定单行；减小此值可以容纳更多菜单项' }),
+        f('itemPaddingY', '条目上下内边距(px)', 'number', { min: 0, max: 24, step: 1, default: 8 }),
+        f('itemStyle', '导航栏风格', 'select', { options: NAV_ITEM_STYLE_OPTIONS, hint: '横向主导航条目的悬停/选中样式；强调色跟随下方「强调颜色」' }),
         f('submenuEffect', '二级菜单展开', 'select', { options: [{ value: 'slide-down', text: '下滑淡入' }, { value: 'fade', text: '淡入' }, { value: 'zoom', text: '缩放淡入' }, { value: 'none', text: '无动画' }] }),
         f('submenuItemEffect', '二级条目悬停/选中', 'select', { options: [{ value: 'background', text: '背景高亮' }, { value: 'shift', text: '向右滑动' }, { value: 'underline', text: '底部线条' }, { value: 'left-bar', text: '左侧色条' }, { value: 'none', text: '无特效' }], hint: '鼠标滑过、键盘聚焦和当前页面使用同一种强调效果' }),
         f('submenuDuration', '特效时长(ms)', 'number', { min: 100, max: 1000, step: 50, default: 200 }),

@@ -25,9 +25,9 @@ namespace MySite.Web.Models
                 {
                     Node("section", null, Style("paddingTop","16px","paddingBottom","16px","backgroundColor","#ffffff","position","sticky","top","0px","zIndex",1000,"boxShadow","0 2px 8px rgba(0,0,0,.06)"),
                         Node("container", null, null,
-                            Node("grid", Props("columns",3), Style("gap","20px"),
-                                Node("column", null, null, Node("logo", Props("text","企业名称","href","/"), null)),
-                                Node("column", null, Style("textAlign","center"), Node("navigation", Props("direction","horizontal"), null)),
+                            Node("grid", Props("columns",3,"columnWidths",new[] { 32, 48, 20 }), Style("gap","20px"),
+                                Node("column", null, null, Node("logo", Props("text","企业名称","href","/","logoWidth",200,"logoMaxHeight",56), null)),
+                                Node("column", null, Style("textAlign","center"), Node("navigation", Props("direction","horizontal","alignment","center","itemGap",16,"itemPaddingX",10,"itemPaddingY",8), null)),
                                 Node("column", null, Style("textAlign","right"), Node("button", Props("text","联系我们","link",new { type = "none" },"variant","outline"), null)))))
                 }
             };

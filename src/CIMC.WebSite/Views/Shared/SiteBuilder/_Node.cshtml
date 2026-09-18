@@ -28,6 +28,13 @@
         return value is JObject json ? json.ToObject<Dictionary<string, object>>() : value as Dictionary<string, object> ?? new Dictionary<string, object>();
     }
     string LinkProp(string key) => MySite.Web.Common.BuilderLinkHelper.Resolve(props.TryGetValue(key, out var value) ? value : null, LinkPageRepository);
+    // 文本/标题换行方式白名单：auto（默认，自适应所在元素宽度）/ nowrap（超出省略）/ break（强制断行）。
+    // 取值与 default-components.js 的 TEXT_WRAP_OPTIONS、designer-renderer.js 的 TEXT_WRAPS 保持一致。
+    string TextWrapClass()
+    {
+        var wrap = (Prop("textWrap", "auto") ?? "auto").Trim().ToLowerInvariant();
+        return new[] { "auto", "nowrap", "break" }.Contains(wrap) ? "is-wrap-" + wrap : "is-wrap-auto";
+    }
     List<string> StringListProp(string key)
     {
         if (!props.TryGetValue(key, out var value) || value == null) return new List<string>();
@@ -152,14 +159,20 @@ else if (node.Type == "column")
 else if (node.Type == "heading")
 {
     var text = Prop("text", "标题"); var level = Math.Max(1, Math.Min(4, IntProp("level", 2)));
-    if (level == 1) { <h1 class="sb-heading" sb-effects="@style" style="@css">@text</h1> }
-    else if (level == 2) { <h2 class="sb-heading" sb-effects="@style" style="@css">@text</h2> }
-    else if (level == 3) { <h3 class="sb-heading" sb-effects="@style" style="@css">@text</h3> }
-    else { <h4 class="sb-heading" sb-effects="@style" style="@css">@text</h4> }
+    var headWrap = TextWrapClass();
+    if (level == 1) { <h1 class="sb-heading @headWrap" sb-effects="@style" style="@css">@text</h1> }
+    else if (level == 2) { <h2 class="sb-heading @headWrap" sb-effects="@style" style="@css">@text</h2> }
+    else if (level == 3) { <h3 class="sb-heading @headWrap" sb-effects="@style" style="@css">@text</h3> }
+    else { <h4 class="sb-heading @headWrap" sb-effects="@style" style="@css">@text</h4> }
 }
 else if (node.Type == "text")
 {
-    <div class="sb-text" sb-effects="@style" style="@css">@Prop("text", "文本内容")</div>
+    // 先 HTML 编码再换行转换：字面 \n 与真实换行都渲染成 <br/>，避免电话等长文本挤成一坨
+    var textHtml = Html.Encode(Prop("text", "文本内容"))
+        .Replace("\\n", "\n")
+        .Replace("\r\n", "\n").Replace("\r", "\n")
+        .Replace("\n", "<br/>");
+    <div class="sb-text @TextWrapClass()" sb-effects="@style" style="@css">@Html.Raw(textHtml)</div>
 }
 else if (node.Type == "richText")
 {
@@ -251,12 +264,22 @@ else if (node.Type == "spacer")
 else if (node.Type == "logo")
 {
     var src = SafeUrl(Prop("src")); var href = SafeUrl(Prop("href", "/"));
-    <a class="sb-public-logo" href="@href" sb-effects="@style" style="@css">@if (!string.IsNullOrWhiteSpace(src)) { <img src="@src" alt="@Prop("text","Logo")" /> } else { <strong>@Prop("text","企业名称")</strong> }</a>
+    var logoWidth = Math.Max(24, Math.Min(800, IntProp("logoWidth", 200)));
+    var logoMaxHeight = Math.Max(16, Math.Min(240, IntProp("logoMaxHeight", 56)));
+    <a class="sb-public-logo" href="@href" sb-effects="@style" style="@css">@if (!string.IsNullOrWhiteSpace(src)) { <img src="@src" alt="@Prop("text","Logo")" style="width:@(logoWidth)px;max-width:100%;height:auto;max-height:@(logoMaxHeight)px;object-fit:contain" /> } else { <strong>@Prop("text","企业名称")</strong> }</a>
 }
 else if (node.Type == "navigation")
 {
     var nav = Model.Page?.Navigation ?? new List<MySite.Web.Models.NavigationModel>();
     var vertical = Prop("direction", "horizontal") == "vertical";
+    var alignmentValue = Prop("alignment", "center");
+    var alignment = new[] { "left", "center", "right" }.Contains(alignmentValue) ? alignmentValue : "center";
+    var itemGap = Math.Max(0, Math.Min(80, IntProp("itemGap", 16)));
+    var itemPaddingX = Math.Max(0, Math.Min(40, IntProp("itemPaddingX", 10)));
+    var itemPaddingY = Math.Max(0, Math.Min(24, IntProp("itemPaddingY", 8)));
+    var itemStyleValue = Prop("itemStyle", "underline");
+    // 与 default-components.js 的 NAV_ITEM_STYLE_OPTIONS、designer-renderer.js 白名单三处同步
+    var itemStyle = new[] { "underline", "pill", "block", "left-bar", "plain" }.Contains(itemStyleValue) ? itemStyleValue : "underline";
     var submenuEffectValue = Prop("submenuEffect", "slide-down");
     var submenuEffect = new[] { "slide-down", "fade", "zoom", "none" }.Contains(submenuEffectValue) ? submenuEffectValue : "slide-down";
     var submenuItemEffectValue = Prop("submenuItemEffect", "background");
@@ -264,7 +287,7 @@ else if (node.Type == "navigation")
     var submenuDuration = Math.Max(100, Math.Min(1000, IntProp("submenuDuration", 200)));
     var submenuAccentValue = Prop("submenuAccentColor", "#0054a6");
     var submenuAccent = System.Text.RegularExpressions.Regex.IsMatch(submenuAccentValue, "^#[0-9a-fA-F]{6}$") ? submenuAccentValue : "#0054a6";
-    <nav class="sb-public-nav @(vertical ? "is-vertical" : "is-horizontal")" data-subnav-effect="@submenuEffect" data-subnav-item-effect="@submenuItemEffect" sb-effects="@style" style="@css;--sb-subnav-duration:@(submenuDuration)ms;--sb-subnav-accent:@submenuAccent">
+    <nav class="sb-public-nav is-item-@itemStyle @(vertical ? "is-vertical" : "is-horizontal") align-@alignment" data-subnav-effect="@submenuEffect" data-subnav-item-effect="@submenuItemEffect" sb-effects="@style" style="@css;--sb-nav-gap:@(itemGap)px;--sb-nav-padding-x:@(itemPaddingX)px;--sb-nav-padding-y:@(itemPaddingY)px;--sb-subnav-duration:@(submenuDuration)ms;--sb-subnav-accent:@submenuAccent">
         @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_NavigationItems.cshtml", nav)
     </nav>
 }

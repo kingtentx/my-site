@@ -45,9 +45,9 @@
         standardHeader: {
             name: '标准 Header', group: '全局区块',
             create: function () {
-                return n('section',null,{paddingTop:'16px',paddingBottom:'16px',backgroundColor:'#ffffff'},[n('container',null,null,[n('grid',{columns:3},{gap:'20px'},[
-                    n('column',null,null,[n('logo',{text:'企业名称',href:'/'})]),
-                    n('column',null,{textAlign:'center'},[n('navigation',{menuKey:'main'})]),
+                return n('section',null,{paddingTop:'16px',paddingBottom:'16px',backgroundColor:'#ffffff'},[n('container',null,null,[n('grid',{columns:3,columnWidths:[32,48,20]},{gap:'20px'},[
+                    n('column',null,null,[n('logo',{text:'企业名称',href:'/',logoWidth:200,logoMaxHeight:56})]),
+                    n('column',null,{textAlign:'center'},[n('navigation',{menuKey:'main',alignment:'center',itemGap:16,itemPaddingX:10,itemPaddingY:8})]),
                     n('column',null,{textAlign:'right'},[n('search',{placeholder:'搜索'}),n('button',{text:'联系我们',link:{type:'none'},variant:'outline'})])
                 ])])]);
             }

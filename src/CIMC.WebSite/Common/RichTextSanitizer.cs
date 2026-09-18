@@ -4,6 +4,7 @@ using System.Net;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
+using System.Text.Unicode;
 
 namespace MySite.Web.Common;
 
@@ -13,6 +14,9 @@ namespace MySite.Web.Common;
 /// </summary>
 public static class RichTextSanitizer
 {
+    // 与 Razor 的全局 WebEncoderOptions 保持一致：Unicode 原样输出，HTML 特殊字符继续安全转义。
+    private static readonly HtmlEncoder UnicodeHtmlEncoder = HtmlEncoder.Create(UnicodeRanges.All);
+
     private static readonly HashSet<string> AllowedTags = new(StringComparer.OrdinalIgnoreCase)
     {
         "p", "br", "strong", "b", "em", "i", "u", "s", "strike",
@@ -61,7 +65,7 @@ public static class RichTextSanitizer
     {
         if (string.IsNullOrEmpty(text)) return;
         // 先解实体再编码，避免已有 &amp; 被重复编码，同时仍然保证最终是纯文本。
-        result.Append(HtmlEncoder.Default.Encode(WebUtility.HtmlDecode(text)));
+        result.Append(UnicodeHtmlEncoder.Encode(WebUtility.HtmlDecode(text)));
     }
 
     private static void AppendSafeTag(StringBuilder result, string token)
@@ -96,7 +100,7 @@ public static class RichTextSanitizer
             if (IsSafeHref(href))
             {
                 result.Append(" href=\"")
-                    .Append(HtmlEncoder.Default.Encode(WebUtility.HtmlDecode(href).Trim()))
+                    .Append(UnicodeHtmlEncoder.Encode(WebUtility.HtmlDecode(href).Trim()))
                     .Append('"');
             }
 
