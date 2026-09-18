@@ -10,6 +10,7 @@
     var styleGroups = [
         { key:'layout', title:'背景与尺寸', fields:[
             { key:'backgroundColor', label:'背景色', type:'color', scope:'background' },
+            { key:'bgOpacity', label:'背景不透明度', type:'number', min:0, max:1, step:0.05, scope:'background', hint:'0~1，需先设置背景色；0=全透明，1=不透明。只影响背景色，文字保持清晰' },
             { key:'backgroundImage', label:'背景图片', type:'image', scope:'background' },
             { key:'backgroundOverlay', label:'背景遮罩', type:'number', min:0, max:1, step:0.05, scope:'background', hint:'0~1，数值越大遮罩越深' },
             { key:'maxWidth', label:'最大宽度', type:'length', units:['px','%','vw','auto'], scope:'size' },

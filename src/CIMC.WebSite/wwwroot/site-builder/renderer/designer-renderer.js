@@ -13,12 +13,25 @@
         return /^(javascript|vbscript|data):/i.test(v) ? '' : v;
     }
 
+    // 背景色 + 背景不透明度(bgOpacity 0~1) → rgba；仅处理 #rgb/#rrggbb，其余原样返回
+    function bgColorValue(color, opacity) {
+        if (!color) return '';
+        var op = Number(opacity);
+        if (!isFinite(op) || op < 0 || op >= 1) return color;
+        var m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(color).trim());
+        if (!m) return color;
+        var hex = m[1];
+        if (hex.length === 3) hex = hex.replace(/./g, function (c) { return c + c; });
+        var r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), b = parseInt(hex.slice(4, 6), 16);
+        return 'rgba(' + r + ',' + g + ',' + b + ',' + op + ')';
+    }
+
     function styleText(style) {
         style = style || {};
         var map = {
             paddingTop:'padding-top', paddingRight:'padding-right', paddingBottom:'padding-bottom', paddingLeft:'padding-left',
             marginTop:'margin-top', marginRight:'margin-right', marginBottom:'margin-bottom', marginLeft:'margin-left',
-            backgroundColor:'background-color', color:'color', maxWidth:'max-width', width:'width', minHeight:'min-height',
+            color:'color', maxWidth:'max-width', width:'width', minHeight:'min-height',
             gap:'gap', borderWidth:'border-width', borderStyle:'border-style', borderColor:'border-color', borderRadius:'border-radius', textAlign:'text-align', borderTopWidth:'border-top-width',
             borderTopStyle:'border-top-style', borderTopColor:'border-top-color', position:'position', top:'top',
             zIndex:'z-index', boxShadow:'box-shadow', fontSize:'font-size', fontWeight:'font-weight',
@@ -28,6 +41,8 @@
         Object.keys(map).forEach(function (key) {
             if (style[key] !== undefined && style[key] !== null && style[key] !== '') parts.push(map[key] + ':' + style[key]);
         });
+        var bg = bgColorValue(style.backgroundColor, style.bgOpacity);
+        if (bg) parts.push('background-color:' + bg);
         if(style.backgroundImage){
             var url=safeUrl(style.backgroundImage).replace(/["'()\\]/g,function(c){return '%'+c.charCodeAt(0).toString(16);});
             var shade=Math.max(0,Math.min(1,Number(style.backgroundOverlay)||0));
@@ -128,6 +143,18 @@
         return result;
     }
 
+    // 分类 Tab 的排列展示样式：取值与 default-components.js 的 TAB_STYLE_OPTIONS /
+    // TAB_ALIGN_OPTIONS 以及服务端 _ArticleList / _ProductList / _JobList 保持一致。
+    var TAB_STYLES = ['pill', 'underline', 'segmented', 'card', 'plain'];
+    var TAB_ALIGNS = ['left', 'center', 'right'];
+    function tabWrapClass(p) {
+        var style = String((p && p.tabStyle) || 'pill').toLowerCase();
+        if (TAB_STYLES.indexOf(style) < 0) style = 'pill';
+        var align = String((p && p.tabAlign) || 'left').toLowerCase();
+        if (TAB_ALIGNS.indexOf(align) < 0) align = 'left';
+        return 'sb-content-tabs is-tab-' + style + ' align-' + align;
+    }
+
     /**
      * 分类切换 Tab 预览。分类名称由 inspector 拉取后写入 SiteBuilder.CategoryData，
      * 首次加载完成时 page-designer 会重绘画布，这里就能显示真实分类名。
@@ -151,7 +178,7 @@
             });
         }
         if (!names.length) return '';
-        var html = '<div class="sb-content-tabs"><a class="sb-content-tab is-active">全部</a>';
+        var html = '<div class="' + esc(tabWrapClass(p)) + '"><a class="sb-content-tab is-active">全部</a>';
         names.forEach(function (name) { html += '<a class="sb-content-tab">' + esc(name) + '</a>'; });
         return html + '</div>';
     }

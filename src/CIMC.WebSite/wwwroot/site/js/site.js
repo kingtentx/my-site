@@ -31,7 +31,7 @@
     }
 
     function initStickyHeader() {
-        var header = document.querySelector('.site-global-header.is-sticky');
+        var header = document.querySelector('.site-global-header.is-sticky, .site-global-header.is-fixed');
         if (!header) { return; }
         var scheduled = false;
         function update() {

@@ -6,17 +6,22 @@
 .page-wrapper > .site-main { flex: 1 0 auto; min-width: 0; }
 .page-wrapper > .site-global-header, .page-wrapper > .site-global-footer { flex-shrink: 0; min-width: 0; }
 .site-global-header.is-sticky { position: sticky; top: 0; z-index: 1000; }
-.site-global-header.is-sticky > .sb-runtime > .sb-public-section:first-child {
+.site-global-header.is-fixed { position: fixed; top: 0; left: 0; right: 0; z-index: 1000; }
+.site-global-header.is-sticky > .sb-runtime > .sb-public-section:first-child,
+.site-global-header.is-fixed > .sb-runtime > .sb-public-section:first-child {
     transition: padding .25s ease, box-shadow .25s ease, background-color .25s ease;
 }
-.site-global-header.is-sticky.is-scrolled > .sb-runtime > .sb-public-section:first-child {
+.site-global-header.is-sticky.is-scrolled > .sb-runtime > .sb-public-section:first-child,
+.site-global-header.is-fixed.is-scrolled > .sb-runtime > .sb-public-section:first-child {
     padding-top: 7px !important;
     padding-bottom: 7px !important;
     box-shadow: 0 10px 32px rgba(15,23,42,.12) !important;
 }
 /* The outer header owns scrolling, otherwise a sticky node is trapped in its short parent. */
 .site-global-header > .sb-runtime > [style*="position:sticky"],
-.site-global-header > .sb-runtime > [style*="position: sticky"] { position: static !important; }
+.site-global-header > .sb-runtime > [style*="position: sticky"],
+.site-global-header > .sb-runtime > [style*="position:fixed"],
+.site-global-header > .sb-runtime > [style*="position: fixed"] { position: static !important; }
 
 .builder-preview-notice {
     position:fixed;right:16px;bottom:16px;z-index:99999;max-width:calc(100vw - 32px);
@@ -397,6 +402,118 @@
     translate: 0 0;
 }
 
+/* ── 分类 Tab：排列位置 ─────────────────────────────────────────────────── */
+.sb-runtime .sb-content-tabs.align-left   { justify-content: flex-start; }
+.sb-runtime .sb-content-tabs.align-center { justify-content: center; }
+.sb-runtime .sb-content-tabs.align-right  { justify-content: flex-end; }
+
+/* ── 分类 Tab：下划线导航 ───────────────────────────────────────────────── */
+.sb-runtime .sb-content-tabs.is-tab-underline {
+    gap: 26px;
+    margin-bottom: 26px;
+    border-bottom: 1px solid #e8edf4;
+}
+
+.sb-runtime .is-tab-underline .sb-content-tab {
+    position: relative;
+    min-height: 44px;
+    padding: 10px 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #5b6b80;
+    font-size: 15px;
+}
+
+.sb-runtime .is-tab-underline .sb-content-tab:after {
+    content: "";
+    position: absolute;
+    right: 0;
+    bottom: -1px;
+    left: 0;
+    height: 2px;
+    border-radius: 2px;
+    background: transparent;
+    transition: background-color .2s ease;
+}
+
+.sb-runtime .is-tab-underline .sb-content-tab:hover { color: #1677ff; background: transparent; box-shadow: none; translate: 0 0; }
+.sb-runtime .is-tab-underline .sb-content-tab:hover:after { background: rgba(22,119,255,.35); }
+.sb-runtime .is-tab-underline .sb-content-tab.is-active { color: #1677ff; font-weight: 600; background: transparent; box-shadow: none; }
+.sb-runtime .is-tab-underline .sb-content-tab.is-active:after { background: #1677ff; }
+
+/* ── 分类 Tab：分段控件 ─────────────────────────────────────────────────── */
+.sb-runtime .sb-content-tabs.is-tab-segmented {
+    gap: 0;
+    padding: 4px;
+    margin-bottom: 30px;
+    border-radius: 999px;
+    background: #eef2f7;
+}
+
+.sb-runtime .is-tab-segmented .sb-content-tab {
+    min-height: 38px;
+    padding: 6px 20px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    box-shadow: none;
+    color: #5b6b80;
+}
+
+.sb-runtime .is-tab-segmented .sb-content-tab:hover { color: #1677ff; background: rgba(255,255,255,.8); box-shadow: none; translate: 0 0; }
+.sb-runtime .is-tab-segmented .sb-content-tab.is-active {
+    background: #fff;
+    color: #1677ff;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(15,23,42,.12);
+}
+
+/* ── 分类 Tab：卡片式 ───────────────────────────────────────────────────── */
+.sb-runtime .sb-content-tabs.is-tab-card { gap: 14px; margin-bottom: 30px; }
+
+.sb-runtime .is-tab-card .sb-content-tab {
+    min-height: 50px;
+    padding: 10px 22px;
+    border: 1px solid #e5eaf1;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(15,23,42,.05);
+    color: #4b5768;
+}
+
+.sb-runtime .is-tab-card .sb-content-tab:hover {
+    border-color: #1677ff;
+    color: #1677ff;
+    background: #f7fbff;
+    box-shadow: 0 8px 18px rgba(22,119,255,.1);
+}
+
+.sb-runtime .is-tab-card .sb-content-tab.is-active {
+    border-color: #1677ff;
+    background: #eef5ff;
+    color: #1677ff;
+    box-shadow: 0 10px 22px rgba(22,119,255,.16);
+}
+
+/* ── 分类 Tab：纯文字 ───────────────────────────────────────────────────── */
+.sb-runtime .sb-content-tabs.is-tab-plain { gap: 22px; margin-bottom: 26px; }
+
+.sb-runtime .is-tab-plain .sb-content-tab {
+    min-height: 32px;
+    padding: 4px 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: #6b7a8d;
+    font-size: 15px;
+}
+
+.sb-runtime .is-tab-plain .sb-content-tab:hover { color: #1677ff; background: transparent; box-shadow: none; translate: 0 0; }
+.sb-runtime .is-tab-plain .sb-content-tab.is-active { color: #1677ff; font-weight: 700; background: transparent; box-shadow: none; }
+
 .sb-runtime .sb-content-card > a { text-decoration: none; color: inherit; }
 .sb-runtime .sb-content-card img { display: block; width: 100%; aspect-ratio: 16/10; object-fit: cover; }
 .sb-runtime .sb-content-card img { transition:scale .35s ease; }
@@ -517,6 +634,11 @@
     .sb-runtime .sb-public-container { padding-left: 14px; padding-right: 14px; }
     .sb-runtime .sb-content-tabs { gap: 8px; margin-bottom: 22px; }
     .sb-runtime .sb-content-tab { min-height:36px;padding: 6px 14px;font-size: 13px; }
+    /* 变体的间距与基准值不同，这里需要一并收紧，否则窄屏下分段控件会被 gap 撑裂 */
+    .sb-runtime .sb-content-tabs.is-tab-underline { gap: 18px; }
+    .sb-runtime .sb-content-tabs.is-tab-segmented { gap: 0; }
+    .sb-runtime .sb-content-tabs.is-tab-card { gap: 10px; }
+    .sb-runtime .sb-content-tabs.is-tab-plain { gap: 16px; }
     .sb-runtime .sb-article-grid,
     .sb-runtime .sb-product-grid { grid-template-columns: 1fr; }
     .sb-runtime .sb-article-editorial-list { grid-template-columns: 1fr; }

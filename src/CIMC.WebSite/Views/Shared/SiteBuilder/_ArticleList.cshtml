@@ -19,6 +19,16 @@
     var showImage = GetBool("showImage", true);
     var enablePagination = GetBool("enablePagination", true);
     var showTabs = GetBool("showTabs", true);
+    string GetString(string key, string fallback) => props.TryGetValue(key, out var value) && value != null && !string.IsNullOrWhiteSpace(value.ToString()) ? value.ToString().Trim() : fallback;
+
+    // ── 分类 Tab 排列展示样式（取值与 default-components.js 的 TAB_*_OPTIONS 一致）──
+    var tabStyles = new[] { "pill", "underline", "segmented", "card", "plain" };
+    var tabAligns = new[] { "left", "center", "right" };
+    var tabStyle = GetString("tabStyle", "pill").ToLowerInvariant();
+    if (!tabStyles.Contains(tabStyle)) tabStyle = "pill";
+    var tabAlign = GetString("tabAlign", "left").ToLowerInvariant();
+    if (!tabAligns.Contains(tabAlign)) tabAlign = "left";
+    var tabClass = "sb-content-tabs is-tab-" + tabStyle + " align-" + tabAlign;
 
     var layoutRaw = (props.TryGetValue("layout", out var layoutObj) && layoutObj != null) ? layoutObj.ToString() : "card";
     var layout = string.IsNullOrWhiteSpace(layoutRaw) ? "card" : layoutRaw.ToLowerInvariant();
@@ -121,7 +131,7 @@
 <div class="sb-content-list is-@layout" sb-effects="@Model.Node.Style" style="@Model.RenderedStyle" data-builder-id="@Model.Node.Id">
     @if (tabs.Count > 0)
     {
-        <div class="sb-content-tabs" role="tablist">
+        <div class="@tabClass" role="tablist">
             <a class="sb-content-tab@(activeCat == 0 ? " is-active" : "")" href="@TabUrl(0)" role="tab" aria-selected="@(activeCat == 0 ? "true" : "false")">全部</a>
             @foreach (var tab in tabs)
             {

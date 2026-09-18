@@ -97,7 +97,7 @@
         // Keep these versions identical to public/preview pages. Otherwise the browser can
         // retain different generations of the same rules and the canvas stops being WYSIWYG.
         addCss('sbPublicSiteCss', '/site/css/site.css?v=2026091710');
-        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091801');
+        addCss('sbRuntimeCss', '/site-builder/runtime.css?v=2026091806');
 
         if (!document.getElementById('sbDesignerWysiwygCss')) {
             var style = document.createElement('style');
@@ -125,7 +125,7 @@
         }
 
         $('#canvas').addClass('sb-runtime');
-        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091801');
+        addCss('sbEditorCss', '/site-builder/editor.css?v=2026091805');
     }
 
     function ensureCanvasViewport() {
@@ -738,8 +738,9 @@
         html+='</div>';
         if(isHeader){
             var first=(store.document.nodes||[]).filter(function(node){return node.visible!==false;})[0];
-            var mode=store.document.settings.headerPosition || (first && first.style && first.style.position==='sticky'?'sticky':'static');
-            html+='<label>页头滚动方式 <select id="sbHeaderPosition"><option value="static"'+(mode==='static'?' selected':'')+'>随页面滚动</option><option value="sticky"'+(mode==='sticky'?' selected':'')+'>吸顶显示</option></select></label>';
+            var mode=store.document.settings.headerPosition || (first && first.style && (first.style.position==='sticky'||first.style.position==='fixed')?first.style.position:'static');
+            html+='<label>页头滚动方式 <select id="sbHeaderPosition"><option value="static"'+(mode==='static'?' selected':'')+'>随页面滚动</option><option value="sticky"'+(mode==='sticky'?' selected':'')+'>吸顶显示</option><option value="fixed"'+(mode==='fixed'?' selected':'')+'>悬浮在内容上</option></select></label>';
+            if(mode==='fixed') html+='<div class="props-hint">悬浮模式：页头固定在顶部，页面内容从其下方穿过。请给页头设置半透明背景色（背景不透明度建议 0.9 左右），并确保每个页面顶部有足够留白（如通栏 Banner），否则首屏内容会被遮挡。</div>';
         }
         html+='<div class="props-hint">修改仅影响当前全局区域；保存后可整页预览，发布后应用到所有页面。</div></div>';
         $('#propsPanel').prepend(html);

@@ -55,19 +55,50 @@
         value = (value ?? "").Trim();
         return value.StartsWith("javascript:", StringComparison.OrdinalIgnoreCase) || value.StartsWith("vbscript:", StringComparison.OrdinalIgnoreCase) || value.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ? "" : value;
     }
+    string BgColorWithOpacity(string raw, string opacityRaw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return raw;
+        // bgOpacity 0~1：仅对 #rgb/#rrggbb 背景色生效，转成 rgba；缺省/1/非法值原样返回
+        if (!string.IsNullOrWhiteSpace(opacityRaw)
+            && double.TryParse(opacityRaw, NumberStyles.Float, CultureInfo.InvariantCulture, out var op)
+            && double.IsFinite(op) && op >= 0 && op < 1)
+        {
+            var hex = raw.Trim();
+            if (hex.StartsWith("#"))
+            {
+                var h = hex.Substring(1);
+                if (h.Length == 3) h = string.Concat(h.Select(c => new string(c, 2)));
+                if (h.Length == 6
+                    && byte.TryParse(h.Substring(0, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var r)
+                    && byte.TryParse(h.Substring(2, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var g)
+                    && byte.TryParse(h.Substring(4, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var b))
+                {
+                    return "rgba(" + r + "," + g + "," + b + "," + op.ToString("0.##", CultureInfo.InvariantCulture) + ")";
+                }
+            }
+        }
+        return raw;
+    }
     string StyleText()
     {
         var map = new Dictionary<string,string>
         {
             {"paddingTop","padding-top"},{"paddingRight","padding-right"},{"paddingBottom","padding-bottom"},{"paddingLeft","padding-left"},
             {"marginTop","margin-top"},{"marginRight","margin-right"},{"marginBottom","margin-bottom"},{"marginLeft","margin-left"},
-            {"backgroundColor","background-color"},{"color","color"},{"maxWidth","max-width"},{"width","width"},{"minHeight","min-height"},
+            {"color","color"},{"maxWidth","max-width"},{"width","width"},{"minHeight","min-height"},
             {"gap","gap"},{"borderWidth","border-width"},{"borderStyle","border-style"},{"borderColor","border-color"},{"borderRadius","border-radius"},{"textAlign","text-align"},{"borderTopWidth","border-top-width"},
             {"borderTopStyle","border-top-style"},{"borderTopColor","border-top-color"},{"position","position"},{"top","top"},
             {"zIndex","z-index"},{"boxShadow","box-shadow"},{"fontSize","font-size"},{"fontWeight","font-weight"},
             {"lineHeight","line-height"},{"letterSpacing","letter-spacing"},{"alignItems","align-items"},{"height","height"},{"objectFit","object-fit"}
         };
-        return string.Join(";", map.Where(pair => style.ContainsKey(pair.Key) && style[pair.Key] != null && !string.IsNullOrWhiteSpace(style[pair.Key].ToString())).Select(pair => pair.Value + ":" + style[pair.Key]));
+        var parts = map.Where(pair => style.ContainsKey(pair.Key) && style[pair.Key] != null && !string.IsNullOrWhiteSpace(style[pair.Key].ToString())).Select(pair => pair.Value + ":" + style[pair.Key]).ToList();
+        // 背景色放最前，结合 bgOpacity 输出 rgba
+        if (style.TryGetValue("backgroundColor", out var bgColor) && bgColor != null && !string.IsNullOrWhiteSpace(bgColor.ToString()))
+        {
+            var bgOpacity = style.TryGetValue("bgOpacity", out var bgo) ? bgo?.ToString() : null;
+            parts.Insert(0, "background-color:" + BgColorWithOpacity(bgColor.ToString(), bgOpacity));
+        }
+        return string.Join(";", parts);
     }
     var css = StyleText();
     if (style.TryGetValue("backgroundImage", out var backgroundImage))

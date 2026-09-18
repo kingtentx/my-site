@@ -25,12 +25,12 @@
     @if (!string.IsNullOrEmpty(keywords)) { <meta name="keywords" content="@keywords" /> }
     @if (!string.IsNullOrEmpty(description)) { <meta name="description" content="@description" /> }
     <link rel="stylesheet" href="~/site/css/site.css?v=2026091710" />
-    <link rel="stylesheet" href="~/site-builder/runtime.css?v=2026091801" />
+    <link rel="stylesheet" href="~/site-builder/runtime.css?v=2026091806" />
     <link rel="stylesheet" href="~/site-builder/effects.css?v=2026091702" />
 </head>
 <body>
     <div class="page-wrapper" data-current-path="@currentPath">
-        <header class="site-global-header @(headerPosition == "sticky" ? "is-sticky" : "")">
+        <header class="site-global-header @(headerPosition == "sticky" ? "is-sticky" : headerPosition == "fixed" ? "is-fixed" : "")">
             @{ chromeModel.Document = headerDocument; }
             @await Html.PartialAsync("~/Views/Shared/SiteBuilder/_Document.cshtml", chromeModel)
         </header>
@@ -44,7 +44,7 @@
     {
         <div class="builder-preview-notice">草稿预览 · 包含 Header / Footer 草稿，正式网站以各自发布版本为准</div>
     }
-    <script src="~/site/js/site.js?v=2026091703" defer></script>
+    <script src="~/site/js/site.js?v=2026091806" defer></script>
     <script src="~/site-builder/effects.js?v=2026091702" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
