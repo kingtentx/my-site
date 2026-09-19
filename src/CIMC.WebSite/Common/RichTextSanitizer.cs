@@ -10,7 +10,7 @@ namespace MySite.Web.Common;
 
 /// <summary>
 /// 页面装修文本组件使用的轻量富文本清洗器。
-/// 仅保留排版所需的少量标签；所有普通文本重新编码，链接只允许安全协议。
+/// 仅保留排版所需的标签和预定义样式类；所有普通文本重新编码，链接只允许安全协议。
 /// </summary>
 public static class RichTextSanitizer
 {
@@ -20,7 +20,19 @@ public static class RichTextSanitizer
     private static readonly HashSet<string> AllowedTags = new(StringComparer.OrdinalIgnoreCase)
     {
         "p", "br", "strong", "b", "em", "i", "u", "s", "strike",
-        "ul", "ol", "li", "blockquote", "h1", "h2", "h3", "h4", "a"
+        "ul", "ol", "li", "blockquote", "h1", "h2", "h3", "h4", "a", "span",
+        "table", "thead", "tbody", "tr", "th", "td", "img"
+    };
+
+    private static readonly HashSet<string> InlineClasses = new(StringComparer.Ordinal)
+    {
+        "sb-rte-size-sm", "sb-rte-size-md", "sb-rte-size-lg",
+        "sb-rte-color-red", "sb-rte-color-blue", "sb-rte-color-green"
+    };
+
+    private static readonly HashSet<string> AlignmentClasses = new(StringComparer.Ordinal)
+    {
+        "sb-rte-align-left", "sb-rte-align-center", "sb-rte-align-right", "sb-rte-align-justify"
     };
 
     private static readonly Regex HtmlTokenPattern = new(
@@ -79,7 +91,7 @@ public static class RichTextSanitizer
         var closing = match.Groups["close"].Value.Length > 0;
         if (closing)
         {
-            if (!string.Equals(name, "br", StringComparison.OrdinalIgnoreCase))
+            if (name != "br" && name != "img")
             {
                 result.Append("</").Append(name).Append('>');
             }
@@ -92,7 +104,25 @@ public static class RichTextSanitizer
             return;
         }
 
+        var imageSrc = name == "img" ? ReadAttribute(match.Groups["attrs"].Value, "src") : string.Empty;
+        if (name == "img" && !IsSafeImageSrc(imageSrc)) return;
+
         result.Append('<').Append(name);
+        HashSet<string> permittedClasses = name == "span" ? InlineClasses :
+            name is "p" or "h1" or "h2" or "h3" or "h4" or "blockquote" or "li" or "th" or "td" ? AlignmentClasses : null;
+        if (permittedClasses != null)
+        {
+            var classes = ReadAttribute(match.Groups["attrs"].Value, "class")
+                .Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+            var safeClasses = new List<string>();
+            foreach (var className in classes)
+            {
+                if (permittedClasses.Contains(className) && !safeClasses.Contains(className))
+                    safeClasses.Add(className);
+            }
+            if (safeClasses.Count > 0)
+                result.Append(" class=\"").Append(string.Join(' ', safeClasses)).Append('"');
+        }
         if (name == "a")
         {
             var attrs = match.Groups["attrs"].Value;
@@ -108,6 +138,23 @@ public static class RichTextSanitizer
             if (string.Equals(target, "_blank", StringComparison.OrdinalIgnoreCase))
             {
                 result.Append(" target=\"_blank\" rel=\"noopener noreferrer\"");
+            }
+        }
+        else if (name == "img")
+        {
+            result.Append(" src=\"")
+                .Append(UnicodeHtmlEncoder.Encode(WebUtility.HtmlDecode(imageSrc).Trim()))
+                .Append('"');
+            var alt = ReadAttribute(match.Groups["attrs"].Value, "alt");
+            result.Append(" alt=\"").Append(UnicodeHtmlEncoder.Encode(WebUtility.HtmlDecode(alt))).Append('"');
+        }
+        else if (name is "td" or "th")
+        {
+            foreach (var attribute in new[] { "colspan", "rowspan" })
+            {
+                var value = ReadAttribute(match.Groups["attrs"].Value, attribute);
+                if (int.TryParse(value, out var count) && count >= 2 && count <= 12)
+                    result.Append(' ').Append(attribute).Append("=\"").Append(count).Append('"');
             }
         }
         result.Append('>');
@@ -138,5 +185,17 @@ public static class RichTextSanitizer
                 uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase) ||
                 uri.Scheme.Equals(Uri.UriSchemeMailto, StringComparison.OrdinalIgnoreCase) ||
                 uri.Scheme.Equals("tel", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsSafeImageSrc(string src)
+    {
+        src = WebUtility.HtmlDecode(src ?? string.Empty).Trim();
+        if (string.IsNullOrEmpty(src) || src.StartsWith("//", StringComparison.Ordinal)) return false;
+        if (src.StartsWith("/", StringComparison.Ordinal) ||
+            src.StartsWith("./", StringComparison.Ordinal) ||
+            src.StartsWith("../", StringComparison.Ordinal)) return true;
+        return Uri.TryCreate(src, UriKind.Absolute, out var uri) &&
+               (uri.Scheme.Equals(Uri.UriSchemeHttp, StringComparison.OrdinalIgnoreCase) ||
+                uri.Scheme.Equals(Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase));
     }
 }

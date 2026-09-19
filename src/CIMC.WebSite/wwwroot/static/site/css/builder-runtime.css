@@ -120,16 +120,25 @@
 }
 
 /* 富文本组件：父级继承装修器设置，内部标签只负责语义排版。 */
-.sb-runtime .sb-richtext {line-height:1.8;white-space:normal;overflow-wrap:anywhere}
+.sb-runtime .sb-richtext {line-height:1.8;white-space:normal;overflow-wrap:anywhere;overflow-x:auto}
 .sb-runtime .sb-richtext > :first-child {margin-top:0}
 .sb-runtime .sb-richtext > :last-child {margin-bottom:0}
 .sb-runtime .sb-richtext p {margin:0 0 1em;line-height:inherit}
 .sb-runtime .sb-richtext h1,.sb-runtime .sb-richtext h2,.sb-runtime .sb-richtext h3,.sb-runtime .sb-richtext h4 {margin:1.15em 0 .55em;line-height:1.35;font-weight:600;color:inherit}
 .sb-runtime .sb-richtext h1 {font-size:2em}.sb-runtime .sb-richtext h2 {font-size:1.5em}.sb-runtime .sb-richtext h3 {font-size:1.2em}.sb-runtime .sb-richtext h4 {font-size:1em}
 .sb-runtime .sb-richtext ul,.sb-runtime .sb-richtext ol {margin:.75em 0 1em;padding-left:1.8em}
+.sb-runtime .sb-richtext ul {list-style:disc}.sb-runtime .sb-richtext ol {list-style:decimal}
 .sb-runtime .sb-richtext li {margin:.28em 0}
 .sb-runtime .sb-richtext blockquote {margin:1em 0;padding:.65em 1em;border-left:4px solid currentColor;background:rgba(148,163,184,.10);opacity:.9}
 .sb-runtime .sb-richtext a {color:#1677ff;text-decoration:underline;text-underline-offset:2px}
+.sb-runtime .sb-richtext .sb-rte-size-sm {font-size:13px}.sb-runtime .sb-richtext .sb-rte-size-md {font-size:16px}.sb-runtime .sb-richtext .sb-rte-size-lg {font-size:24px}
+.sb-runtime .sb-richtext .sb-rte-color-red {color:#d92d20}.sb-runtime .sb-richtext .sb-rte-color-blue {color:#1677ff}.sb-runtime .sb-richtext .sb-rte-color-green {color:#15803d}
+.sb-runtime .sb-richtext .sb-rte-align-left {text-align:left}.sb-runtime .sb-richtext .sb-rte-align-center {text-align:center}.sb-runtime .sb-richtext .sb-rte-align-right {text-align:right}.sb-runtime .sb-richtext .sb-rte-align-justify {text-align:justify}
+.sb-runtime .sb-richtext table {width:100%;border-collapse:collapse;margin:10px 0;line-height:1.5}
+.sb-runtime .sb-richtext th,.sb-runtime .sb-richtext td {border:1px solid #ccc;padding:3px 5px;min-height:30px}
+.sb-runtime .sb-richtext th {background:#f1f1f1;text-align:center}
+.sb-runtime .sb-richtext th p,.sb-runtime .sb-richtext td p {margin:0}
+.sb-runtime .sb-richtext img {max-width:100%;height:auto}
 
 .sb-runtime .sb-image {
     display: block;

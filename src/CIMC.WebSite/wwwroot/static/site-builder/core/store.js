@@ -161,15 +161,19 @@
     Store.prototype.update = function (id, area, key, value, options) {
         var node = Tree.find((this.document || {}).nodes, id);
         if (!node) return false;
-        if (area === 'node') {
-            if (node[key] === value) return false;
-            node[key] = value;
-        } else {
-            node[area] = node[area] || {};
-            if (node[area][key] === value) return false;
-            node[area][key] = value;
+        var target = area === 'node' ? node : (node[area] = node[area] || {});
+        var live = options && options.live === true;
+        if (target[key] === value) {
+            // 实时预览已写入文档时，失焦/保存仍需把最终值记入撤销栈。
+            if (!live && this.history[this.history.length - 1] !== JSON.stringify(this.document)) {
+                this.snapshot();
+                this.emit();
+                return true;
+            }
+            return false;
         }
-        if (options && options.live === true) this.emit();
+        target[key] = value;
+        if (live) this.emit();
         else { this.snapshot(); this.emit(); }
         return true;
     };

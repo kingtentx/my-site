@@ -44,6 +44,14 @@
     var uploadedMaterials = [];
     // 属性面板正在做实时预览（如拖动取色器）时，跳过面板重建，避免焦点/输入法被打断
     var panelLiveEdit = false;
+    if (SB.RichTextEditor) {
+        SB.RichTextEditor.onChange = function (nodeId, html, commit, previousHtml) {
+            var target = nodeId && SB.Tree.find(store.document.nodes, nodeId);
+            if (!target || isLocked(nodeId) || String((target.props || {}).html || '') !== String(previousHtml || '')) return;
+            if (!commit && store.selectedId === nodeId) panelLiveEdit = true;
+            store.update(nodeId, 'props', 'html', html, commit ? null : { live: true });
+        };
+    }
     var categoryRequest = 0;
     var categoryState = { nodeId: null, area: 'props', key: null, contentType: 'article', selected: [], keyword: '', options: [], allText: '全部' };
     var materialState = {
@@ -97,7 +105,7 @@
         // Keep these versions identical to public/preview pages. Otherwise the browser can
         // retain different generations of the same rules and the canvas stops being WYSIWYG.
         addCss('sbPublicSiteCss', '/static/site/css/site.css?v=2026091901');
-        addCss('sbRuntimeCss', '/static/site/css/builder-runtime.css?v=2026091809');
+        addCss('sbRuntimeCss', '/static/site/css/builder-runtime.css?v=2026091903');
 
         if (!document.getElementById('sbDesignerWysiwygCss')) {
             var style = document.createElement('style');
@@ -125,7 +133,7 @@
         }
 
         $('#canvas').addClass('sb-runtime');
-        addCss('sbEditorCss', '/static/site-builder/editor.css?v=2026091805');
+        addCss('sbEditorCss', '/static/site-builder/editor.css?v=2026091904');
     }
 
     function ensureCanvasViewport() {
@@ -663,7 +671,9 @@
         renderPending = true;
         window.requestAnimationFrame(function () {
             renderPending = false;
-            var liveOnly = panelLiveEdit;
+            var changingNode = inspectorNodeId !== store.selectedId;
+            if (SB.RichTextEditor && (changingNode || !panelLiveEdit)) SB.RichTextEditor.flush(true);
+            var liveOnly = panelLiveEdit && !changingNode;
             panelLiveEdit = false;
             if (dragging) return;
             try {
@@ -687,6 +697,7 @@
                     var activeField = document.activeElement, focus = null;
                     if (sameNode && $(activeField).closest('#propsPanel').length && $(activeField).attr('data-key')) focus = {area:$(activeField).attr('data-area'),key:$(activeField).attr('data-key'),part:$(activeField).attr('data-part'),type:$(activeField).attr('type'),start:activeField.selectionStart,end:activeField.selectionEnd};
                     if (sameNode) $('#propsPanel details').each(function(){folds.push(this.open);});
+                    if (SB.RichTextEditor) SB.RichTextEditor.destroy();
                     $('#propsPanel').html(SB.Inspector.render(store.selected(), store.document));
                     renderGlobalSettings();
                     // 分类树首次加载完成后重绘画布，让设计器预览里的分类 Tab 显示真实名称
@@ -695,6 +706,7 @@
                     $('#propsPanel').scrollTop(sameNode ? panelScroll : 0);
                     if (focus) $('#propsPanel [data-area][data-key]').filter(function(){return $(this).attr('data-area')===focus.area&&$(this).attr('data-key')===focus.key&&$(this).attr('data-part')===focus.part&&$(this).attr('type')===focus.type;}).first().each(function(){this.focus({preventScroll:true});if(focus.start!=null&&this.setSelectionRange)this.setSelectionRange(focus.start,focus.end);});
                     inspectorNodeId = store.selectedId;
+                    if (SB.RichTextEditor) SB.RichTextEditor.mount(store.selectedId, !!(store.selected() && store.selected().locked));
                     if (window.layui && layui.form) layui.form.render();
                 }
                 // Preload every data component's categories, not only the currently selected
@@ -792,6 +804,7 @@
 
     function saveDraft(done) {
         if (saving) return;
+        if (SB.RichTextEditor) SB.RichTextEditor.flush(true);
         var active = document.activeElement;
         if (active && $(active).closest('#propsPanel').length) $(active).trigger('change');
         var submitted = store.serialize();

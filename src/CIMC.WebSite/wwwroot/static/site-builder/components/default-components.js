@@ -65,7 +65,7 @@
 
     reg({ type: 'heading', name: '标题', group: 'basic', icon: 'layui-icon-fonts-strong', desc: 'H1~H4 级标题', styleScope: SCOPE_TEXT, defaults: { text: '请输入标题', level: 2, textWrap: 'auto' }, inspector: [f('text', '标题文字'), f('level', '标题级别', 'select', { options: [{ value: 1, text: 'H1' }, { value: 2, text: 'H2' }, { value: 3, text: 'H3' }, { value: 4, text: 'H4' }] }), textWrapField()] });
     reg({ type: 'text', name: '文本', group: 'basic', icon: 'layui-icon-edit', desc: '普通多行文本，通过字体排版设置外观', styleScope: SCOPE_TEXT, defaults: { text: '请输入文本内容', textWrap: 'auto' }, inspector: [f('text', '文本内容', 'textarea', { rows: 6 }), textWrapField()] });
-    reg({ type: 'richText', name: '富文本', group: 'basic', icon: 'layui-icon-fonts-html', desc: '使用编辑器编排段落、标题、列表与链接', styleScope: [], hideStyle: true, defaults: { html: '<p>请输入富文本内容</p>' }, inspector: [f('html', '富文本内容', 'textarea', { rows: 8, richText: true })] });
+    reg({ type: 'richText', name: '富文本', group: 'basic', icon: 'layui-icon-fonts-html', desc: '使用 wangEditor 编辑文字、图片与表格', styleScope: [], hideStyle: true, defaults: { html: '<p>请输入富文本内容</p>' }, inspector: [f('html', '富文本内容', 'textarea', { rows: 8, richText: true })] });
     reg({ type: 'image', name: '图片', group: 'basic', icon: 'layui-icon-picture', desc: '单张图片，可设置跳转链接', styleScope: SCOPE_MEDIA, defaults: { src: '', alt: '', link: '' }, inspector: [f('src', '图片', 'image'), f('alt', '替代文本', 'text', { hint: '用于 SEO 与图片加载失败提示' }), f('link', '跳转链接', 'text', { placeholder: '留空表示不可点击' })] });
     reg({ type: 'banner', name: 'Banner', group: 'basic', icon: 'layui-icon-carousel', desc: '多图轮播，2 张及以上自动播放', styleScope: SCOPE_BANNER, defaults: { images: [], height: 420, interval: 5000, showArrows: true, showDots: true, objectFit: 'cover' }, inspector: [f('images', '轮播图片', 'image-list', { hint: '选择 2 张及以上时前台自动轮播' }), f('height', 'Banner 高度(px)', 'number', { min: 120, max: 900, default: 420 }), f('interval', '轮播间隔(ms)', 'number', { min: 1000, max: 30000, step: 500, default: 5000 }), f('objectFit', '图片填充', 'select', { options: [{ value: 'cover', text: '覆盖裁剪' }, { value: 'contain', text: '完整显示' }] }), f('showArrows', '显示左右箭头', 'checkbox'), f('showDots', '显示圆点指示', 'checkbox'), f('title', '主标题'), f('description', '介绍文字', 'textarea'), f('buttonText', '按钮文字'), f('buttonLink', '跳转链接', 'link')] });
     reg({ type: 'button', name: '按钮', group: 'basic', icon: 'layui-icon-link', desc: '行动按钮，支持跳转与打开方式', styleScope: SCOPE_TEXT, defaults: { text: '了解更多', link: { type: 'none' }, target: '_self', variant: 'primary' }, inspector: [f('text', '按钮文字'), f('link', '跳转链接', 'link'), f('target', '打开方式', 'select', { options: [{ value: '_self', text: '当前窗口' }, { value: '_blank', text: '新窗口' }] }), f('variant', '按钮样式', 'select', { options: [{ value: 'primary', text: '主按钮' }, { value: 'outline', text: '描边按钮' }, { value: 'text', text: '文字按钮' }] })] });
@@ -118,12 +118,44 @@
         }
     });
 
-    // ── 富文本组件编辑器 ──────────────────────────────────────────────────
-    // 不引入额外第三方编辑器，直接复用浏览器 contenteditable，避免装修器体积和部署依赖增加。
-    // 允许的标签与服务端 RichTextSanitizer 保持一致，保存和发布时形成双重防护。
+    // 装修富文本的安全转换：与服务端 RichTextSanitizer 保持一致。
+    // wangEditor 实例的创建和销毁在 richtext-editor.js 中处理。
     (function () {
-        var allowed = { p:1, br:1, strong:1, b:1, em:1, i:1, u:1, s:1, strike:1, ul:1, ol:1, li:1, blockquote:1, h1:1, h2:1, h3:1, h4:1, a:1 };
+        var allowed = { p:1, br:1, strong:1, b:1, em:1, i:1, u:1, s:1, strike:1, ul:1, ol:1, li:1, blockquote:1, h1:1, h2:1, h3:1, h4:1, a:1, span:1, table:1, thead:1, tbody:1, tr:1, th:1, td:1, img:1 };
         var blocked = { script:1, style:1, iframe:1, object:1, embed:1, svg:1, math:1, form:1, input:1, button:1, textarea:1, select:1, option:1 };
+        var colors = { '#d92d20':'sb-rte-color-red', '#1677ff':'sb-rte-color-blue', '#15803d':'sb-rte-color-green' };
+        var sizes = { '2':'sb-rte-size-sm', '3':'sb-rte-size-md', '5':'sb-rte-size-lg', '13px':'sb-rte-size-sm', '16px':'sb-rte-size-md', '24px':'sb-rte-size-lg' };
+        var alignments = { left:'sb-rte-align-left', center:'sb-rte-align-center', right:'sb-rte-align-right', justify:'sb-rte-align-justify' };
+        var alignable = { p:1, h1:1, h2:1, h3:1, h4:1, blockquote:1, li:1, th:1, td:1 };
+        var inlineClasses = { 'sb-rte-size-sm':1, 'sb-rte-size-md':1, 'sb-rte-size-lg':1, 'sb-rte-color-red':1, 'sb-rte-color-blue':1, 'sb-rte-color-green':1 };
+        var blockClasses = { 'sb-rte-align-left':1, 'sb-rte-align-center':1, 'sb-rte-align-right':1, 'sb-rte-align-justify':1 };
+
+        function colorClass(value) {
+            var color = String(value || '').toLowerCase().replace(/\s+/g, '');
+            var rgb = /^rgb\((\d{1,3}),(\d{1,3}),(\d{1,3})\)$/.exec(color);
+            if (rgb) {
+                var channels = rgb.slice(1).map(Number);
+                if (channels.some(function (channel) { return channel > 255; })) return '';
+                color = '#' + channels.map(function (channel) { return channel.toString(16).padStart(2, '0'); }).join('');
+            }
+            return colors[color] || '';
+        }
+
+        function safeClasses(source, tag) {
+            var inline = tag === 'span' || tag === 'font';
+            var permitted = inline ? inlineClasses : alignable[tag] ? blockClasses : {};
+            var classes = String(source.getAttribute('class') || '').split(/\s+/).filter(function (name) { return permitted[name]; });
+            if (inline) {
+                var color = colorClass(source.getAttribute('color') || source.style.color);
+                var size = sizes[String(source.getAttribute('size') || source.style.fontSize || '').toLowerCase()] || '';
+                if (color) classes = classes.filter(function (name) { return name.indexOf('sb-rte-color-') !== 0; }).concat(color);
+                if (size) classes = classes.filter(function (name) { return name.indexOf('sb-rte-size-') !== 0; }).concat(size);
+            } else if (alignable[tag]) {
+                var alignment = alignments[String(source.style.textAlign || '').toLowerCase()];
+                if (alignment) classes = classes.filter(function (name) { return name.indexOf('sb-rte-align-') !== 0; }).concat(alignment);
+            }
+            return classes.filter(function (name, index) { return classes.indexOf(name) === index; });
+        }
 
         function safeHref(value) {
             var text = String(value == null ? '' : value).trim();
@@ -131,6 +163,11 @@
             if (/^(#|\/|\.\/|\.\.\/)/.test(text)) return text;
             if (/^(https?:|mailto:|tel:)/i.test(text)) return text;
             return '';
+        }
+
+        function safeImageSrc(value) {
+            var text = String(value == null ? '' : value).trim();
+            return text && !/^\/\//.test(text) && (/^\/(?!\/)/.test(text) || /^\.\.?\//.test(text) || /^https?:\/\//i.test(text)) ? text : '';
         }
 
         function sanitize(value) {
@@ -151,12 +188,32 @@
                 var tag = String(source.tagName || '').toLowerCase();
                 if (blocked[tag]) return;
 
-                if (!allowed[tag]) {
+                if (!allowed[tag] && tag !== 'font') {
                     Array.prototype.slice.call(source.childNodes || []).forEach(function (child) { appendNode(child, target); });
                     return;
                 }
 
-                var element = document.createElement(tag);
+                var classes = safeClasses(source, tag);
+                if ((tag === 'span' || tag === 'font') && !classes.length) {
+                    Array.prototype.slice.call(source.childNodes || []).forEach(function (child) { appendNode(child, target); });
+                    return;
+                }
+                var element = document.createElement(tag === 'font' ? 'span' : tag);
+                if (classes.length) element.setAttribute('class', classes.join(' '));
+                if (tag === 'img') {
+                    var src = safeImageSrc(source.getAttribute('src'));
+                    if (!src) return;
+                    element.setAttribute('src', src);
+                    element.setAttribute('alt', source.getAttribute('alt') || '');
+                    target.appendChild(element);
+                    return;
+                }
+                if (tag === 'td' || tag === 'th') {
+                    ['colspan', 'rowspan'].forEach(function (name) {
+                        var count = Number(source.getAttribute(name));
+                        if (Number.isInteger(count) && count >= 2 && count <= 12) element.setAttribute(name, String(count));
+                    });
+                }
                 if (tag === 'a') {
                     var href = safeHref(source.getAttribute('href'));
                     if (href) element.setAttribute('href', href);
@@ -175,107 +232,10 @@
 
         root.RichText = {
             sanitize: sanitize,
-            safeHref: safeHref
+            safeHref: safeHref,
+            safeImageSrc: safeImageSrc
         };
 
-        function currentTextEditor(panel) {
-            if (!panel) return null;
-            return panel.querySelector('textarea[data-richtext="true"]');
-        }
-
-        function buildToolbar(editor, source, wrapper) {
-            var toolbar = document.createElement('div');
-            toolbar.className = 'sb-richtext-toolbar';
-            toolbar.setAttribute('role', 'toolbar');
-            toolbar.setAttribute('aria-label', '富文本工具栏');
-            toolbar.innerHTML = [
-                '<button type="button" data-rte-block="p" title="正文">正文</button>',
-                '<button type="button" data-rte-block="h2" title="二级标题">H2</button>',
-                '<button type="button" data-rte-block="h3" title="三级标题">H3</button>',
-                '<span class="sb-rte-separator"></span>',
-                '<button type="button" data-rte-command="bold" title="加粗"><strong>B</strong></button>',
-                '<button type="button" data-rte-command="italic" title="斜体"><em>I</em></button>',
-                '<button type="button" data-rte-command="underline" title="下划线"><u>U</u></button>',
-                '<button type="button" data-rte-command="strikeThrough" title="删除线"><s>S</s></button>',
-                '<span class="sb-rte-separator"></span>',
-                '<button type="button" data-rte-command="insertUnorderedList" title="无序列表">• 列表</button>',
-                '<button type="button" data-rte-command="insertOrderedList" title="有序列表">1. 列表</button>',
-                '<button type="button" data-rte-block="blockquote" title="引用">❝ 引用</button>',
-                '<button type="button" data-rte-link="1" title="添加链接">🔗 链接</button>',
-                '<button type="button" data-rte-command="removeFormat" title="清除格式">清除格式</button>'
-            ].join('');
-
-            function sync(commit) {
-                var clean = sanitize(editor.innerHTML);
-                source.value = clean;
-                if (commit && window.jQuery) window.jQuery(source).trigger('change');
-            }
-
-            toolbar.addEventListener('mousedown', function (event) {
-                if (event.target.closest('button')) event.preventDefault();
-            });
-            toolbar.addEventListener('click', function (event) {
-                var button = event.target.closest('button');
-                if (!button) return;
-                event.preventDefault();
-                editor.focus();
-
-                var command = button.getAttribute('data-rte-command');
-                var block = button.getAttribute('data-rte-block');
-                if (command) document.execCommand(command, false, null);
-                else if (block) document.execCommand('formatBlock', false, block);
-                else if (button.getAttribute('data-rte-link')) {
-                    var href = window.prompt('请输入链接地址，例如 https://example.com 或 /about', 'https://');
-                    if (href === null) return;
-                    href = safeHref(href);
-                    if (!href) {
-                        window.alert('链接地址格式不正确，仅支持 http、https、mailto、tel 或站内相对地址。');
-                        return;
-                    }
-                    document.execCommand('createLink', false, href);
-                }
-                sync(true);
-            });
-            wrapper.appendChild(toolbar);
-            return sync;
-        }
-
-        function enhanceRichText() {
-            var panel = document.getElementById('propsPanel');
-            var source = currentTextEditor(panel);
-            if (!source || source.getAttribute('data-richtext-ready') === '1') return;
-            source.setAttribute('data-richtext-ready', '1');
-            source.classList.add('sb-richtext-source');
-
-            var wrapper = document.createElement('div');
-            wrapper.className = 'sb-richtext-editor-wrap';
-            var editor = document.createElement('div');
-            editor.className = 'sb-richtext-editor';
-            editor.contentEditable = 'true';
-            editor.setAttribute('role', 'textbox');
-            editor.setAttribute('aria-multiline', 'true');
-            editor.setAttribute('data-placeholder', '输入正文内容，可使用上方工具栏进行排版');
-            editor.innerHTML = sanitize(source.value) || '<p><br></p>';
-
-            source.parentNode.insertBefore(wrapper, source);
-            var sync = buildToolbar(editor, source, wrapper);
-            wrapper.appendChild(editor);
-            source.style.display = 'none';
-
-            editor.addEventListener('input', function () { sync(false); });
-            editor.addEventListener('blur', function () { sync(true); });
-            editor.addEventListener('paste', function () {
-                window.setTimeout(function () {
-                    editor.innerHTML = sanitize(editor.innerHTML) || '<p><br></p>';
-                    sync(false);
-                }, 0);
-            });
-        }
-
-        var panel = document.getElementById('propsPanel');
-        if (panel && window.MutationObserver) {
-            new MutationObserver(function () { enhanceRichText(); }).observe(panel, { childList: true, subtree: true });
-        }
-        window.setTimeout(enhanceRichText, 0);
+        // 富文本编辑器实例由 richtext-editor.js 在属性面板渲染后创建。
     })();
 })(window);

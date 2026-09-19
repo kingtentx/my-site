@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><title>RUNNING</title>
+<link rel="stylesheet" href="../src/CIMC.WebSite/wwwroot/static/site-builder/editor.css">
+<link rel="stylesheet" href="../src/CIMC.WebSite/wwwroot/static/site/css/builder-runtime.css">
+</head>
+<body>
+<div id="propsPanel"><textarea data-richtext="true" data-area="props" data-key="html">&lt;p&gt;测试文字&lt;/p&gt;</textarea></div>
+<div class="sb-runtime"><div id="preview" class="sb-richtext"></div></div>
+<pre id="result"></pre>
+<script>
+window.SiteBuilder = { Registry: {
+    items: {},
+    register: function (item) { this.items[item.type] = item; },
+    get: function (type) { return this.items[type]; }
+} };
+</script>
+<script src="../src/CIMC.WebSite/wwwroot/static/plugin/wangEditor-4.7.13/wangEditor.min.js"></script>
+<script src="../src/CIMC.WebSite/wwwroot/static/site-builder/components/default-components.js"></script>
+<script src="../src/CIMC.WebSite/wwwroot/static/site-builder/core/tree.js"></script>
+<script src="../src/CIMC.WebSite/wwwroot/static/site-builder/core/store.js"></script>
+<script src="../src/CIMC.WebSite/wwwroot/static/site-builder/richtext-editor.js"></script>
+<script>
+window.setTimeout(function () {
+    var failures = [], updates = [];
+    var panel = document.getElementById('propsPanel');
+    var manager = window.SiteBuilder.RichTextEditor;
+    function check(name, passed) { if (!passed) failures.push(name); }
+    manager.onChange = function (nodeId, html) { updates.push({ nodeId: nodeId, html: html }); };
+    manager.mount('node-1', false);
+    var source = panel.querySelector('textarea[data-richtext]');
+    var text = panel.querySelector('.w-e-text');
+    var formattedHtml = '';
+    check('wangEditor 菜单和编辑区', !!panel.querySelector('.w-e-toolbar') && !!text);
+    if (text) {
+        text.innerHTML = '<p style="text-align:center"><font color="#d92d20" size="5">中文</font></p>';
+        manager.flush(false);
+        check('字号颜色和对齐保存', /sb-rte-align-center/.test(source.value) && /sb-rte-color-red/.test(source.value) && /sb-rte-size-lg/.test(source.value));
+        formattedHtml = source.value;
+        document.getElementById('preview').innerHTML = source.value;
+        var span = document.querySelector('#preview span');
+        check('前台格式一致', span && getComputedStyle(span).color === 'rgb(217, 45, 32)' && getComputedStyle(span).fontSize === '24px');
+
+        text.innerHTML = '<table><tbody><tr><th colspan="2">参数</th></tr><tr><td>长</td><td>宽</td></tr></tbody></table><p><img src="/upload/image/test.png" alt="示例"><img src="javascript:alert(1)"></p>';
+        manager.flush(true);
+        check('表格和图片保存', /<table>/.test(source.value) && /colspan="2"/.test(source.value) && /src="\/upload\/image\/test.png"/.test(source.value));
+        check('危险图片地址被清除', source.value.indexOf('javascript:') < 0);
+        check('内容通知绑定节点', updates.length > 0 && updates[updates.length - 1].nodeId === 'node-1');
+    }
+    manager.mount('node-1', false);
+    check('相同节点不重复创建', panel.querySelectorAll('.w-e-toolbar').length === 1);
+    manager.destroy();
+    panel.innerHTML = '<textarea data-richtext="true" data-area="props" data-key="html">&lt;p&gt;新节点&lt;/p&gt;</textarea>';
+    panel.querySelector('textarea').value = formattedHtml;
+    manager.mount('node-2', false);
+    check('切换节点后重新创建', panel.querySelectorAll('.w-e-toolbar').length === 1);
+    var restored = panel.querySelector('.w-e-text .sb-rte-color-red');
+    check('重新打开后保留格式', !!restored && getComputedStyle(restored).fontSize === '24px' && getComputedStyle(restored).color === 'rgb(217, 45, 32)');
+    manager.destroy();
+    panel.innerHTML = '<textarea data-richtext="true" data-area="props" data-key="html">&lt;p&gt;锁定&lt;/p&gt;</textarea>';
+    manager.mount('node-3', true);
+    check('锁定组件不可编辑', panel.querySelector('.w-e-text').getAttribute('contenteditable') === 'false');
+    manager.destroy();
+    var store = new SiteBuilder.Store('smoke');
+    store.load({ schemaVersion: 1, nodes: [{ id: 'rich', type: 'richText', props: { html: '<p>原文</p>' } }], settings: {} });
+    store.update('rich', 'props', 'html', '<p>新文</p>', { live: true });
+    store.update('rich', 'props', 'html', '<p>新文</p>');
+    store.undo();
+    check('实时编辑后可以撤销', store.selected() === null && store.document.nodes[0].props.html === '<p>原文</p>');
+    store.redo();
+    check('撤销后可以重做', store.document.nodes[0].props.html === '<p>新文</p>');
+    panel.innerHTML = '<textarea data-richtext="true" data-area="props" data-key="html">&lt;p&gt;字号&lt;/p&gt;</textarea>';
+    panel.style.width = '500px';
+    manager.mount('font-probe', false);
+    panel.querySelector('[data-title="字号"]').click();
+    var fontMenu = panel.querySelector('[data-title="字号"]'), drop = fontMenu.querySelector('.w-e-droplist'), bar = panel.querySelector('.w-e-toolbar');
+    check('两行工具栏的字号下拉不遮挡按钮', !!drop && drop.getBoundingClientRect().top >= bar.getBoundingClientRect().bottom - 1);
+    check('字号选项完整显示', !!drop && drop.querySelectorAll('.w-e-item').length === 3);
+    panel.querySelector('[data-title="对齐"]').click();
+    var alignDrop = panel.querySelector('[data-title="对齐"] .w-e-droplist');
+    check('第二行菜单下拉不遮挡编辑区', !!alignDrop && alignDrop.getBoundingClientRect().top >= bar.getBoundingClientRect().bottom - 1);
+    panel.querySelector('[data-title="标题"]').click();
+    var headingDrop = panel.querySelector('[data-title="标题"] .w-e-droplist');
+    check('标题下拉不遮挡第二行按钮', !!headingDrop && headingDrop.getBoundingClientRect().top >= bar.getBoundingClientRect().bottom - 1);
+    manager.destroy();
+    var result = failures.length ? 'FAIL: ' + failures.join(', ') : 'PASS: wangEditor, sync, table, image, sanitizer, lifecycle';
+    document.title = result;
+    document.getElementById('result').textContent = result;
+}, 150);
+</script>
+</body>
+</html>

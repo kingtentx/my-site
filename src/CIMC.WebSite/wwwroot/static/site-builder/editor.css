@@ -219,60 +219,20 @@
 
 /* ── 富文本编辑器 ───────────────────────────────────────────────────── */
 .sb-richtext-source {display:none!important}
-.sb-field-row>.sb-richtext-editor-wrap {min-width:0;flex:1}
-.sb-richtext-editor-wrap {
-    overflow:hidden;
-    border:1px solid #cbd6e3;
-    border-radius:8px;
-    background:#fff;
-    box-shadow:0 1px 2px rgba(15,23,42,.03);
-}
-.sb-richtext-editor-wrap:focus-within {border-color:#4d91ff;box-shadow:0 0 0 3px rgba(22,119,255,.10)}
-.sb-richtext-toolbar {
-    display:flex;
-    align-items:center;
-    gap:4px;
-    flex-wrap:wrap;
-    padding:7px 8px;
-    border-bottom:1px solid #e4e9f0;
-    background:#f8fafc;
-}
-.sb-richtext-toolbar button {
-    min-width:30px;
-    height:29px;
-    padding:0 8px;
-    border:1px solid transparent;
-    border-radius:5px;
-    background:transparent;
-    color:#46566b;
-    font-size:12px;
-    line-height:27px;
-    cursor:pointer;
-    white-space:nowrap;
-}
-.sb-richtext-toolbar button:hover {border-color:#c7d8ef;background:#eef5ff;color:#1677ff}
-.sb-rte-separator {width:1px;height:20px;margin:0 2px;background:#d9e0e9}
-.sb-richtext-editor {
-    min-height:190px;
-    max-height:420px;
-    overflow:auto;
-    padding:13px 14px;
-    outline:0;
-    color:#253247;
-    background:#fff;
-    font:14px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC",sans-serif;
-    word-break:break-word;
-}
-.sb-richtext-editor:empty:before {content:attr(data-placeholder);color:#a2adbb;pointer-events:none}
-.sb-richtext-editor p {margin:0 0 10px}
-.sb-richtext-editor h1,.sb-richtext-editor h2,.sb-richtext-editor h3,.sb-richtext-editor h4 {margin:14px 0 8px;line-height:1.4;color:#172033}
-.sb-richtext-editor h2 {font-size:20px}.sb-richtext-editor h3 {font-size:17px}
-.sb-richtext-editor ul,.sb-richtext-editor ol {margin:8px 0;padding-left:24px}
-.sb-richtext-editor blockquote {margin:10px 0;padding:8px 12px;border-left:3px solid #8ebcff;background:#f5f9ff;color:#526176}
-.sb-richtext-editor a {color:#1677ff;text-decoration:underline}
-
+.sb-field-row>.sb-wangeditor {min-width:0;flex:1}
+.sb-wangeditor {width:100%;min-width:0;border:1px solid #cbd6e3;border-radius:8px;background:#fff}
+.sb-wangeditor:focus-within {border-color:#4d91ff;box-shadow:0 0 0 3px rgba(22,119,255,.10)}
+.sb-wangeditor .w-e-toolbar {display:flex;flex-wrap:wrap;border:0!important;border-bottom:1px solid #e4e9f0!important;border-radius:8px 8px 0 0;background:#f8fafc!important;z-index:20!important}
+.sb-wangeditor .w-e-toolbar .w-e-menu .w-e-droplist {top:var(--sb-menu-dropdown-top, 40px)!important;margin-top:0!important}
+.sb-wangeditor .w-e-text-container {height:360px!important;min-height:240px;border:0!important}
+.sb-wangeditor .w-e-text {padding:12px 14px;font-size:14.5px;line-height:1.75;word-break:break-word}
+.sb-wangeditor .w-e-menu .w-e-panel-container {z-index:30}
+.sb-wangeditor.is-locked .w-e-toolbar {pointer-events:none;opacity:.55}
+.sb-wangeditor .sb-rte-size-sm {font-size:13px}.sb-wangeditor .sb-rte-size-md {font-size:16px}.sb-wangeditor .sb-rte-size-lg {font-size:24px}
+.sb-wangeditor .sb-rte-color-red {color:#d92d20}.sb-wangeditor .sb-rte-color-blue {color:#1677ff}.sb-wangeditor .sb-rte-color-green {color:#15803d}
+.sb-wangeditor .sb-rte-align-left {text-align:left}.sb-wangeditor .sb-rte-align-center {text-align:center}.sb-wangeditor .sb-rte-align-right {text-align:right}.sb-wangeditor .sb-rte-align-justify {text-align:justify}
 @media(max-width:1500px){.designer-props{width:370px}.designer-props .layui-form-item{grid-template-columns:88px minmax(0,1fr)}.sb-field-hint{padding-left:98px}}
-@media(max-width:1200px){.designer-lib{width:210px;min-width:210px}.designer-props{width:320px;padding-left:11px;padding-right:11px}.designer-props .layui-form-item{grid-template-columns:1fr;row-gap:5px}.designer-props .layui-form-label{padding:0!important}.sb-field-hint{grid-column:1;padding-left:0}.props-style-spacing .props-fold-body{grid-template-columns:1fr}.sb-richtext-editor{min-height:160px}}
+@media(max-width:1200px){.designer-lib{width:210px;min-width:210px}.designer-props{width:320px;padding-left:11px;padding-right:11px}.designer-props .layui-form-item{grid-template-columns:1fr;row-gap:5px}.designer-props .layui-form-label{padding:0!important}.sb-field-hint{grid-column:1;padding-left:0}.props-style-spacing .props-fold-body{grid-template-columns:1fr}.sb-wangeditor .w-e-text-container{height:280px!important}}
 
 /* ── 富文本录入空间优化：内容区改为上下布局，编辑器使用整行宽度 ───────────── */
 .props-content .layui-form-item {
@@ -294,7 +254,7 @@
     width: 100%;
     align-items: flex-start;
 }
-.props-content .sb-richtext-editor-wrap {
+.props-content .sb-wangeditor {
     width: 100%;
     min-width: 0;
     flex: 1 1 auto;
@@ -305,27 +265,10 @@
     margin: 7px 0 3px;
     font-size: 12.5px;
 }
-.props-content .sb-richtext-toolbar {
-    gap: 5px;
-    padding: 8px 10px;
-}
-.props-content .sb-richtext-toolbar button {
-    min-width: 34px;
-    height: 31px;
-    padding: 0 9px;
-    font-size: 12.5px;
-    line-height: 29px;
-}
-.props-content .sb-richtext-editor {
-    min-height: 300px;
-    max-height: 620px;
-    padding: 15px 16px;
-    font-size: 14.5px;
-    line-height: 1.85;
-}
+.props-content .sb-wangeditor .w-e-text-container {height:400px!important}
 @media(min-width:1501px){.designer-props{width:460px}}
 @media(max-width:1500px) and (min-width:1201px){.designer-props{width:420px}}
-@media(max-width:1200px){.props-content .sb-richtext-editor{min-height:240px;max-height:520px}}
+@media(max-width:1200px){.props-content .sb-wangeditor .w-e-text-container{height:300px!important}}
 
 /* ── 复合属性控件宽度优化：录入值优先，单位/颜色/素材按钮保持紧凑 ─────── */
 .designer-props .sb-length-control {
@@ -411,42 +354,42 @@
 }
 
 /* 富文本字段始终保持：标签在上，编辑器整行占满。放在文件末尾覆盖普通属性响应式规则。 */
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) {
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) {
     position:relative;
     display:grid;
     grid-template-columns:minmax(0,1fr)!important;
     row-gap:7px;
 }
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) > .layui-form-label {
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) > .layui-form-label {
     grid-column:1;
     width:100%!important;
     padding:0 34px 6px 0!important;
 }
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) > .layui-input-block {
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) > .layui-input-block {
     grid-column:1;
     width:100%;
     min-width:0;
 }
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-field-row.is-tall {
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) .sb-field-row.is-tall {
     position:relative;
     display:block;
     width:100%;
     min-width:0;
 }
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-richtext-editor-wrap {
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) .sb-wangeditor {
     display:block;
     width:100%!important;
     min-width:0!important;
     max-width:none!important;
 }
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-field-reset {
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) .sb-field-reset {
     position:absolute;
     right:0;
     top:-36px;
     margin:0!important;
 }
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) + .sb-field-hint,
-.designer-props .props-content .layui-form-item:has(.sb-richtext-editor-wrap) .sb-field-hint {
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) + .sb-field-hint,
+.designer-props .props-content .layui-form-item:has(.sb-wangeditor) .sb-field-hint {
     grid-column:1;
     padding-left:0!important;
 }
