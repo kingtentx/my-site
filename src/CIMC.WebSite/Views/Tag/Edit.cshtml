@@ -8,9 +8,9 @@
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
-    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
-    <link rel="stylesheet" href="~/resource/css/site.css" media="all">
+    <link rel="stylesheet" href="~/static/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/static/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/static/layuiadmin/css/site.css" media="all">
 </head>
 <body>
 <div class="layui-fluid">
@@ -38,9 +38,9 @@
         </div>
     </div>
 </div>
-<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script src="~/static/layuiadmin/layui/layui.js"></script>
 <script>
-layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','form'],function(){
+layui.config({base:'@Url.Content("~/static/layuiadmin/")'}).extend({index:'lib/index'}).use(['index','form'],function(){
     var $=layui.$,form=layui.form,layer=layui.layer;
     form.on('submit(save)',function(data){
         data.field.IsActive=$('input[name="IsActive"]').prop('checked');

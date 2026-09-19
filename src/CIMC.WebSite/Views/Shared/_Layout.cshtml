@@ -9,13 +9,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>@title</title>
-    <link rel="stylesheet" href="~/syle/site.css" />
+    <link rel="stylesheet" href="~/static/site/legacy/site.css" />
 </head>
 <body>
     <main>
         @RenderBody()
     </main>
-    <script src="~/syle/site.js"></script>
+    <script src="~/static/site/legacy/site.js"></script>
     <script>
         function switchLang(culture) {
             document.cookie = '.AspNetCore.Culture=' + encodeURIComponent('c=' + culture + '|uic=' + culture) + ';path=/;max-age=' + (365 * 24 * 3600);

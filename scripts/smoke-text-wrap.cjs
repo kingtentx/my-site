@@ -3,7 +3,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-const base = 'D:/MyProject/my-site/src/CIMC.WebSite/wwwroot/site-builder';
+const base = 'D:/MyProject/my-site/src/CIMC.WebSite/wwwroot/static/site-builder';
 const sandbox = { console, setTimeout: () => 0, clearTimeout: () => {} };
 sandbox.window = sandbox;
 sandbox.document = {
@@ -65,7 +65,7 @@ check('nowrap 下字面 \\n 仍转 <br>',
 check('HTML 仍被转义', render('text', { text: '<b>x</b>' }).includes('&lt;b&gt;'), '');
 
 // 4. CSS：三档策略 + 宽度约束
-const css = fs.readFileSync(path.join(base, 'runtime.css'), 'utf8');
+const css = fs.readFileSync(path.join(base, '../site/css/builder-runtime.css'), 'utf8');
 check('CSS .sb-text 有 max-width:100%', /\.sb-runtime \.sb-text \{[^}]*max-width:\s*100%/.test(css), '');
 check('CSS .sb-text 有 min-width:0', /\.sb-runtime \.sb-text \{[^}]*min-width:\s*0/.test(css), '');
 check('CSS nowrap 有 ellipsis', /is-wrap-nowrap[^{]*\{[^}]*text-overflow:\s*ellipsis/.test(css), '');

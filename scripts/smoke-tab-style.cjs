@@ -3,7 +3,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-const base = 'D:/MyProject/my-site/src/CIMC.WebSite/wwwroot/site-builder';
+const base = 'D:/MyProject/my-site/src/CIMC.WebSite/wwwroot/static/site-builder';
 const sandbox = { console, setTimeout: () => 0, clearTimeout: () => {} };
 sandbox.window = sandbox;
 sandbox.document = {

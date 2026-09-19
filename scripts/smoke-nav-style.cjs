@@ -3,7 +3,7 @@ const fs = require('fs');
 const vm = require('vm');
 const path = require('path');
 
-const base = 'D:/MyProject/my-site/src/CIMC.WebSite/wwwroot/site-builder';
+const base = 'D:/MyProject/my-site/src/CIMC.WebSite/wwwroot/static/site-builder';
 const sandbox = { console, setTimeout: () => 0, clearTimeout: () => {} };
 sandbox.window = sandbox;
 sandbox.document = {
@@ -78,7 +78,7 @@ const textNode3 = { type: 'text', id: 't3', props: { text: '<b>x</b>' }, style: 
 check('HTML 仍被转义', Renderer.render({ nodes: [textNode3] }).includes('&lt;b&gt;'), '');
 
 // 4. CSS / 服务端渲染保持一致
-const css = fs.readFileSync(path.join(base, 'runtime.css'), 'utf8');
+const css = fs.readFileSync(path.join(base, '../site/css/builder-runtime.css'), 'utf8');
 check('横向导航强制单行', /sb-public-nav\.is-horizontal\s*\{\s*flex-wrap:\s*nowrap/.test(css), '');
 check('导航宽度受所在列约束', /sb-public-nav\s*\{[^}]*max-width:\s*100%/.test(css), '');
 check('Logo 图片取消 200px 硬上限', !/sb-public-logo img[^}]*max-width:\s*200px/.test(css), '');

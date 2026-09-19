@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const source = fs.readFileSync(path.join(__dirname, '../src/CIMC.WebSite/wwwroot/site-builder/effects.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '../src/CIMC.WebSite/wwwroot/static/site/js/builder-effects.js'), 'utf8');
 
 function environment({ reduced = false, observer = true } = {}) {
     const elements = [], observers = [], frames = new Map(); let frameId = 0;

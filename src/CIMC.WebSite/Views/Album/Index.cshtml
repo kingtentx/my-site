@@ -8,8 +8,8 @@
     <meta name="renderer" content="webkit">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="~/resource/layuiadmin/layui/css/layui.css" media="all">
-    <link rel="stylesheet" href="~/resource/layuiadmin/style/admin.css" media="all">
+    <link rel="stylesheet" href="~/static/layuiadmin/layui/css/layui.css" media="all">
+    <link rel="stylesheet" href="~/static/layuiadmin/style/admin.css" media="all">
     <style>.layui-table-cell{height:auto}.product-thumb{width:110px;height:70px;object-fit:contain;cursor:pointer;background:#f8f8f8}</style>
 </head>
 <body>
@@ -40,9 +40,9 @@
         </div>
     </div>
 </div>
-<script src="~/resource/layuiadmin/layui/layui.js"></script>
+<script src="~/static/layuiadmin/layui/layui.js"></script>
 <script>
-layui.config({base:'@Url.Content("~")/resource/layuiadmin/'}).extend({index:'lib/index'}).use(['index','table','form'],function(){
+layui.config({base:'@Url.Content("~/static/layuiadmin/")'}).extend({index:'lib/index'}).use(['index','table','form'],function(){
     var $=layui.$,table=layui.table,form=layui.form,layer=layui.layer;
     table.render({elem:'#app-table',url:'/Album/GetList',response:{statusName:'code',statusCode:200,msgName:'message',countName:'count',dataName:'data'},request:{pageName:'pageIndex',limitName:'pageSize'},page:true,cols:[[{type:'checkbox'},{field:'id',width:70,title:'ID'},{field:'imageUrl',minWidth:180,title:'产品图片',templet:'#imageTpl'},{field:'title',width:220,title:'产品标题'},{field:'tagName',width:140,title:'分类'},{field:'sort',width:80,title:'排序'},{field:'isActive',width:100,title:'状态',templet:'#statusTpl'},{field:'creationTime',width:180,title:'创建时间'},{align:'center',width:180,title:'操作',toolbar:'#barTpl'}]]});
     form.on('submit(app-search)',function(data){table.reload('app-table',{page:{curr:1},where:data.field});return false;});

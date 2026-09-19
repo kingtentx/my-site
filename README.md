@@ -299,7 +299,7 @@ Banner 支持：
 设计页、预览页和正式发布页共用：
 
 ```text
-wwwroot/site-builder/runtime.css
+wwwroot/static/site/css/builder-runtime.css
 ```
 
 该文件是 Site Builder 的统一运行时样式。
@@ -527,15 +527,15 @@ src/CIMC.WebSite/
 │  ├─ Home/                   # 前台页面
 │  └─ Shared/SiteBuilder/     # Builder 服务端渲染
 └─ wwwroot/
-   └─ site-builder/
-      ├─ core/                # Registry / Tree / Store
-      ├─ components/          # 组件定义
-      ├─ inspector/           # 属性面板
-      ├─ renderer/            # 设计器渲染
-      ├─ page-designer.js     # 装修器主逻辑
-      ├─ presets.js           # 组合预设
-      └─ runtime.css          # 设计 / 预览 / 发布统一运行时样式
+   ├─ static/
+   │  ├─ layuiadmin/         # 后台框架及站点自有的后台资源
+   │  ├─ site-builder/       # 装修器及前台 Builder 运行时资源
+   │  ├─ site/               # 前台样式、脚本及旧版页面资源
+   │  └─ plugin/             # 第三方类库，按插件名称/版本归档
+   └─ upload/                # 运行时上传内容，保留已有 /upload/ URL
 ```
+
+静态资源分类、路径迁移及兼容规则见 [文档索引](doc/README.md) 和 [静态资源目录规范](doc/architecture/static-resources.md)。
 
 ---
 
@@ -571,7 +571,7 @@ Header / Footer = 全局 BuilderDocument
 3. Inspector 配置
 4. Designer Renderer
 5. Server Renderer (_Node.cshtml)
-6. runtime.css
+6. `wwwroot/static/site/css/builder-runtime.css`
 7. BuilderDocument 服务端校验
 ```
 
@@ -653,7 +653,7 @@ agent/site-builder-enhancements
 - 选中任意控件，在右侧「样式 → 动画与特效」设置滚动入场（淡入、上移、左右滑入、缩放）及悬停效果（上浮、放大、阴影）；标题和文字还支持数字递增。页头、正文、页脚使用相同配置。
 - 可调整入场时长（100–3000 ms）、延迟（0–3000 ms）、位移（0–100 px）、播放节奏，以及是否每次重新滚入屏幕都播放；悬停使用轻量的 220 ms 过渡。留空使用默认值，未设置的旧控件保持静态。
 - 「预览特效」只播放当前控件，不影响拖动和文档内容。保存草稿后可整页预览；发布对应页面或全局区域后在前台生效。支持撤销、重做和恢复默认样式。
-- 配置保存在节点 `Style` 中：`effectEntrance`、`effectHover`、`effectDuration`、`effectDelay`、`effectDistance`、`effectRepeat`、`effectEasing`、`effectCounter`。Razor 将配置附加到控件自身，不增加布局容器；`effects.js` / `effects.css` 负责前台播放。
+- 配置保存在节点 `Style` 中：`effectEntrance`、`effectHover`、`effectDuration`、`effectDelay`、`effectDistance`、`effectRepeat`、`effectEasing`、`effectCounter`。Razor 将配置附加到控件自身，不增加布局容器；`wwwroot/static/site/js/builder-effects.js` / `wwwroot/static/site/css/builder-effects.css` 负责前台播放。
 - 系统启用「减少动态效果」时停用动画；JavaScript 不可用时正文仍正常显示。建议主要内容区使用轻量入场，避免父子控件同时设置大量动画。
 - 无额外依赖的运行时回归测试：`node scripts/site-builder-effects.test.cjs`。
 - 导航控件支持分别设置二级菜单的展开效果（下滑淡入、淡入、缩放淡入或关闭动画）以及条目的悬停／当前选中效果（背景高亮、右移、下划线、左侧色条或关闭），并可配置 100–1000 ms 特效时长和强调色；装修画布与发布页面共用同一套效果，键盘聚焦和“减少动态效果”设置同样受支持。

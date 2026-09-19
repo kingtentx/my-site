@@ -250,6 +250,56 @@ namespace MySite.Web
                 app.UseHsts();
             }
 
+            // 已发布页面和数据库内容可能仍含旧静态 URL。仅在新目录中确有对应文件时改写，
+            // 避免误拦截同名的动态页面路由；新模板一律直接引用 /static/。
+            var legacyStaticPaths = new (string OldPrefix, string NewPrefix)[]
+            {
+                ("/resource/js/jquery-1.12.4.min.js", "/static/plugin/jquery/jquery-1.12.4.min.js"),
+                ("/resource/js/jquery-2.1.1.min.js", "/static/plugin/jquery/jquery-2.1.1.min.js"),
+                ("/resource/js/Sortable.min.js", "/static/plugin/sortable/Sortable.min.js"),
+                ("/resource/js/Sortable.js", "/static/plugin/sortable/Sortable.js"),
+                ("/resource/js/jquery.dad.min.js", "/static/plugin/jquery-dad/jquery.dad.min.js"),
+                ("/resource/js/jquery.pagination.js", "/static/plugin/jquery-pagination/jquery.pagination.js"),
+                ("/resource/js/particles.js", "/static/plugin/particles/particles.js"),
+                ("/resource/js/pickr.min.js", "/static/plugin/pickr/pickr.min.js"),
+                ("/resource/js/polyfill.min.js", "/static/plugin/polyfill/polyfill.min.js"),
+                ("/resource/js/spark-md5.min.js", "/static/plugin/spark-md5/spark-md5.min.js"),
+                ("/resource/css/jquery.dad.css", "/static/plugin/jquery-dad/jquery.dad.css"),
+                ("/resource/layuiadmin/", "/static/layuiadmin/"),
+                ("/resource/css/", "/static/layuiadmin/css/"),
+                ("/resource/img/", "/static/layuiadmin/img/"),
+                ("/resource/images/", "/static/layuiadmin/images/"),
+                ("/resource/js/", "/static/layuiadmin/js/"),
+                ("/resource/ssi-uploader/", "/static/plugin/ssi-uploader/"),
+                ("/resource/wangEditor-4.7.13/", "/static/plugin/wangEditor-4.7.13/"),
+                ("/resource/wangeditor-4.7.9/", "/static/plugin/wangeditor-4.7.9/"),
+                ("/layui-v2.6.8/", "/static/plugin/layui-v2.6.8/"),
+                ("/site-builder/runtime.css", "/static/site/css/builder-runtime.css"),
+                ("/site-builder/effects.css", "/static/site/css/builder-effects.css"),
+                ("/site-builder/effects.js", "/static/site/js/builder-effects.js"),
+                ("/site-builder/", "/static/site-builder/"),
+                ("/site/", "/static/site/"),
+                ("/syle/", "/static/site/legacy/"),
+                ("/favicon.ico", "/static/site/favicon.ico")
+            };
+            var staticRoot = Path.GetFullPath(Path.Combine(env.WebRootPath, "static")) + Path.DirectorySeparatorChar;
+            app.Use(async (context, next) =>
+            {
+                var requestPath = context.Request.Path.Value ?? string.Empty;
+                foreach (var (oldPrefix, newPrefix) in legacyStaticPaths)
+                {
+                    if (!requestPath.StartsWith(oldPrefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    var mappedPath = newPrefix + requestPath.Substring(oldPrefix.Length);
+                    var physicalPath = Path.GetFullPath(Path.Combine(env.WebRootPath,
+                        mappedPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+                    if (physicalPath.StartsWith(staticRoot, StringComparison.OrdinalIgnoreCase) && File.Exists(physicalPath))
+                    {
+                        context.Request.Path = mappedPath;
+                    }
+                    break;
+                }
+                await next();
+            });
             app.UseStaticFiles();
             app.UseRouting();
             app.UseRequestLocalization();
