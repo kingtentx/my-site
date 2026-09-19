@@ -433,6 +433,43 @@ button { font-family: inherit; cursor: pointer; }
 .product-section { margin-bottom: 32px; }
 .product-section .section-title { font-size: 20px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
 .product-description, .product-specification { line-height: 1.8; }
+.product-description { overflow-x: auto; }
+.product-description p,
+.product-description h1,
+.product-description h2,
+.product-description h3,
+.product-description h4,
+.product-description h5,
+.product-description table,
+.product-description pre { margin: 10px 0; line-height: 1.5; }
+.product-description ul,
+.product-description ol { margin: 10px 0 10px 20px; padding: 0; }
+.product-description ul { list-style: disc; }
+.product-description ol { list-style: decimal; }
+.product-description table {
+    border-collapse: collapse;
+    border-top: 1px solid #ccc;
+    border-left: 1px solid #ccc;
+}
+.product-description table th,
+.product-description table td {
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    padding: 3px 5px;
+    height: 30px;
+}
+.product-description table th {
+    border-bottom-width: 2px;
+    background: #f1f1f1;
+    text-align: center;
+}
+.product-description blockquote {
+    border-left: 8px solid #d0e5f2;
+    padding: 5px 10px;
+    margin: 10px 0;
+    line-height: 1.4;
+    background: #f1f1f1;
+}
 .product-footer-nav { text-align: center; }
 
 /* ====== Component error ====== */

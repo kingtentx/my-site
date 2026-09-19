@@ -272,7 +272,6 @@ namespace MySite.Web
                 ("/resource/js/", "/static/layuiadmin/js/"),
                 ("/resource/ssi-uploader/", "/static/plugin/ssi-uploader/"),
                 ("/resource/wangEditor-4.7.13/", "/static/plugin/wangEditor-4.7.13/"),
-                ("/resource/wangeditor-4.7.9/", "/static/plugin/wangeditor-4.7.9/"),
                 ("/layui-v2.6.8/", "/static/plugin/layui-v2.6.8/"),
                 ("/site-builder/runtime.css", "/static/site/css/builder-runtime.css"),
                 ("/site-builder/effects.css", "/static/site/css/builder-effects.css"),
