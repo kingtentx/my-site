@@ -20,6 +20,7 @@ namespace CIMC.Data.ExtModel
     /// </summary>
     public class ExtUpdateModel : ExtCreateModel
     {
+        /// <summary>最后更新时间。</summary>
         public DateTime? UpdateTime { get; set; }
 
     }
@@ -51,6 +52,7 @@ namespace CIMC.Data.ExtModel
     /// </summary>
     public interface ICreateByModel
     {
+        /// <summary>创建人。</summary>
         [StringLength(ModelUnits.Len_50)]
         string CreationBy { get; set; }
     }
@@ -60,6 +62,7 @@ namespace CIMC.Data.ExtModel
     /// </summary>
     public interface IUpdateByModel
     {
+        /// <summary>最后更新人。</summary>
         [StringLength(ModelUnits.Len_50)]
         string UpdateBy { get; set; }
     }
@@ -69,6 +72,7 @@ namespace CIMC.Data.ExtModel
     /// </summary>
     public interface IModifyModel
     {
+        /// <summary>是否已软删除。</summary>
         bool IsDelete { get; set; }
     }
 
@@ -77,6 +81,7 @@ namespace CIMC.Data.ExtModel
     /// </summary>
     public interface IActiveModel
     {
+        /// <summary>是否启用。</summary>
         bool IsActive { get; set; }
     }
     /// <summary>
@@ -84,6 +89,7 @@ namespace CIMC.Data.ExtModel
     /// </summary>
     public interface ISortModel
     {
+        /// <summary>排序值，数值越小越靠前。</summary>
         int Sort { get; set; }
     }
 }

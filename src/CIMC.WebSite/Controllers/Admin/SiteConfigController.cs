@@ -7,18 +7,21 @@ using System;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理站点配置相关的网页请求。</summary>
     [Authorize]
     public class SiteConfigController : AdminBaseController
     {
         private readonly IRepository<WebsiteSiteConfig> _repository;
         private readonly IPermissionService _permission;
 
+        /// <summary>初始化站点配置。</summary>
         public SiteConfigController(IRepository<WebsiteSiteConfig> repository, IPermissionService permission)
         {
             _repository = repository;
             _permission = permission;
         }
 
+        /// <summary>显示站点配置管理页面。</summary>
         [PermissionFilter(MenuCode.Site_Info, PermissionType.View)]
         public IActionResult Index()
         {
@@ -27,6 +30,7 @@ namespace MySite.Web.Controllers
             return View(ToModel(entity));
         }
 
+        /// <summary>保存站点配置的编辑内容。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Site_Info, PermissionType.Edit)]
         public IActionResult Edit(SiteConfigModel input)
@@ -63,6 +67,7 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>将实体转换为页面模型。</summary>
         private static SiteConfigModel ToModel(WebsiteSiteConfig entity)
         {
             return new SiteConfigModel

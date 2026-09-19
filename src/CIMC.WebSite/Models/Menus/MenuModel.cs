@@ -2,6 +2,7 @@
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载菜单相关数据。</summary>
     public class MenuModel
     {
         /// <summary>

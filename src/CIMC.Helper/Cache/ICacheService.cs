@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace CIMC.Helper
 {
+    /// <summary>定义ICache服务的接口。</summary>
     public interface ICacheService : IDisposable
     {
         /// <summary>
@@ -55,7 +56,7 @@ namespace CIMC.Helper
         /// <summary>
         /// 批量删除缓存
         /// </summary>
-        /// <param name="key">缓存Key集合</param>
+        /// <param name="keys">缓存Key集合</param>
         /// <returns></returns>
         void RemoveAll(IEnumerable<string> keys);
 

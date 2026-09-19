@@ -2,6 +2,7 @@ using System.ComponentModel;
 
 namespace MySite.Web
 {
+    /// <summary>定义权限的可选类型。</summary>
     public enum PermissionType
     {
         /// <summary>

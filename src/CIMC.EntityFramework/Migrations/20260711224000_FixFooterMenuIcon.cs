@@ -6,10 +6,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace CIMC.EntityFramework.Migrations
 {
+    /// <summary>修正页脚菜单图标的数据库迁移。</summary>
     [DbContext(typeof(AppDbContext))]
     [Migration("20260711224000_FixFooterMenuIcon")]
     public partial class FixFooterMenuIcon : Migration
     {
+        /// <summary>应用数据库迁移。</summary>
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"
@@ -19,6 +21,7 @@ WHERE `PermissionKey` = 'Site_Footer'
   AND (`Icon` IS NULL OR TRIM(`Icon`) = '');");
         }
 
+        /// <summary>回退数据库迁移。</summary>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.Sql(@"

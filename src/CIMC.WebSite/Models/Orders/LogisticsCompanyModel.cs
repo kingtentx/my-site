@@ -1,5 +1,6 @@
 ﻿namespace MySite.Web.Models
 {
+    /// <summary>承载物流相关数据。</summary>
     public class LogisticsCompanyModel
     {
         /// <summary>
@@ -21,6 +22,7 @@
 
         public string AliasName { get; set; }
 
+        /// <summary>排序值，数值越小越靠前。</summary>
         public int Sort { get; set; }
     }
 }

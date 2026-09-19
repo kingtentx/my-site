@@ -2,8 +2,10 @@
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载微信相关数据。</summary>
     public class WxMediaModel
     {
+        /// <summary>主键。</summary>
         public long Id { get; set; }
 
         /// <summary>
@@ -52,7 +54,9 @@ namespace MySite.Web.Models
         /// 创建人
         /// </summary>
         public DateTime? CreationTime { get; set; }
+        /// <summary>创建人。</summary>
         public string CreationBy { get; set; }
+        /// <summary>是否已软删除。</summary>
         public bool IsDelete { get; set; }
     }
 }

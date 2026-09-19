@@ -11,6 +11,7 @@ using System.Linq;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理素材图片相关的网页请求。</summary>
     [Authorize]
     public class ImagesController : AdminBaseController
     {
@@ -18,6 +19,7 @@ namespace MySite.Web.Controllers
         private readonly IPermissionService _permission;
         private readonly IWebHostEnvironment _environment;
 
+        /// <summary>初始化素材图片。</summary>
         public ImagesController(IRepository<Images> repository, IPermissionService permission, IWebHostEnvironment environment)
         {
             _repository = repository;
@@ -25,6 +27,7 @@ namespace MySite.Web.Controllers
             _environment = environment;
         }
 
+        /// <summary>显示素材图片管理页面。</summary>
         [PermissionFilter(MenuCode.Content_Images, PermissionType.View)]
         public IActionResult Index()
         {
@@ -34,6 +37,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>查询素材图片列表。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.Content_Images, PermissionType.View)]
         public JsonResult GetList(int pageIndex = 1, int pageSize = 15)
@@ -63,6 +67,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Count = query.Count, Data = data });
         }
 
+        /// <summary>删除指定素材图片记录。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Content_Images, PermissionType.Delete)]
         public IActionResult Delete(long id)

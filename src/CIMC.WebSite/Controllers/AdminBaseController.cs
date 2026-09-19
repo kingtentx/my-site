@@ -8,6 +8,7 @@ using System.Security.Claims;
 namespace MySite.Web.Controllers
 {
 
+    /// <summary>处理管理员相关的网页请求。</summary>
     public class AdminBaseController : Controller
     {
         /// <summary>

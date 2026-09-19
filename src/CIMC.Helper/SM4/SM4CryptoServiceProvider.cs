@@ -6,17 +6,22 @@ using System.Threading.Tasks;
 
 namespace CIMC.Helper.SM4
 {
+    /// <summary>实现 SM4 密钥扩展和数据加解密。</summary>
     public class SM4CryptoServiceProvider
     {
+        /// <summary>SM4 加密模式标识。</summary>
         public const int SM4_ENCRYPT = 1;
+        /// <summary>SM4 解密模式标识。</summary>
         public const int SM4_DECRYPT = 0;
 
+        /// <summary>从字节数组读取大端序无符号整数。</summary>
         private int GET_Uint_BE(byte[] b, int i)
         {
             int n = (int)(((b[i] & 0xff) << 24) | ((b[i + 1] & 0xff) << 16) | ((b[i + 2] & 0xff) << 8) | (b[i + 3] & 0xff) & 0xffffffffL);
             return n;
         }
 
+        /// <summary>将无符号整数写为大端序字节。</summary>
         private void PUT_Uint_BE(int n, byte[] b, int i)
         {
             b[i] = (byte)(int)(0xFF & n >> 24);
@@ -25,16 +30,19 @@ namespace CIMC.Helper.SM4
             b[i + 3] = (byte)(int)(0xFF & n);
         }
 
+        /// <summary>对 SM4 字执行左移。</summary>
         private int SHL(int x, int n)
         {
             return (int)((x & 0xFFFFFFFF) << n);
         }
 
+        /// <summary>对 SM4 字执行循环左移。</summary>
         private int ROTL(int x, int n)
         {
             return SHL(x, n) | x >> (32 - n);
         }
 
+        /// <summary>交换 SM4 字的字节顺序。</summary>
         private void SWAP(int[] sk, int i)
         {
             int t = sk[i];
@@ -42,6 +50,7 @@ namespace CIMC.Helper.SM4
             sk[(31 - i)] = t;
         }
 
+        /// <summary>SM4 S 盒常量表。</summary>
         public byte[] SboxTable = new byte[] { (byte) 0xd6, (byte) 0x90, (byte) 0xe9, (byte) 0xfe,
             (byte) 0xcc, (byte) 0xe1, 0x3d, (byte) 0xb7, 0x16, (byte) 0xb6,
             0x14, (byte) 0xc2, 0x28, (byte) 0xfb, 0x2c, 0x05, 0x2b, 0x67,
@@ -82,8 +91,10 @@ namespace CIMC.Helper.SM4
             0x7d, (byte) 0xec, 0x3a, (byte) 0xdc, 0x4d, 0x20, 0x79,
             (byte) 0xee, 0x5f, 0x3e, (byte) 0xd7, (byte) 0xcb, 0x39, 0x48 };
 
+        /// <summary>SM4 系统参数。</summary>
         public uint[] FK = { 0xa3b1bac6, 0x56aa3350, 0x677d9197, 0xb27022dc };
 
+        /// <summary>SM4 固定参数。</summary>
         public uint[] CK = { 0x00070e15,0x1c232a31,0x383f464d,0x545b6269,
                                         0x70777e85,0x8c939aa1,0xa8afb6bd,0xc4cbd2d9,
                                         0xe0e7eef5,0xfc030a11,0x181f262d,0x343b4249,
@@ -93,6 +104,7 @@ namespace CIMC.Helper.SM4
                                         0xa0a7aeb5,0xbcc3cad1,0xd8dfe6ed,0xf4fb0209,
                                         0x10171e25,0x2c333a41,0x484f565d,0x646b7279 };
 
+        /// <summary>执行 SM4 S 盒替换。</summary>
         private byte sm4Sbox(byte inch)
         {
             int i = inch & 0xFF;
@@ -100,6 +112,7 @@ namespace CIMC.Helper.SM4
             return retVal;
         }
 
+        /// <summary>执行 SM4 线性变换。</summary>
         private int sm4Lt(int ka)
         {
             int bb = 0;
@@ -116,11 +129,13 @@ namespace CIMC.Helper.SM4
             return c;
         }
 
+        /// <summary>执行 SM4 轮函数。</summary>
         private int sm4F(int x0, int x1, int x2, int x3, int rk)
         {
             return x0 ^ sm4Lt(x1 ^ x2 ^ x3 ^ rk);
         }
 
+        /// <summary>计算 SM4 轮密钥。</summary>
         private int sm4CalciRK(int ka)
         {
             int bb = 0;
@@ -137,6 +152,7 @@ namespace CIMC.Helper.SM4
             return rk;
         }
 
+        /// <summary>设置 SM4 密钥。</summary>
         private void sm4_setkey(int[] SK, byte[] key)
         {
             int[] MK = new int[4];
@@ -157,6 +173,7 @@ namespace CIMC.Helper.SM4
             }
         }
 
+        /// <summary>执行一轮 SM4 加解密运算。</summary>
         private void sm4_one_round(int[] sk, byte[] input, byte[] output)
         {
             int i = 0;
@@ -176,6 +193,7 @@ namespace CIMC.Helper.SM4
             PUT_Uint_BE(ulbuf[32], output, 12);
         }
 
+        /// <summary>对 SM4 输入数据执行填充。</summary>
         private byte[] padding(byte[] input, int mode)
         {
             if (input == null)
@@ -203,12 +221,14 @@ namespace CIMC.Helper.SM4
             return ret;
         }
 
+        /// <summary>设置 SM4 加密轮密钥。</summary>
         public void sm4_setkey_enc(SM4Context ctx, byte[] key)
         {
             ctx.mode = SM4_ENCRYPT;
             sm4_setkey(ctx.sk, key);
         }
 
+        /// <summary>设置 SM4 解密轮密钥。</summary>
         public void sm4_setkey_dec(SM4Context ctx, byte[] key)
         {
             int i = 0;
@@ -220,6 +240,7 @@ namespace CIMC.Helper.SM4
             }
         }
 
+        /// <summary>以 ECB 模式执行 SM4 加解密。</summary>
         public byte[] sm4_crypt_ecb(SM4Context ctx, byte[] input)
         {
             if ((ctx.isPadding) && (ctx.mode == SM4_ENCRYPT))
@@ -247,6 +268,7 @@ namespace CIMC.Helper.SM4
             return bous;
         }
 
+        /// <summary>以 CBC 模式执行 SM4 加解密。</summary>
         public byte[] sm4_crypt_cbc(SM4Context ctx, byte[] iv, byte[] input)
         {
             if (ctx.isPadding && ctx.mode == SM4_ENCRYPT)

@@ -9,8 +9,10 @@ namespace MySite.Web.TagHelpers
     [HtmlTargetElement(Attributes = "sb-effects")]
     public class BuilderEffectsTagHelper : TagHelper
     {
+        /// <summary>页面装修效果配置。</summary>
         public IDictionary<string, object> SbEffects { get; set; }
 
+        /// <summary>处理页面标签的输出内容。</summary>
         public override void Process(TagHelperContext context, TagHelperOutput output)
         {
             output.Attributes.RemoveAll("sb-effects");

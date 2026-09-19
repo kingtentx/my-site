@@ -10,17 +10,20 @@ using System.Threading.Tasks;
 
 namespace MySite.Web.Services
 {
+    /// <summary>提供审计日志相关服务。</summary>
     public class AuditLogService : IAuditLogService
     {
         private readonly IRepository<AuditLog> _repository;
         private readonly IAuditLogQueue _queue;
 
+        /// <summary>初始化审计日志。</summary>
         public AuditLogService(IRepository<AuditLog> repository, IAuditLogQueue queue)
         {
             _repository = repository;
             _queue = queue;
         }
 
+        /// <summary>异步记录审计日志。</summary>
         public async Task LogAsync(AuditLog auditLog)
         {
             if (auditLog == null) return;
@@ -29,6 +32,7 @@ namespace MySite.Web.Services
             await _queue.EnqueueAsync(auditLog);
         }
 
+        /// <summary>异步记录审计日志。</summary>
         public async Task LogAsync(string userId, string userName, string ipAddress,
             string operationType, string operationModule, string operationDesc,
             string requestUrl, string httpMethod,
@@ -57,6 +61,7 @@ namespace MySite.Web.Services
             await LogAsync(log);
         }
 
+        /// <summary>查询审计日志列表。</summary>
         public (List<AuditLog> List, int Count) GetList(string userId, string userName,
             string operationType, string operationModule, string resultStatus,
             string startTime, string endTime,
@@ -66,6 +71,7 @@ namespace MySite.Web.Services
             return _repository.GetList(where, p => p.Id, pageIndex, pageSize, false);
         }
 
+        /// <summary>导出符合筛选条件的记录。</summary>
         public List<AuditLog> Export(string userId, string userName,
             string operationType, string operationModule, string resultStatus,
             string startTime, string endTime)
@@ -74,6 +80,7 @@ namespace MySite.Web.Services
             return _repository.GetList(where, p => p.Id, false);
         }
 
+        /// <summary>验证审计日志的哈希值。</summary>
         public bool VerifyHash(long id)
         {
             var log = _repository.GetOne(id);
@@ -83,6 +90,7 @@ namespace MySite.Web.Services
             return currentHash == log.DataHash;
         }
 
+        /// <summary>验证全部审计日志的哈希值。</summary>
         public (int Total, int Tampered) VerifyAllHashes()
         {
             var allLogs = _repository.GetList(p => !p.IsArchived);
@@ -96,6 +104,7 @@ namespace MySite.Web.Services
             return (allLogs.Count, tampered);
         }
 
+        /// <summary>归档旧审计日志。</summary>
         public int ArchiveLogs(DateTime beforeDate)
         {
             var where = LambdaHelper.True<AuditLog>()
@@ -113,6 +122,7 @@ namespace MySite.Web.Services
             return count;
         }
 
+        /// <summary>统计各操作类型的日志数量。</summary>
         public Dictionary<string, int> GetOperationTypeStats(string startTime, string endTime)
         {
             var where = LambdaHelper.True<AuditLog>();
@@ -127,6 +137,7 @@ namespace MySite.Web.Services
                        .ToDictionary(g => g.Key, g => g.Count());
         }
 
+        /// <summary>统计各模块的日志数量。</summary>
         public Dictionary<string, int> GetModuleStats(string startTime, string endTime)
         {
             var where = LambdaHelper.True<AuditLog>();
@@ -141,6 +152,7 @@ namespace MySite.Web.Services
                        .ToDictionary(g => g.Key, g => g.Count());
         }
 
+        /// <summary>构建审计日志查询条件。</summary>
         private System.Linq.Expressions.Expression<Func<AuditLog, bool>> BuildWhere(
             string userId, string userName, string operationType, string operationModule,
             string resultStatus, string startTime, string endTime)
@@ -171,6 +183,7 @@ namespace MySite.Web.Services
             return where;
         }
 
+        /// <summary>计算审计日志的校验哈希值。</summary>
         private static string ComputeHash(AuditLog log)
         {
             var raw = $"{log.UserId}|{log.OperationTime:O}|{log.OperationType}|{log.OperationModule}|{log.RequestUrl}|{log.ResultStatus}|{log.OldData}|{log.NewData}";
@@ -179,6 +192,7 @@ namespace MySite.Web.Services
             return Convert.ToBase64String(bytes);
         }
 
+        /// <summary>将文本截断到指定长度。</summary>
         private static string Truncate(string value, int maxLength)
         {
             if (string.IsNullOrEmpty(value)) return value;
@@ -186,33 +200,43 @@ namespace MySite.Web.Services
         }
     }
 
+    /// <summary>提供NoopAuditLog相关服务。</summary>
     public class NoopAuditLogService : IAuditLogService
     {
+        /// <summary>异步记录审计日志。</summary>
         public Task LogAsync(AuditLog auditLog) => Task.CompletedTask;
 
+        /// <summary>异步记录审计日志。</summary>
         public Task LogAsync(string userId, string userName, string ipAddress,
             string operationType, string operationModule, string operationDesc,
             string requestUrl, string httpMethod,
             string requestData, string oldData, string newData,
             string resultStatus, string resultMessage, long duration) => Task.CompletedTask;
 
+        /// <summary>查询NoopAuditLog列表。</summary>
         public (List<AuditLog> List, int Count) GetList(string userId, string userName,
             string operationType, string operationModule, string resultStatus,
             string startTime, string endTime,
             int pageIndex, int pageSize) => (new List<AuditLog>(), 0);
 
+        /// <summary>导出符合筛选条件的记录。</summary>
         public List<AuditLog> Export(string userId, string userName,
             string operationType, string operationModule, string resultStatus,
             string startTime, string endTime) => new List<AuditLog>();
 
+        /// <summary>验证审计日志的哈希值。</summary>
         public bool VerifyHash(long id) => true;
 
+        /// <summary>验证全部审计日志的哈希值。</summary>
         public (int Total, int Tampered) VerifyAllHashes() => (0, 0);
 
+        /// <summary>归档旧审计日志。</summary>
         public int ArchiveLogs(DateTime beforeDate) => 0;
 
+        /// <summary>统计各操作类型的日志数量。</summary>
         public Dictionary<string, int> GetOperationTypeStats(string startTime, string endTime) => new Dictionary<string, int>();
 
+        /// <summary>统计各模块的日志数量。</summary>
         public Dictionary<string, int> GetModuleStats(string startTime, string endTime) => new Dictionary<string, int>();
     }
 }

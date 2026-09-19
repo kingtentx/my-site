@@ -8,6 +8,7 @@ namespace CIMC.Data
     /// </summary>
     public class Article : ExtFullModifyModel, IActiveModel, ISortModel, IModifyModel
     {
+        /// <summary>主键。</summary>
         [Key]
         public int Id { get; set; }
 
@@ -56,6 +57,7 @@ namespace CIMC.Data
         [StringLength(ModelUnits.Len_100)]
         public string Source { get; set; }
 
+        /// <summary>来源链接地址。</summary>
         [StringLength(ModelUnits.Len_250)]
         public string SourceUrl { get; set; }
         /// <summary>
@@ -97,6 +99,7 @@ namespace CIMC.Data
         /// </summary>
         public bool IsActive { get; set; }
 
+        /// <summary>是否已软删除。</summary>
         public bool IsDelete { get; set; } = false;
 
 

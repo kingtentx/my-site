@@ -3,8 +3,10 @@ using System.Collections.Generic;
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载微信相关数据。</summary>
     public class WxKeyWordsReplyModel
     {
+        /// <summary>主键。</summary>
         public int Id { get; set; }
         /// <summary>
         /// 规则名称
@@ -62,13 +64,17 @@ namespace MySite.Web.Models
         /// </summary>
         public bool IsActive { get; set; } = false;
 
+        /// <summary>创建时间。</summary>
         public DateTime? CreationTime { get; set; } = DateTime.Now;
 
+        /// <summary>备注信息。</summary>
         public string Remark { get; set; }
 
+        /// <summary>微信相关项目集合。</summary>
         public List<WxKeyWordsModel> WxKeyWordsList { get; set; } = new List<WxKeyWordsModel>();
     }
 
+    /// <summary>承载微信相关数据。</summary>
     public class WxKeyWordsModel
     {
         /// <summary>
@@ -88,6 +94,7 @@ namespace MySite.Web.Models
         /// </summary>          
         public string KeyWords { get; set; }
 
+        /// <summary>创建时间。</summary>
         public DateTime? CreationTime { get; set; } = DateTime.Now;
     }
 }

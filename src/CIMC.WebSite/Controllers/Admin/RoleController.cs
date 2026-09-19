@@ -10,6 +10,7 @@ using System.Linq;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理角色相关的网页请求。</summary>
     [Authorize]
     public class RoleController : AdminBaseController
     {
@@ -19,6 +20,7 @@ namespace MySite.Web.Controllers
         private IPermissionService _permission;
         private ICacheService _cache;
 
+        /// <summary>初始化角色。</summary>
         public RoleController(ICacheService cache, IRepository<Role> roleService, IRepository<RoleMenu> rolemenuRepository, IPermissionService permission)
         {
             _roleRepository = roleService;
@@ -28,6 +30,7 @@ namespace MySite.Web.Controllers
 
         }
 
+        /// <summary>显示角色管理页面。</summary>
         [PermissionFilter(MenuCode.System_Role, PermissionType.View)]
         public IActionResult Index()
         {
@@ -40,6 +43,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>查询角色列表。</summary>
         [PermissionFilter(MenuCode.System_Role, PermissionType.View)]
         public ActionResult GetList(int pageIndex = 1, int pageSize = 10)
         {
@@ -71,6 +75,7 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>显示角色的编辑内容。</summary>
         [PermissionFilter(MenuCode.System_Role, PermissionType.View)]
         public ActionResult Edit(int? id)
         {
@@ -93,6 +98,7 @@ namespace MySite.Web.Controllers
             return View(model);
         }
 
+        /// <summary>保存编辑内容。</summary>
         [HttpPost, ActionName("Edit")]
         public ActionResult EditPost(int? id, RoleModel input)
         {
@@ -148,6 +154,7 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>删除指定角色记录。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.System_Role, PermissionType.Delete)]
         public ActionResult Delete(int? id)
@@ -165,6 +172,7 @@ namespace MySite.Web.Controllers
         }
 
 
+        /// <summary>配置角色的访问权限。</summary>
         [PermissionFilter(MenuCode.System_Role, PermissionType.Authorize)]
         public ActionResult Authorize(int? id)
         {

@@ -43,6 +43,7 @@ public static class RichTextSanitizer
         @"^<\s*(?<close>/?)\s*(?<name>[A-Za-z0-9]+)(?<attrs>[^>]*)>$",
         RegexOptions.Compiled);
 
+    /// <summary>清理富文本中的不安全内容。</summary>
     public static string Sanitize(string value)
     {
         value ??= string.Empty;
@@ -73,6 +74,7 @@ public static class RichTextSanitizer
         return result.ToString();
     }
 
+    /// <summary>向输出中追加经过编码的文本。</summary>
     private static void AppendEncodedText(StringBuilder result, string text)
     {
         if (string.IsNullOrEmpty(text)) return;
@@ -80,6 +82,7 @@ public static class RichTextSanitizer
         result.Append(UnicodeHtmlEncoder.Encode(WebUtility.HtmlDecode(text)));
     }
 
+    /// <summary>向输出中追加允许的 HTML 标签。</summary>
     private static void AppendSafeTag(StringBuilder result, string token)
     {
         var match = TagPattern.Match(token);
@@ -160,6 +163,7 @@ public static class RichTextSanitizer
         result.Append('>');
     }
 
+    /// <summary>读取 HTML 标签的属性值。</summary>
     private static string ReadAttribute(string attrs, string name)
     {
         if (string.IsNullOrWhiteSpace(attrs)) return string.Empty;
@@ -168,6 +172,7 @@ public static class RichTextSanitizer
         return match.Success ? match.Groups["v"].Value : string.Empty;
     }
 
+    /// <summary>判断超链接地址是否安全。</summary>
     private static bool IsSafeHref(string href)
     {
         href = WebUtility.HtmlDecode(href ?? string.Empty).Trim();
@@ -187,6 +192,7 @@ public static class RichTextSanitizer
                 uri.Scheme.Equals("tel", StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>判断图片地址是否安全。</summary>
     private static bool IsSafeImageSrc(string src)
     {
         src = WebUtility.HtmlDecode(src ?? string.Empty).Trim();

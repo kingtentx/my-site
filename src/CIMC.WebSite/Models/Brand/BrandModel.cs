@@ -1,5 +1,6 @@
 ﻿namespace MySite.Web.Models
 {
+    /// <summary>承载品牌相关数据。</summary>
     public class BrandModel
     {
         /// <summary>

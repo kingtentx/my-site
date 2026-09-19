@@ -9,6 +9,7 @@ using System.Text;
 namespace CIMC.Helper
 {
 
+    /// <summary>提供Excel相关辅助操作。</summary>
     public class ExcelHelper
     {       
 
@@ -257,7 +258,7 @@ namespace CIMC.Helper
         /// <summary>
         /// Excel中数字时间转换成时间格式
         /// </summary>
-        /// <param name="timeStr">数字,如:42095.7069444444/0.650694444444444</param>
+        /// <param name="strNumber">数字,如:42095.7069444444/0.650694444444444</param>
         /// <returns>日期/时间格式</returns>
         private static DateTime ToDateTimeValue(string strNumber)
         {

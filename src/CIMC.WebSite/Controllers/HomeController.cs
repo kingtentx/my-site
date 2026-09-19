@@ -12,24 +12,26 @@ using MySite.Web.Models;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>提供网站页面、产品、新闻及招聘的公开访问入口。</summary>
     public class HomeController : Controller
     {
         private readonly IRepository<WebsitePage> _pageRepository;
         private readonly IRepository<WebsitePageVersion> _versionRepository;
         private readonly IRepository<WebsiteSiteConfig> _siteConfigRepository;
         private readonly IRepository<Article> _articleRepository;
-        private readonly IRepository<Album> _productRepository;
+        private readonly IRepository<Product> _productRepository;
         private readonly IRepository<Tag> _productCategoryRepository;
         private readonly IRepository<Job> _jobRepository;
         private readonly IRepository<MessageBoard> _messageRepository;
         private readonly ICacheService _cache;
 
+        /// <summary>初始化公开站点控制器及其数据仓储。</summary>
         public HomeController(
             IRepository<WebsitePage> pageRepository,
             IRepository<WebsitePageVersion> versionRepository,
             IRepository<WebsiteSiteConfig> siteConfigRepository,
             IRepository<Article> articleRepository,
-            IRepository<Album> productRepository,
+            IRepository<Product> productRepository,
             IRepository<Tag> productCategoryRepository,
             IRepository<Job> jobRepository,
             IRepository<MessageBoard> messageRepository,
@@ -46,8 +48,12 @@ namespace MySite.Web.Controllers
             _cache = cache;
         }
 
+        /// <summary>显示网站首页。</summary>
         public IActionResult Index()
         {
+            var home = _pageRepository.GetOne(p => p.IsHome && !p.IsDelete && p.IsActive && p.Status == 1);
+            var directoryRedirect = RedirectDirectory(home);
+            if (directoryRedirect != null) return directoryRedirect;
             var model = BuildPage(p => p.IsHome && !p.IsDelete);
             return model == null ? View("NotFound") : View(model);
         }
@@ -69,6 +75,7 @@ namespace MySite.Web.Controllers
         {
             var page = _pageRepository.GetOne(id);
             if (page == null || page.IsDelete) return NotFound();
+            if (!IsGlobalPage(page) && HasChildren(page)) return BadRequest("目录页面没有独立内容，请预览子页面。");
 
             BuilderDocumentModel document;
             if (string.IsNullOrWhiteSpace(page.ComponentJson))
@@ -130,25 +137,36 @@ namespace MySite.Web.Controllers
             return View("Index", model);
         }
 
+        /// <summary>显示关于页面。</summary>
         public IActionResult About()
         {
+            var directoryRedirect = RedirectDirectoryAtPath("/about");
+            if (directoryRedirect != null) return directoryRedirect;
             var model = BuildPage(p => p.PagePath == "/about" && !p.IsDelete);
             return model == null ? View("NotFound") : View("Index", model);
         }
 
+        /// <summary>显示产品页面和按分类筛选的产品列表。</summary>
         public IActionResult Products(string category)
         {
             var categoryPath = string.IsNullOrWhiteSpace(category) ? null : NormalizePath("/products/" + category);
+            var directoryRedirect = RedirectDirectoryAtPath(categoryPath ?? "/products");
+            if (directoryRedirect != null) return directoryRedirect;
             var model = categoryPath == null ? null : BuildPage(p => p.PagePath == categoryPath && !p.IsDelete);
+            if (model == null && categoryPath != null)
+            {
+                directoryRedirect = RedirectDirectoryAtPath("/products");
+                if (directoryRedirect != null) return directoryRedirect;
+            }
             model ??= BuildPage(p => p.PagePath == "/products" && !p.IsDelete);
             if (model == null) return View("NotFound");
 
-            List<Album> products;
+            List<Product> products;
             if (!string.IsNullOrWhiteSpace(category))
             {
-                var categoryEntity = _productCategoryRepository.GetOne(c => c.TagName == category && c.TagType == (int)CIMC.Core.Enums.TagType.Image && c.IsActive);
+                var categoryEntity = _productCategoryRepository.GetOne(c => c.TagName == category && c.TagType == (int)CIMC.Core.Enums.TagType.Product && c.IsActive);
                 products = categoryEntity == null
-                    ? new List<Album>()
+                    ? new List<Product>()
                     : _productRepository.GetList(p => !p.IsDelete && p.IsActive && p.TagId == categoryEntity.Id, p => p.Sort, true);
             }
             else
@@ -157,11 +175,12 @@ namespace MySite.Web.Controllers
             }
 
             ViewBag.ProductList = products.Take(20).ToList();
-            ViewBag.Categories = _productCategoryRepository.GetList(c => c.IsActive && c.TagType == (int)CIMC.Core.Enums.TagType.Image, c => c.Sort, true);
+            ViewBag.Categories = _productCategoryRepository.GetList(c => c.IsActive && c.TagType == (int)CIMC.Core.Enums.TagType.Product, c => c.Sort, true);
             ViewBag.CurrentCategory = category;
             return View("Index", model);
         }
 
+        /// <summary>显示指定产品的详情。</summary>
         public IActionResult ProductDetail(int id)
         {
             if (!SiteEnabled()) return View("NotFound");
@@ -177,15 +196,26 @@ namespace MySite.Web.Controllers
             return View(product);
         }
 
+        /// <summary>显示新闻页面及新闻列表。</summary>
         public IActionResult News(string category)
         {
-            var model = BuildPage(p => p.PagePath == "/news" && !p.IsDelete);
+            var categoryPath = string.IsNullOrWhiteSpace(category) ? null : NormalizePath("/news/" + category);
+            var directoryRedirect = RedirectDirectoryAtPath(categoryPath ?? "/news");
+            if (directoryRedirect != null) return directoryRedirect;
+            var model = categoryPath == null ? null : BuildPage(p => p.PagePath == categoryPath && !p.IsDelete);
+            if (model == null && categoryPath != null)
+            {
+                directoryRedirect = RedirectDirectoryAtPath("/news");
+                if (directoryRedirect != null) return directoryRedirect;
+            }
+            model ??= BuildPage(p => p.PagePath == "/news" && !p.IsDelete);
             if (model == null) return View("NotFound");
             ViewBag.NewsList = _articleRepository.GetList(a => !a.IsDelete && a.IsActive, a => a.CreationTime, false).Take(10).ToList();
             ViewBag.CurrentCategory = category;
             return View("Index", model);
         }
 
+        /// <summary>显示指定文章的详情。</summary>
         public IActionResult Article(int id)
         {
             if (!SiteEnabled()) return View("NotFound");
@@ -197,6 +227,7 @@ namespace MySite.Web.Controllers
             return View(article);
         }
 
+        /// <summary>预览指定文章。</summary>
         public IActionResult ArticlePreview(int id)
         {
             var article = _articleRepository.GetOne(id);
@@ -205,20 +236,27 @@ namespace MySite.Web.Controllers
             return View("Article", article);
         }
 
+        /// <summary>显示招聘页面及岗位列表。</summary>
         public IActionResult Jobs()
         {
+            var directoryRedirect = RedirectDirectoryAtPath("/jobs");
+            if (directoryRedirect != null) return directoryRedirect;
             var model = BuildPage(p => p.PagePath == "/jobs" && !p.IsDelete);
             if (model == null) return View("NotFound");
             ViewBag.JobList = _jobRepository.GetList(j => !j.IsDelete && j.IsActive, j => j.CreationTime, false);
             return View("Index", model);
         }
 
+        /// <summary>显示联系页面。</summary>
         public IActionResult Contact()
         {
+            var directoryRedirect = RedirectDirectoryAtPath("/contact");
+            if (directoryRedirect != null) return directoryRedirect;
             var model = BuildPage(p => p.PagePath == "/contact" && !p.IsDelete);
             return model == null ? View("NotFound") : View("Index", model);
         }
 
+        /// <summary>提交网站留言。</summary>
         [HttpPost]
         public IActionResult Message(MessageBoard input, string validateKey, string validateCode)
         {
@@ -262,10 +300,13 @@ namespace MySite.Web.Controllers
         public IActionResult DynamicPage(string path)
         {
             var normalized = NormalizePath(path);
+            var directoryRedirect = RedirectDirectoryAtPath(normalized);
+            if (directoryRedirect != null) return directoryRedirect;
             var model = BuildPage(p => p.PagePath == normalized && !p.IsDelete);
             return model == null ? View("NotFound") : View("Index", model);
         }
 
+        /// <summary>加载页面的发布版本并构建渲染模型。</summary>
         private PageRenderModel BuildPage(Expression<Func<WebsitePage, bool>> predicate)
         {
             var siteConfig = _siteConfigRepository.GetOne(1);
@@ -273,6 +314,7 @@ namespace MySite.Web.Controllers
 
             var page = _pageRepository.GetOne(predicate);
             if (page == null || page.Status != 1 || !page.IsActive || IsGlobalPage(page)) return null;
+            if (HasChildren(page)) return null;
 
             var document = LoadPublishedDocument(page);
             if (document == null) return null;
@@ -306,6 +348,7 @@ namespace MySite.Web.Controllers
             return model;
         }
 
+        /// <summary>加载页面公共区域所需的视图数据。</summary>
         private void LoadCommonViewBag(string currentPath)
         {
             var siteConfig = _siteConfigRepository.GetOne(1);
@@ -319,12 +362,52 @@ namespace MySite.Web.Controllers
             ViewBag.FooterDocument = LoadGlobalDocument(BuilderDocumentFactory.GlobalFooterPageCode);
         }
 
+        /// <summary>检查站点是否启用。</summary>
         private bool SiteEnabled()
         {
             var siteConfig = _siteConfigRepository.GetOne(1);
             return siteConfig == null || (siteConfig.IsActive && !siteConfig.IsDelete);
         }
 
+        /// <summary>检查页面是否包含子页面。</summary>
+        private bool HasChildren(WebsitePage page)
+        {
+            return page != null && _pageRepository.GetList(p => p.ParentId == page.Id && !p.IsDelete).Any();
+        }
+
+        /// <summary>将目录路径重定向到第一个可访问的内容页面。</summary>
+        private IActionResult RedirectDirectoryAtPath(string path)
+        {
+            if (string.IsNullOrEmpty(path)) return null;
+            var page = _pageRepository.GetOne(p => p.PagePath == path && !p.IsDelete && p.IsActive && p.Status == 1);
+            return RedirectDirectory(page);
+        }
+
+        /// <summary>将目录页面重定向到第一个可访问的内容页面。</summary>
+        private IActionResult RedirectDirectory(WebsitePage page)
+        {
+            if (page == null || IsGlobalPage(page) || !HasChildren(page)) return null;
+            var targetPath = FindFirstContentPath(page, new HashSet<int>());
+            return targetPath == null ? NotFound() : Redirect(targetPath);
+        }
+
+        /// <summary>递归查找目录下第一个可访问的内容路径。</summary>
+        private string FindFirstContentPath(WebsitePage page, HashSet<int> visited)
+        {
+            if (!visited.Add(page.Id)) return null;
+            if (!HasChildren(page)) return page.PagePath;
+            var children = _pageRepository.GetList(p => p.ParentId == page.Id && !p.IsDelete && p.IsActive && p.Status == 1, p => p.Sort, true)
+                .Where(p => !IsGlobalPage(p))
+                .OrderByDescending(p => p.ShowInNavigation).ThenBy(p => p.Sort).ThenBy(p => p.Id);
+            foreach (var child in children)
+            {
+                var targetPath = FindFirstContentPath(child, visited);
+                if (targetPath != null) return targetPath;
+            }
+            return null;
+        }
+
+        /// <summary>从页面数据构建站点导航树。</summary>
         private List<NavigationModel> BuildNavigationTree(string currentPath)
         {
             var allPages = _pageRepository
@@ -342,14 +425,18 @@ namespace MySite.Web.Controllers
                 var guard = 0;
                 while (current.ParentId > 0 && guard++ < 100)
                 {
-                    if (!byId.TryGetValue(current.ParentId, out var parent)) break;
+                    if (!byId.TryGetValue(current.ParentId, out var parent)) return false;
                     if (!parent.ShowInNavigation) return false;
                     current = parent;
                 }
                 return true;
             }
 
-            var pages = allPages.Where(IsVisible).ToList();
+            // 目录没有可访问的已发布内容时，不在导航中显示。
+            var directoryTargets = allPages.Where(HasChildren)
+                .ToDictionary(p => p.Id, p => FindFirstContentPath(p, new HashSet<int>()));
+            var pages = allPages.Where(p => IsVisible(p) &&
+                (!directoryTargets.TryGetValue(p.Id, out var target) || target != null)).ToList();
             var ids = pages.Select(p => p.Id).ToHashSet();
             var nodes = pages.ToDictionary(
                 p => p.Id,
@@ -358,7 +445,7 @@ namespace MySite.Web.Controllers
                     Id = p.Id,
                     Pid = ids.Contains(p.ParentId) ? p.ParentId : 0,
                     Title = string.IsNullOrWhiteSpace(p.NavigationTitle) ? p.PageName : p.NavigationTitle,
-                    Path = p.PagePath,
+                    Path = directoryTargets.TryGetValue(p.Id, out var targetPath) ? targetPath : p.PagePath,
                     Icon = p.NavigationIcon,
                     Target = p.NavigationTarget,
                     Sort = p.Sort,
@@ -381,15 +468,30 @@ namespace MySite.Web.Controllers
             }
 
             SortNavigation(roots);
+            SetDirectoryTargets(roots);
             return roots;
         }
 
+        /// <summary>让目录导航项指向首个子页面。</summary>
+        private static void SetDirectoryTargets(List<NavigationModel> items)
+        {
+            foreach (var item in items)
+            {
+                SetDirectoryTargets(item.Children);
+                if (item.Children.Count == 0) continue;
+                item.Path = item.Children[0].Path;
+                item.IsCurrent |= item.Children.Any(child => child.IsCurrent);
+            }
+        }
+
+        /// <summary>按排序值和主键排列导航项。</summary>
         private static void SortNavigation(List<NavigationModel> items)
         {
             items.Sort((a, b) => a.Sort != b.Sort ? a.Sort.CompareTo(b.Sort) : a.Id.CompareTo(b.Id));
             foreach (var item in items) SortNavigation(item.Children);
         }
 
+        /// <summary>读取页面的发布文档。</summary>
         private BuilderDocumentModel LoadPublishedDocument(WebsitePage page)
         {
             if (page == null) return null;
@@ -406,6 +508,7 @@ namespace MySite.Web.Controllers
             catch { return null; }
         }
 
+        /// <summary>读取全局区域的草稿或发布文档。</summary>
         private BuilderDocumentModel LoadGlobalDocument(string code, bool previewDraft = false)
         {
             var empty = new BuilderDocumentModel();
@@ -420,6 +523,7 @@ namespace MySite.Web.Controllers
             catch (JsonException) { return empty; }
         }
 
+        /// <summary>将站点配置实体转换为页面模型。</summary>
         private static SiteConfigModel ToSiteConfigModel(WebsiteSiteConfig entity)
         {
             if (entity == null) return new SiteConfigModel();
@@ -435,6 +539,7 @@ namespace MySite.Web.Controllers
             };
         }
 
+        /// <summary>判断页面是否为全局区域。</summary>
         private static bool IsGlobalPage(WebsitePage page)
         {
             if (page == null) return false;
@@ -442,6 +547,7 @@ namespace MySite.Web.Controllers
                    || (!string.IsNullOrWhiteSpace(page.PagePath) && page.PagePath.StartsWith("/__global/", StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>规范化网站页面路径。</summary>
         private static string NormalizePath(string path)
         {
             var value = (path ?? string.Empty).Trim();
@@ -453,6 +559,7 @@ namespace MySite.Web.Controllers
             return value;
         }
 
+        /// <summary>将文本截断到指定的最大长度。</summary>
         private static string TrimTo(string value, int maxLength)
         {
             var text = (value ?? string.Empty).Trim();

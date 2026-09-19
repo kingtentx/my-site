@@ -122,6 +122,7 @@
         }
     }
 
+    /// <summary>定义操作结果的可选类型。</summary>
     public enum ResultCode
     {
         /// <summary>

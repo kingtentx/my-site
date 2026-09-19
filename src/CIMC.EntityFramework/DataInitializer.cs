@@ -23,6 +23,8 @@ namespace CIMC.Data
     /// </summary>
     public class DataInitializer
     {
+        /// <summary>补建系统运行必需的管理员、菜单和站点配置。</summary>
+        /// <param name="context">数据库上下文。</param>
         public void Create(AppDbContext context)
         {
             InitUser(context);        // Admin 表无同名管理员时才创建
@@ -30,6 +32,7 @@ namespace CIMC.Data
             InitSiteConfig(context);  // 仅在站点配置不存在时创建
         }
 
+        /// <summary>在管理员账户不存在时创建默认账户。</summary>
         private static void InitUser(AppDbContext context)
         {
             const string superAdmin = "admin";
@@ -50,6 +53,7 @@ namespace CIMC.Data
             context.SaveChanges();
         }
 
+        /// <summary>补建菜单并迁移旧产品菜单及角色权限。</summary>
         private static void InitMenus(AppDbContext context)
         {
             EnsureMenu(
@@ -88,8 +92,38 @@ namespace CIMC.Data
 
             EnsureMenu(context, "新闻管理", "/article/index", "layui-icon-list", 2, content.Id, false,
                 "Content_Article", "Add,Edit,Delete", 31);
-            EnsureMenu(context, "产品管理", "/album/index", "layui-icon-picture", 2, content.Id, false,
-                "Content_Album", "Add,Edit,Delete", 32);
+            var productMenu = context.Menu.FirstOrDefault(p => p.PermissionKey == "Content_Product" || p.Path == "/product/index");
+            var legacyProductMenu = context.Menu.FirstOrDefault(p => p.PermissionKey == "Content_Album" || p.Path == "/album/index");
+            if (legacyProductMenu != null)
+            {
+                if (productMenu == null || productMenu.Id == legacyProductMenu.Id)
+                {
+                    // 保留已有菜单的 ID 和管理员调整过的显示设置。
+                    legacyProductMenu.PermissionKey = "Content_Product";
+                    if (legacyProductMenu.Path == "/album/index") legacyProductMenu.Path = "/product/index";
+                    productMenu = legacyProductMenu;
+                }
+                else
+                {
+                    context.Menu.Remove(legacyProductMenu);
+                }
+            }
+            if (productMenu != null && productMenu.PermissionKey != "Content_Product")
+                productMenu.PermissionKey = "Content_Product";
+            if (productMenu == null)
+                EnsureMenu(context, "产品管理", "/product/index", "layui-icon-picture", 2, content.Id, false,
+                    "Content_Product", "Add,Edit,Delete", 32);
+
+            var legacyProductPermissions = context.RoleMenu.Where(p => p.Permission == "Content_Album"
+                || (p.Permission != null && p.Permission.StartsWith("Content_Album_"))).ToList();
+            foreach (var permission in legacyProductPermissions)
+            {
+                var newPermission = "Content_Product" + permission.Permission.Substring("Content_Album".Length);
+                if (context.RoleMenu.Any(p => p.RoleId == permission.RoleId && p.Permission == newPermission))
+                    context.RoleMenu.Remove(permission);
+                else
+                    permission.Permission = newPermission;
+            }
             EnsureMenu(context, "招聘管理", "/job/index", "layui-icon-friends", 2, content.Id, false,
                 "Content_Job", "Add,Edit,Delete", 33);
             EnsureMenu(context, "分类管理", "/tag/index", "layui-icon-tabs", 2, content.Id, false,
@@ -97,13 +131,11 @@ namespace CIMC.Data
             EnsureMenu(context, "素材管理", "/images/index", "layui-icon-picture", 2, content.Id, false,
                 "Content_Images", "Add,Edit,Delete", 35);
 
-            var obsoleteContentMenus = context.Menu.Where(p => p.Path == "/product/index"
-                || p.Path == "/productcategory/index" || p.Path == "/contentcategory/index"
-                || p.PermissionKey == "Content_Product" || p.PermissionKey == "Content_ProductCategory").ToList();
+            var obsoleteContentMenus = context.Menu.Where(p => p.Path == "/productcategory/index" || p.Path == "/contentcategory/index"
+                || p.PermissionKey == "Content_ProductCategory").ToList();
             if (obsoleteContentMenus.Count > 0) context.Menu.RemoveRange(obsoleteContentMenus);
-            var obsoleteContentPermissions = context.RoleMenu.Where(p => p.Permission == "Content_Product"
-                || p.Permission == "Content_ProductCategory"
-                || (p.Permission != null && (p.Permission.StartsWith("Content_Product_") || p.Permission.StartsWith("Content_ProductCategory_")))).ToList();
+            var obsoleteContentPermissions = context.RoleMenu.Where(p => p.Permission == "Content_ProductCategory"
+                || (p.Permission != null && p.Permission.StartsWith("Content_ProductCategory_"))).ToList();
             if (obsoleteContentPermissions.Count > 0) context.RoleMenu.RemoveRange(obsoleteContentPermissions);
 
             // 页面树已承担网站导航；旧导航管理和旧 Footer 设置都不再存在。
@@ -132,6 +164,7 @@ namespace CIMC.Data
             context.SaveChanges();
         }
 
+        /// <summary>在指定菜单不存在时添加菜单。</summary>
         private static Menu EnsureMenu(
             AppDbContext context,
             string title,
@@ -192,6 +225,7 @@ namespace CIMC.Data
             return menu;
         }
 
+        /// <summary>在站点配置不存在时创建默认配置。</summary>
         private static void InitSiteConfig(AppDbContext context)
         {
             if (context.WebsiteSiteConfig.Any(p => p.Id == 1))
@@ -214,6 +248,7 @@ namespace CIMC.Data
             context.SaveChanges();
         }
 
+        /// <summary>将文本计算为 MD5 哈希值。</summary>
         private static string ToMd5(string value)
         {
             using var md5 = MD5.Create();

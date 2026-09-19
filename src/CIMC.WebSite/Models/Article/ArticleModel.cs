@@ -4,8 +4,10 @@ using System.Linq;
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载文章相关数据。</summary>
     public class ArticleModel
     {
+        /// <summary>主键。</summary>
         public int Id { get; set; }
         /// <summary>
         /// 标题
@@ -45,6 +47,7 @@ namespace MySite.Web.Models
         public string Source { get; set; }
 
 
+        /// <summary>来源链接地址。</summary>
         public string SourceUrl { get; set; }
         /// <summary>
         /// 链接
@@ -85,6 +88,7 @@ namespace MySite.Web.Models
         /// </summary>
         public bool IsHot { get; set; }
 
+        /// <summary>创建时间。</summary>
         public DateTime? CreationTime { get; set; }
 
         /// <summary>
@@ -99,7 +103,9 @@ namespace MySite.Web.Models
         /// 更新人
         /// </summary>
         public string UpdateBy { get; set; }
+        /// <summary>可选择的分类列表。</summary>
         public List<TagModel> TagsList { get; set; } = new List<TagModel>();
+        /// <summary>分类名称。</summary>
         public string TagName => TagsList.FirstOrDefault(p => p.Id == TagId)?.TagName ?? string.Empty;
     }
 }

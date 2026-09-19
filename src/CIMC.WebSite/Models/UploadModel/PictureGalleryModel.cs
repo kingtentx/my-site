@@ -2,9 +2,12 @@ using System;
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载图片相关数据。</summary>
     public class PictureGalleryModel
     {
+        /// <summary>主键。</summary>
         public long Id { get; set; }
+        /// <summary>图片的名称。</summary>
         public string ImageName { get; set; }
         /// <summary>
         /// 主机地址
@@ -43,6 +46,7 @@ namespace MySite.Web.Models
         /// </summary>     
         public string CreationBy { get; set; }
 
+        /// <summary>创建时间。</summary>
         public DateTime? CreationTime { get; set; }
     }
 }

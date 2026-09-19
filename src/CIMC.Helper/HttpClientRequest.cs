@@ -13,6 +13,7 @@ namespace CIMC.Helper
     {
         private static readonly HttpClient HttpClient;
 
+        /// <summary>初始化HttpClientRequest。</summary>
         static HttpClientRequest()
         {
             HttpClient = new HttpClient();

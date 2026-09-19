@@ -1,5 +1,6 @@
 ﻿namespace MySite.Web.Models
 {
+    /// <summary>承载WecatConfig相关数据。</summary>
     public class WecatConfigModel
     {
         /// <summary>

@@ -3,8 +3,10 @@ using System;
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载微信相关数据。</summary>
     public class WxUserModel
     {
+        /// <summary>主键。</summary>
         public int Id { get; set; }
         /// <summary>
         /// 手机号码

@@ -6,12 +6,15 @@ using System.Linq;
 
 namespace CIMC.Helper
 {
+    /// <summary>提供MemoryCache相关辅助操作。</summary>
     public class MemoryCacheHelper : ICacheService
     {
 
+        /// <summary>缓存服务实例。</summary>
         protected IMemoryCache _cache;
         private readonly ConcurrentDictionary<string, object> _cacheKeys;
 
+        /// <summary>初始化MemoryCache。</summary>
         public MemoryCacheHelper(IMemoryCache cache)
         {
             _cache = cache;
@@ -124,7 +127,7 @@ namespace CIMC.Helper
         /// <summary>
         /// 批量删除缓存
         /// </summary>
-        /// <param name="key">缓存Key集合</param>
+        /// <param name="keys">缓存Key集合</param>
         /// <returns></returns>
         public void RemoveAll(IEnumerable<string> keys)
         {
@@ -278,6 +281,7 @@ namespace CIMC.Helper
         }
         #endregion
 
+        /// <summary>释放持有的资源。</summary>
         public void Dispose()
         {
             if (_cache != null)

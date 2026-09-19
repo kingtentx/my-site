@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理管理员相关的网页请求。</summary>
     [Authorize]
     public class ManagerController : AdminBaseController
     {
@@ -20,6 +21,7 @@ namespace MySite.Web.Controllers
         private IRepository<Role> _roleRepository;
 
 
+        /// <summary>初始化管理员。</summary>
         public ManagerController(IPermissionService permission, IRepository<Admin> adminRepository, IRepository<Role> roleService)
         {
             _adminRepository = adminRepository;
@@ -28,6 +30,7 @@ namespace MySite.Web.Controllers
 
         }
 
+        /// <summary>显示管理员管理页面。</summary>
         [PermissionFilter(MenuCode.System_Admin, PermissionType.View)]
         public IActionResult Index()
         {
@@ -39,6 +42,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>查询管理员列表。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_Admin, PermissionType.View)]
         public JsonResult GetList(int pageIndex = 1, int pageSize = 10)
@@ -74,6 +78,7 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>显示管理员的编辑内容。</summary>
         [PermissionFilter(MenuCode.System_Admin, PermissionType.View)]
         public ActionResult Edit(int? id)
         {
@@ -107,6 +112,7 @@ namespace MySite.Web.Controllers
             return View(model);
         }
 
+        /// <summary>保存编辑内容。</summary>
         [HttpPost, ActionName("Edit")]
         public ActionResult EditPost(int? id, AdminModel input)
         {
@@ -194,6 +200,7 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>删除指定管理员记录。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.System_Admin, PermissionType.Delete)]
         public async Task<JsonResult> Delete(int id)

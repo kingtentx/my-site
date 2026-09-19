@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理授权相关的网页请求。</summary>
     public class AuthorizeController : Controller
     {
         private ICacheService _cache;
@@ -22,6 +23,7 @@ namespace MySite.Web.Controllers
         private IRepository<Role> _roleRepository;
 
 
+        /// <summary>初始化授权。</summary>
         public AuthorizeController(ICacheService cache,
              IRepository<Admin> adminRepository,
              IRepository<Role> roleRepository)

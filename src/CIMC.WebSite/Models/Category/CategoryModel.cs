@@ -2,6 +2,7 @@
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载分类相关数据。</summary>
     public class CategoryModel
     {
         /// <summary>
@@ -29,6 +30,7 @@ namespace MySite.Web.Models
         /// </summary>
         public bool IsActive { get; set; }
 
+        /// <summary>是否已软删除。</summary>
         public bool IsDelete { get; set; }
         /// <summary>
         /// 更新时间

@@ -1,5 +1,6 @@
 ﻿namespace MySite.Web.Config
 {
+    /// <summary>保存JWT的配置。</summary>
     public class JwtConfig
     {
         /// <summary>

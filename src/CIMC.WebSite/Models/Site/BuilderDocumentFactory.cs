@@ -4,18 +4,25 @@ using System.Linq;
 
 namespace MySite.Web.Models
 {
+    /// <summary>创建页面装修相关对象。</summary>
     public static class BuilderDocumentFactory
     {
+        /// <summary>全局页眉的页面编码。</summary>
         public const string GlobalHeaderPageCode = "__GLOBAL_HEADER__";
+        /// <summary>全局页脚的页面编码。</summary>
         public const string GlobalFooterPageCode = "__GLOBAL_FOOTER__";
+        /// <summary>全局页眉的访问路径。</summary>
         public const string GlobalHeaderPath = "/__global/header";
+        /// <summary>全局页脚的访问路径。</summary>
         public const string GlobalFooterPath = "/__global/footer";
 
+        /// <summary>创建空的页面装修文档。</summary>
         public static BuilderDocumentModel CreateEmpty(string name)
         {
             return new BuilderDocumentModel { SchemaVersion = 1, Name = name ?? string.Empty };
         }
 
+        /// <summary>创建默认页眉文档。</summary>
         public static BuilderDocumentModel CreateDefaultHeader()
         {
             return new BuilderDocumentModel
@@ -33,6 +40,7 @@ namespace MySite.Web.Models
             };
         }
 
+        /// <summary>创建默认页脚文档。</summary>
         public static BuilderDocumentModel CreateDefaultFooter()
         {
             return new BuilderDocumentModel
@@ -52,6 +60,7 @@ namespace MySite.Web.Models
             };
         }
 
+        /// <summary>创建页面装修节点。</summary>
         public static BuilderNodeModel Node(string type, Dictionary<string, object> props, Dictionary<string, object> style, params BuilderNodeModel[] children)
         {
             return new BuilderNodeModel
@@ -66,16 +75,19 @@ namespace MySite.Web.Models
             };
         }
 
+        /// <summary>将键值对转换为节点属性字典。</summary>
         private static Dictionary<string, object> Props(params object[] values)
         {
             return Dictionary(values);
         }
 
+        /// <summary>将键值对转换为样式字典。</summary>
         private static Dictionary<string, object> Style(params object[] values)
         {
             return Dictionary(values);
         }
 
+        /// <summary>将交替排列的键和值转换为字典。</summary>
         private static Dictionary<string, object> Dictionary(params object[] values)
         {
             var result = new Dictionary<string, object>();

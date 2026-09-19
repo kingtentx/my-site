@@ -5,6 +5,7 @@ using System.Security.Claims;
 
 namespace MySite.Web.Filters
 {
+    /// <summary>处理请求相关的请求筛选逻辑。</summary>
     public class ActionFilter : IActionFilter
     {
 
@@ -19,6 +20,7 @@ namespace MySite.Web.Filters
 
         private Stopwatch Stopwatch { get; set; }
 
+        /// <summary>在请求执行前处理筛选逻辑。</summary>
         public void OnActionExecuting(ActionExecutingContext context)
         {
             //// 后续添加了获取请求的请求体，如果在实际项目中不需要删除即可
@@ -42,6 +44,7 @@ namespace MySite.Web.Filters
             Stopwatch.Start();
         }
 
+        /// <summary>在请求执行后处理筛选逻辑。</summary>
         public void OnActionExecuted(ActionExecutedContext context)
         {
 

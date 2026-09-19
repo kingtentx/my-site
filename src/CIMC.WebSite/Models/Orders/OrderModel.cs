@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载订单相关数据。</summary>
     public class OrderModel
     {
         /// <summary>
@@ -88,6 +89,7 @@ namespace MySite.Web.Models
 
     }
 
+    /// <summary>承载订单相关数据。</summary>
     public class OrderGoodsModel
     {
         /// <summary>

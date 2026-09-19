@@ -17,6 +17,7 @@ namespace CIMC.EntityFramework
         where T : class, new()
         where TContext : DbContext
     {
+        /// <summary>数据库上下文实例。</summary>
         protected readonly TContext _dbContext;
         private readonly Expression<Func<T, bool>> _autoDeleteCondition;
 
@@ -30,6 +31,7 @@ namespace CIMC.EntityFramework
         }
 
         #region 私有方法
+        /// <summary>构造软删除过滤条件。</summary>
         private Expression<Func<T, bool>> CreateAutoDeleteCondition()
         {
             var property = typeof(T).GetProperty("IsDelete");
@@ -44,6 +46,7 @@ namespace CIMC.EntityFramework
             return null;
         }
 
+        /// <summary>构造实体基础查询。</summary>
         private IQueryable<T> GetBaseQuery()
         {
             var query = _dbContext.Set<T>().AsQueryable();

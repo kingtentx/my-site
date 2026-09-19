@@ -2,6 +2,7 @@
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载管理员相关数据。</summary>
     public class AdminInputModel
     {
         /// <summary>

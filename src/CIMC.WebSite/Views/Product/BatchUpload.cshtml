@@ -1,4 +1,4 @@
-@model MySite.Web.Models.AlbumModel
+@model MySite.Web.Models.ProductModel
 @{ Layout = null; }
 <!DOCTYPE html>
 <html>
@@ -33,7 +33,7 @@
                 <div class="layui-form-item"><label class="layui-form-label">产品标题</label><div class="layui-input-block"><input name="Title" class="layui-input w500" placeholder="未填写时使用“图片”"></div></div>
                 <div class="layui-form-item"><label class="layui-form-label">排序</label><div class="layui-input-inline"><input type="number" name="Sort" class="layui-input" value="0"></div><div class="layui-form-mid layui-word-aux">数字越小越靠前</div></div>
                 <div class="layui-form-item"><label class="layui-form-label">是否发布</label><div class="layui-input-block"><input type="radio" name="IsActive" value="true" title="是" checked><input type="radio" name="IsActive" value="false" title="否"></div></div>
-                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="save">立即保存</button><a class="layui-btn layui-btn-primary" href="/Album/Index">返回列表</a></div></div></div>
+                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="save">立即保存</button><a class="layui-btn layui-btn-primary" href="/Product/Index">返回列表</a></div></div></div>
             </form>
         </div>
     </div>
@@ -45,7 +45,7 @@ layui.config({base:'@Url.Content("~/static/layuiadmin/")'}).extend({index:'lib/i
     function render(){var html='';urls.forEach(function(url,index){html+='<div class="uploaded-item"><img src="'+url+'" alt="已上传图片"><button type="button" class="layui-btn layui-btn-danger layui-btn-sm" data-index="'+index+'">移除</button></div>';});$('#list').html(html);}
     layui.upload.render({elem:'#upload',url:'/Upload/UploadImage',field:'file',multiple:true,accept:'images',done:function(res){if(res&&res.url){urls.push(res.url);render();}else layer.msg(res.message||'上传失败',{icon:5});}});
     $('#list').on('click','button',function(){urls.splice(Number($(this).attr('data-index')),1);render();});
-    form.on('submit(save)',function(data){if(!urls.length){layer.msg('请至少上传一张图片');return false;}data.field.ImageList=urls;$.ajax({type:'post',url:'/Album/BatchUpload',data:data.field,traditional:true,success:function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/Album/Index';});else layer.msg(res.message,{icon:5});}});return false;});
+    form.on('submit(save)',function(data){if(!urls.length){layer.msg('请至少上传一张图片');return false;}data.field.ImageList=urls;$.ajax({type:'post',url:'/Product/BatchUpload',data:data.field,traditional:true,success:function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/Product/Index';});else layer.msg(res.message,{icon:5});}});return false;});
 });
 </script>
 </body>

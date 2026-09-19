@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理文件上传相关的网页请求。</summary>
     [Authorize]
     public class UploadController : Controller
     {
@@ -25,6 +26,7 @@ namespace MySite.Web.Controllers
         private readonly IRepository<Images> _imageRepository;
         private readonly ILogger<UploadController> _logger;
 
+        /// <summary>初始化文件上传。</summary>
         public UploadController(
             IWebHostEnvironment environment,
             IOptions<UploadConfig> uploadConfig,
@@ -37,6 +39,7 @@ namespace MySite.Web.Controllers
             _logger = logger;
         }
 
+        /// <summary>上传图片文件。</summary>
         [HttpPost]
         public async Task<IActionResult> UploadImage(IFormFile file)
         {
@@ -92,6 +95,7 @@ namespace MySite.Web.Controllers
             });
         }
 
+        /// <summary>接收 SSI 图片上传请求。</summary>
         [HttpPost]
         public async Task<IActionResult> SSIUploadImage()
         {
@@ -112,6 +116,7 @@ namespace MySite.Web.Controllers
             return Json(new { code = 200, message = "上传成功", data = urls, urls });
         }
 
+        /// <summary>分页查询图片列表。</summary>
         [HttpGet]
         public IActionResult GetImageList(int pageIndex = 1, int pageSize = 14, string keywords = "")
         {

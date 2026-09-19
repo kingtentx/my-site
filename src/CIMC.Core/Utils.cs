@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace CIMC.Core
 {
+    /// <summary>提供网络请求等通用工具方法。</summary>
     public class Utils
     {
 
@@ -110,7 +111,6 @@ namespace CIMC.Core
         /// Get请求获取url地址输出内容   
         /// </summary> 
         /// <param name="url">url</param>   
-        /// <param name="encoding">返回内容编码方式，例如：Encoding.UTF8</param>   
         public static string GetWeb(string url)
         {
             HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(url);

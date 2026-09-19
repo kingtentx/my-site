@@ -7,8 +7,10 @@ using System.Globalization;
 
 namespace MySite.Web
 {
+    /// <summary>表示应用程序相关数据或操作。</summary>
     public class Program
     {
+        /// <summary>启动应用程序。</summary>
         public static int Main(string[] args)
         {
             CultureInfo.DefaultThreadCurrentCulture = new CultureInfo("zh-CN", true) { DateTimeFormat = { ShortDatePattern = "yyyy-MM-dd", FullDateTimePattern = "yyyy-MM-dd HH:mm:ss", LongTimePattern = "HH:mm:ss" } };
@@ -48,6 +50,7 @@ namespace MySite.Web
             }
         }
 
+        /// <summary>创建应用宿主构建器。</summary>
         public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
             .ConfigureWebHostDefaults(webBuilder =>

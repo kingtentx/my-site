@@ -10,15 +10,18 @@ using MySite.Web.Models;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理文章相关的网页请求。</summary>
     [Authorize]
     public class ArticleController : ContentControllerBase
     {
         private readonly IRepository<Article> _repository;
         private readonly IPermissionService _permission;
 
+        /// <summary>初始化文章。</summary>
         public ArticleController(IRepository<Article> repository, IRepository<Tag> tags, IPermissionService permission) : base(tags)
         { _repository = repository; _permission = permission; }
 
+        /// <summary>显示文章管理页面。</summary>
         [PermissionFilter(MenuCode.Content_Article, PermissionType.View)]
         public IActionResult Index()
         {
@@ -28,6 +31,7 @@ namespace MySite.Web.Controllers
             return View(GetTags((int)TagType.Article));
         }
 
+        /// <summary>显示文章的编辑内容。</summary>
         [PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult Edit(int id = 0)
         {
@@ -39,6 +43,7 @@ namespace MySite.Web.Controllers
             return View(model);
         }
 
+        /// <summary>保存文章的编辑内容。</summary>
         [HttpPost, PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult Edit(int id, ArticleModel input)
         {
@@ -58,6 +63,7 @@ namespace MySite.Web.Controllers
             return Json(Ok());
         }
 
+        /// <summary>查询文章列表。</summary>
         [HttpGet, PermissionFilter(MenuCode.Content_Article, PermissionType.View)]
         public JsonResult GetList(int pageIndex = 1, int pageSize = 10)
         {
@@ -71,6 +77,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Message = "成功", Count = query.Count, Data = data });
         }
 
+        /// <summary>设置文章的热门状态。</summary>
         [HttpPost, PermissionFilter(MenuCode.Content_Article, PermissionType.Edit)]
         public IActionResult SetHotArticle(int id, bool isHot)
         {
@@ -79,6 +86,7 @@ namespace MySite.Web.Controllers
             return Json(Ok("设置成功"));
         }
 
+        /// <summary>删除指定文章记录。</summary>
         [HttpPost, PermissionFilter(MenuCode.Content_Article, PermissionType.Delete)]
         public IActionResult Delete(int id, int[] ids, int isAll = 0)
         {
@@ -87,8 +95,11 @@ namespace MySite.Web.Controllers
             return Json(Ok("删除成功"));
         }
 
+        /// <summary>构造成功的操作结果。</summary>
         private static ResultModel Ok(string message = "保存成功") => new ResultModel { Code = (int)ResultCode.Success, Message = message };
+        /// <summary>显示错误页面。</summary>
         private static ResultModel Error(string message, ResultCode code = ResultCode.ParmsError) => new ResultModel { Code = (int)code, Message = message };
+        /// <summary>将实体转换为页面模型。</summary>
         private static ArticleModel ToModel(Article p) => new ArticleModel { Id=p.Id,Title=p.Title,Title_EN=p.Title_EN,Keyword=p.Keyword,Description=p.Description,Description_EN=p.Description_EN,Detail=p.Detail,Detail_EN=p.Detail_EN,Author=p.Author,Source=p.Source,SourceUrl=p.SourceUrl,LinkUrl=p.LinkUrl,ImageUrl=p.ImageUrl,TagType=p.TagType,TagId=p.TagId,Sort=p.Sort,ViewCount=p.ViewCount,ShareCount=p.ShareCount,IsActive=p.IsActive,IsHot=p.IsHot,CreationTime=p.CreationTime,UpdateTime=p.UpdateTime,CreationBy=p.CreationBy,UpdateBy=p.UpdateBy };
     }
 }

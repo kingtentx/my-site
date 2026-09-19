@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理菜单相关的网页请求。</summary>
     [Authorize]
     public class MenuController : AdminBaseController
     {
@@ -19,6 +20,7 @@ namespace MySite.Web.Controllers
         private readonly IMapper _mapper;
         private readonly IRepository<Menu> _menuRepository;
 
+        /// <summary>初始化菜单。</summary>
         public MenuController(IPermissionService permission, IMapper mapper, IRepository<Menu> menuRepository)
         {
             _permission = permission;
@@ -26,6 +28,7 @@ namespace MySite.Web.Controllers
             _menuRepository = menuRepository;
         }
 
+        /// <summary>显示菜单管理页面。</summary>
         [PermissionFilter(MenuCode.System_Menu, PermissionType.View)]
         public IActionResult Index()
         {
@@ -35,6 +38,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>查询菜单列表。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_Menu, PermissionType.View)]
         public async Task<JsonResult> GetList()
@@ -53,6 +57,7 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>获取菜单数据。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_Menu, PermissionType.View)]
         public async Task<JsonResult> GetMenuData()
@@ -73,6 +78,7 @@ namespace MySite.Web.Controllers
             return Json(treeList.OrderBy(p => p.Sort));
         }
 
+        /// <summary>获取菜单对应的权限类型。</summary>
         private Dictionary<string, string> GetPermissionType()
         {
             var buttons = new Dictionary<string, string>();
@@ -84,6 +90,7 @@ namespace MySite.Web.Controllers
             return buttons;
         }
 
+        /// <summary>显示菜单的编辑内容。</summary>
         [PermissionFilter(MenuCode.System_Menu, PermissionType.View)]
         public ActionResult Edit(int id, int pid)
         {
@@ -98,6 +105,7 @@ namespace MySite.Web.Controllers
             return View(model);
         }
 
+        /// <summary>保存编辑内容。</summary>
         [HttpPost, ActionName("Edit")]
         [PermissionFilter(MenuCode.System_Menu, PermissionType.View)]
         public async Task<ActionResult> EditPost(int id, MenuModel input)
@@ -154,6 +162,7 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>删除指定菜单记录。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.System_Menu, PermissionType.Delete)]
         public async Task<ActionResult> Delete(int id)

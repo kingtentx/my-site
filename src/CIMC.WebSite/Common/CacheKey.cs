@@ -5,10 +5,13 @@
     /// </summary>
     public class CacheKey
     {
+        /// <summary>缓存过期时长配置值 2。</summary>
         public const int ExpirationTimeLen_2 = 2;
 
+        /// <summary>缓存过期时长配置值 5。</summary>
         public const int ExpirationTimeLen_5 = 5;
 
+        /// <summary>缓存过期时长配置值 100。</summary>
         public const int ExpirationTimeLen_100 = 100;
 
 

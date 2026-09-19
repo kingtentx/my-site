@@ -13,18 +13,21 @@ using System.Text;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理审计日志相关的网页请求。</summary>
     [Authorize]
     public class AuditLogController : AdminBaseController
     {
         private readonly IAuditLogService _auditLogService;
         private readonly IPermissionService _permission;
 
+        /// <summary>初始化审计日志。</summary>
         public AuditLogController(IAuditLogService auditLogService, IPermissionService permission)
         {
             _auditLogService = auditLogService;
             _permission = permission;
         }
 
+        /// <summary>显示审计日志管理页面。</summary>
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.View)]
         public IActionResult Index()
         {
@@ -32,6 +35,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>查询审计日志列表。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.View)]
         public JsonResult GetList(int pageIndex = 1, int pageSize = 15)
@@ -71,6 +75,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Count = count, Data = data });
         }
 
+        /// <summary>获取指定记录的详情。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.View)]
         public JsonResult GetDetail(long id)
@@ -115,6 +120,7 @@ namespace MySite.Web.Controllers
             });
         }
 
+        /// <summary>导出 Excel 格式的审计日志。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.View)]
         public IActionResult ExportExcel(string userId, string userName,
@@ -163,6 +169,7 @@ namespace MySite.Web.Controllers
             return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"审计日志_{DateTime.Now:yyyyMMddHHmmss}.xlsx");
         }
 
+        /// <summary>导出 CSV 格式的审计日志。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.View)]
         public IActionResult ExportCsv(string userId, string userName,
@@ -187,6 +194,7 @@ namespace MySite.Web.Controllers
             return File(result, "text/csv", $"审计日志_{DateTime.Now:yyyyMMddHHmmss}.csv");
         }
 
+        /// <summary>获取审计日志统计数据。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.View)]
         public JsonResult GetStats(string startTime, string endTime)
@@ -205,6 +213,7 @@ namespace MySite.Web.Controllers
             });
         }
 
+        /// <summary>验证审计日志完整性。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.View)]
         public JsonResult VerifyIntegrity(long? id)
@@ -227,6 +236,7 @@ namespace MySite.Web.Controllers
             });
         }
 
+        /// <summary>归档指定日期之前的审计日志。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.System_AuditLog, PermissionType.Delete)]
         public JsonResult Archive(string beforeDate)

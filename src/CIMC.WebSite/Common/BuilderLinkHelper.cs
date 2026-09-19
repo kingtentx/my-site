@@ -5,8 +5,10 @@ using Newtonsoft.Json.Linq;
 
 namespace MySite.Web.Common;
 
+/// <summary>提供页面装修相关辅助操作。</summary>
 public static class BuilderLinkHelper
 {
+    /// <summary>解析页面链接的实际目标地址。</summary>
     public static string Resolve(object value, IRepository<WebsitePage> pages)
     {
         if (value == null || value is string) return null;

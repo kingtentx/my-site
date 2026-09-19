@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace CIMC.Data
 {
+    /// <summary>记录后台菜单及其权限配置。</summary>
     public class Menu : ExtFullModifyModel, IModifyModel, ISortModel
     {
         /// <summary>

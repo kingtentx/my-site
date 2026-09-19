@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web
 {
+    /// <summary>提供页面相关的辅助方法。</summary>
     public class PageUtils
     {
         /// <summary>

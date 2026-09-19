@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace CIMC.EntityFramework
 {
+    /// <summary>定义I服务的接口。</summary>
     public interface IRepository<T> where T : class, new()
     {
         #region 添加
@@ -322,7 +323,7 @@ namespace CIMC.EntityFramework
         /// </summary>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
-        /// <param name="count"></param>
+        /// <param name="where">列表筛选条件。</param>
         /// <returns></returns>
         (List<T> List, int Count) GetList(Expression<Func<T, bool>> where, int pageIndex, int pageSize);
         /// <summary>
@@ -337,24 +338,22 @@ namespace CIMC.EntityFramework
         /// <summary>
         /// 分页获取列表 [有排序]
         /// </summary>
-        /// <typeparam name="K">排序列</typeparam>
+        /// <typeparam name="TKey">排序列类型。</typeparam>
         /// <param name="where"></param>
         /// <param name="orderBy"></param>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
-        /// <param name="count"></param>
         /// <param name="isAsc">true:升序 , false:倒序 </param>
         /// <returns></returns>
         (List<T> List, int Count) GetList<TKey>(Expression<Func<T, bool>> where, Expression<Func<T, TKey>> orderBy, int pageIndex, int pageSize, bool isAsc = false);
         /// <summary>
         /// 分页获取列表 [有排序]
         /// </summary>
-        /// <typeparam name="K">排序列</typeparam>
+        /// <typeparam name="TKey">排序列类型。</typeparam>
         /// <param name="where"></param>
         /// <param name="orderBy"></param>
         /// <param name="pageIndex"></param>
         /// <param name="pageSize"></param>
-        /// <param name="count"></param>
         /// <param name="isAsc">true:升序 , false:倒序 </param>
         /// <returns></returns>
         Task<(List<T> List, int Count)> GetListAsync<TKey>(Expression<Func<T, bool>> where, Expression<Func<T, TKey>> orderBy, int pageIndex, int pageSize, bool isAsc = false);
@@ -430,6 +429,7 @@ namespace CIMC.EntityFramework
 
         #endregion
 
+        /// <summary>在事务中异步更新实体。</summary>
         Task<bool> TransactionalUpdateAsync(Func<Task> operation);
 
 

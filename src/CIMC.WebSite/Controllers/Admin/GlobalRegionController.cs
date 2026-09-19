@@ -10,6 +10,7 @@ using Newtonsoft.Json.Linq;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理全局区域相关的网页请求。</summary>
     [Authorize]
     public class GlobalRegionController : AdminBaseController
     {
@@ -17,6 +18,7 @@ namespace MySite.Web.Controllers
         private readonly IRepository<WebsitePageVersion> _versionRepository;
         private readonly IPermissionService _permission;
 
+        /// <summary>初始化全局区域。</summary>
         public GlobalRegionController(IRepository<WebsitePage> pageRepository, IRepository<WebsitePageVersion> versionRepository, IPermissionService permission)
         {
             _pageRepository = pageRepository;
@@ -24,6 +26,7 @@ namespace MySite.Web.Controllers
             _permission = permission;
         }
 
+        /// <summary>显示全局区域管理页面。</summary>
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Design)]
         public IActionResult Index()
         {
@@ -50,6 +53,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>读取全局区域的发布状态。</summary>
         private string PublicationState(WebsitePage page)
         {
             if (page.Status != 1) return "尚未发布";
@@ -59,6 +63,7 @@ namespace MySite.Web.Controllers
             catch (JsonException) { return "已发布 · 请检查草稿"; }
         }
 
+        /// <summary>重置指定全局区域。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Design)]
         public IActionResult Reset(string region)
@@ -84,6 +89,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "已恢复新版默认结构，请进入装修器调整并重新发布" });
         }
 
+        /// <summary>确保指定全局区域存在。</summary>
         private WebsitePage EnsureRegion(string code, string path, string name, BuilderDocumentModel defaultDocument)
         {
             var page = _pageRepository.GetOne(p => p.PageCode == code && !p.IsDelete);

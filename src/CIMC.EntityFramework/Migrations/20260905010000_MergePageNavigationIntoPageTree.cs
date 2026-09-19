@@ -6,10 +6,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace CIMC.EntityFramework.Migrations
 {
+    /// <summary>将网站导航合并到页面树的数据库迁移。</summary>
     [DbContext(typeof(AppDbContext))]
     [Migration("20260905010000_MergePageNavigationIntoPageTree")]
     public partial class MergePageNavigationIntoPageTree : Migration
     {
+        /// <summary>应用数据库迁移。</summary>
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // 页面树已经承担前台导航，旧导航/旧 Footer 单例表不再属于运行模型。
@@ -40,12 +42,14 @@ WHERE `PermissionKey` IN ('Site_Footer', 'Site_Navigation')
    OR `Path` IN ('/footer/index', '/navigation/index');");
         }
 
+        /// <summary>回退数据库迁移。</summary>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             // 本项目明确不兼容旧版 Site Builder。Down 不恢复已经废弃的数据结构，
             // 避免回滚时重新引入两套导航、Footer 和旧装修配置来源。
         }
 
+        /// <summary>存在指定字段时将其删除。</summary>
         private static void DropColumnIfExists(MigrationBuilder migrationBuilder, string table, string column)
         {
             migrationBuilder.Sql($@"

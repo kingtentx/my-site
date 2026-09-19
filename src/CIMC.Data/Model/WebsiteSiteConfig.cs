@@ -9,22 +9,28 @@ namespace CIMC.Data
     /// </summary>
     public class WebsiteSiteConfig : ExtFullModifyModel, IActiveModel, IModifyModel
     {
+        /// <summary>主键。</summary>
         [Key]
         public int Id { get; set; } = 1;
 
+        /// <summary>WebsiteSite的名称。</summary>
         [Required]
         [StringLength(ModelUnits.Len_100)]
         public string SiteName { get; set; }
 
+        /// <summary>站点 Logo 地址。</summary>
         [StringLength(ModelUnits.Len_500)]
         public string Logo { get; set; }
 
+        /// <summary>浏览器标题。</summary>
         [StringLength(ModelUnits.Len_250)]
         public string BrowserTitle { get; set; }
 
+        /// <summary>站点关键词。</summary>
         [StringLength(ModelUnits.Len_500)]
         public string Keywords { get; set; }
 
+        /// <summary>描述。</summary>
         [StringLength(ModelUnits.Len_500)]
         public string Description { get; set; }
 
@@ -33,6 +39,7 @@ namespace CIMC.Data
         /// </summary>
         public bool IsActive { get; set; } = true;
 
+        /// <summary>是否已软删除。</summary>
         public bool IsDelete { get; set; } = false;
     }
 }

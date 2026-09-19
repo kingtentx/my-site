@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web
 {
+    /// <summary>提供权限相关服务。</summary>
     public class PermissionService : IPermissionService
     {
         private IWebHostEnvironment _hostingEnv;
@@ -19,6 +20,7 @@ namespace MySite.Web
         private IRepository<Menu> _menuRepository;
         private ICacheService _cache;
 
+        /// <summary>初始化权限。</summary>
         public PermissionService(
             ICacheService cache,
             IWebHostEnvironment hostingEnv,

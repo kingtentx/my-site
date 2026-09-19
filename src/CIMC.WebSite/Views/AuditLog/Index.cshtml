@@ -68,7 +68,7 @@
                             <select name="operationModule">
                                 <option value="">全部</option>
                                 <option value="Article">文章管理</option>
-                                <option value="Album">产品管理</option>
+                                <option value="Product">产品管理</option><option value="Album">产品管理（历史）</option>
                                 <option value="Job">招聘管理</option>
                                 <option value="Tag">标签管理</option>
                                 <option value="Navigation">导航管理</option>
@@ -291,7 +291,7 @@
                         var moduleStats = res.data.moduleStats || {};
 
                         var typeLabels = { Login: '登录', Logout: '退出', View: '查询', Add: '新增', Edit: '编辑', Delete: '删除', Authorize: '权限变更', Upload: '上传', Export: '导出' };
-                        var moduleLabels = { Article: '文章', Album: '产品', Job: '招聘', Tag: '标签', Navigation: '导航', SiteModule: '页面模块', Manager: '管理员', Role: '角色', Menu: '菜单', Images: '素材', Attachments: '附件', Upload: '上传', Admin: '系统', Message: '留言', Authorize: '认证' };
+                        var moduleLabels = { Article: '文章', Product: '产品', Album: '产品', Job: '招聘', Tag: '标签', Navigation: '导航', SiteModule: '页面模块', Manager: '管理员', Role: '角色', Menu: '菜单', Images: '素材', Attachments: '附件', Upload: '上传', Admin: '系统', Message: '留言', Authorize: '认证' };
 
                         var html = '<div style="padding:16px;"><h4>操作类型统计</h4><div style="margin:10px 0;">';
                         for (var key in typeStats) {

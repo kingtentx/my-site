@@ -8,11 +8,14 @@ using System.Text;
 
 namespace CIMC.Helper
 {
+    /// <summary>提供RedisCache相关辅助操作。</summary>
     public class RedisCacheHelper : ICacheService
     {
+        /// <summary>数据库实例。</summary>
         protected IDatabase _database;
         private ConnectionMultiplexer _connection;
         private string _instance;
+        /// <summary>初始化RedisCache。</summary>
         public RedisCacheHelper(RedisCacheOptions options)
         {
             _connection = ConnectionMultiplexer.Connect(options.Configuration);
@@ -20,6 +23,7 @@ namespace CIMC.Helper
             _database = _connection.GetDatabase(GetDatabaseIndex(options.Configuration));
         }
 
+        /// <summary>获取 Redis 数据库索引。</summary>
         private int GetDatabaseIndex(string configuration, int defaultDatabase = 0)
         {
             const string dbKeys = "defaultdatabase=";
@@ -208,7 +212,7 @@ namespace CIMC.Helper
         /// <summary>
         /// 批量删除缓存
         /// </summary>
-        /// <param name="key">缓存Key集合</param>
+        /// <param name="keys">缓存Key集合</param>
         /// <returns></returns>
         public void RemoveAll(IEnumerable<string> keys)
         {
@@ -305,6 +309,7 @@ namespace CIMC.Helper
         }
         #endregion
 
+        /// <summary>生成 Redis 存储键。</summary>
         private string GetKeyForRedis(string key)
         {
             if (string.IsNullOrEmpty(_instance))
@@ -312,6 +317,7 @@ namespace CIMC.Helper
             else
                 return _instance + ":" + key;
         }
+        /// <summary>释放持有的资源。</summary>
         public void Dispose()
         {
             if (_connection != null)

@@ -1,5 +1,6 @@
 namespace MySite.Web
 {
+    /// <summary>定义后台页面按钮的标识常量。</summary>
     public class PageCode
     {
         #region 页面显示

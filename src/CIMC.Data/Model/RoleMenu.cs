@@ -9,6 +9,7 @@ namespace CIMC.Data
     /// </summary>  
     public class RoleMenu : ExtCreateModel
     {
+        /// <summary>主键。</summary>
         [Key]
         public int Id { get; set; }
         /// <summary>
@@ -16,6 +17,7 @@ namespace CIMC.Data
         /// </summary>
         public int RoleId { get; set; }
 
+        /// <summary>权限代码。</summary>
         [StringLength(ModelUnits.Len_100)]
         public string Permission { get; set; }
 

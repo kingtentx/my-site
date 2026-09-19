@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web.Filters
 {
+    /// <summary>记录后台请求的操作及其审计信息。</summary>
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false, Inherited = true)]
     public class AuditLogFilter : Attribute, IAsyncActionFilter
     {
@@ -22,6 +23,7 @@ namespace MySite.Web.Filters
             "ImageSelector", "Error"
         };
 
+        /// <summary>执行请求并记录符合配置的审计日志。</summary>
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
             var actionName = context.ActionDescriptor.RouteValues["action"];
@@ -160,6 +162,7 @@ namespace MySite.Web.Filters
             _ = auditLogService.LogAsync(log);
         }
 
+        /// <summary>判断请求是否为只读操作。</summary>
         private static bool IsReadAction(string actionName, string httpMethod)
         {
             if (httpMethod.Equals("GET", StringComparison.OrdinalIgnoreCase))
@@ -174,6 +177,7 @@ namespace MySite.Web.Filters
             return false;
         }
 
+        /// <summary>在修改前读取目标记录的数据。</summary>
         private static async Task<string> CaptureOldDataAsync(ActionExecutingContext context, string controllerName, string actionName)
         {
             try
@@ -205,6 +209,7 @@ namespace MySite.Web.Filters
             }
         }
 
+        /// <summary>从操作参数中提取记录主键。</summary>
         private static object ExtractIdFromArgs(ActionExecutingContext context, string actionName)
         {
             if (context.ActionArguments.TryGetValue("id", out var idObj))
@@ -221,6 +226,7 @@ namespace MySite.Web.Filters
             return null;
         }
 
+        /// <summary>根据控制器名称找到对应实体类型。</summary>
         private static Type GetEntityType(string controllerName)
         {
             return controllerName switch
@@ -233,7 +239,7 @@ namespace MySite.Web.Filters
                 "Page" => typeof(WebsitePage),
                 "GlobalRegion" => typeof(WebsitePage),
                 "SiteConfig" => typeof(WebsiteSiteConfig),
-                "Album" => typeof(Album),
+                "Product" => typeof(Product),
                 "Tag" => typeof(Tag),
                 "Job" => typeof(Job),
                 "Message" => typeof(MessageBoard),
@@ -241,6 +247,7 @@ namespace MySite.Web.Filters
             };
         }
 
+        /// <summary>根据控制器名称找到审计记录使用的表名。</summary>
         private static string GetOperationTable(string controllerName)
         {
             return controllerName switch
@@ -253,7 +260,7 @@ namespace MySite.Web.Filters
                 "Page" => "WebsitePage",
                 "GlobalRegion" => "WebsitePage",
                 "SiteConfig" => "WebsiteSiteConfig",
-                "Album" => "Album",
+                "Product" => "Product",
                 "Tag" => "Tag",
                 "Job" => "Job",
                 "Message" => "MessageBoard",
@@ -261,12 +268,14 @@ namespace MySite.Web.Filters
             };
         }
 
+        /// <summary>取得当前操作的记录主键。</summary>
         private static string GetRecordId(ActionExecutingContext context, string actionName)
         {
             var id = ExtractIdFromArgs(context, actionName);
             return id?.ToString();
         }
 
+        /// <summary>生成便于阅读的操作说明。</summary>
         private static string BuildOperationDesc(string operationType, string controllerName, string actionName)
         {
             var moduleName = controllerName switch
@@ -279,7 +288,7 @@ namespace MySite.Web.Filters
                 "Page" => "页面",
                 "GlobalRegion" => "全局区域",
                 "SiteConfig" => "站点配置",
-                "Album" => "产品",
+                "Product" => "产品",
                 "Tag" => "内容分类",
                 "Job" => "招聘",
                 "Message" => "留言",
@@ -307,6 +316,7 @@ namespace MySite.Web.Filters
             return actionDesc;
         }
 
+        /// <summary>根据请求方法和操作名称判定操作类型。</summary>
         private static string GetOperationType(string httpMethod, string actionName)
         {
             if (actionName.IndexOf("Login", StringComparison.OrdinalIgnoreCase) >= 0) return "Login";
@@ -342,6 +352,7 @@ namespace MySite.Web.Filters
             return "View";
         }
 
+        /// <summary>将审计文本限制在指定长度以内。</summary>
         private static string Truncate(string value, int maxLength)
         {
             if (string.IsNullOrEmpty(value)) return value;

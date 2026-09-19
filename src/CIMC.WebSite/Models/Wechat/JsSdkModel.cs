@@ -1,5 +1,6 @@
 ﻿namespace VPhonor.AdminSite.Models
 {
+    /// <summary>承载JsSdk相关数据。</summary>
     public class JsSdkModel
     {
         /// <summary>

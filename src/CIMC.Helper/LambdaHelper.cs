@@ -3,6 +3,7 @@ using System.Linq.Expressions;
 
 namespace CIMC.Helper
 {
+    /// <summary>提供Lambda相关辅助操作。</summary>
     public static class LambdaHelper
     {
         /// <summary>
@@ -56,17 +57,20 @@ namespace CIMC.Helper
                 func(left, right), parameter);
         }
 
+        /// <summary>在表达式树中替换指定节点。</summary>
         private class ReplaceExpressionVisitor : ExpressionVisitor
         {
             private readonly Expression _oldValue;
             private readonly Expression _newValue;
 
+            /// <summary>初始化ReplaceExpressionVisitor。</summary>
             public ReplaceExpressionVisitor(Expression oldValue, Expression newValue)
             {
                 _oldValue = oldValue;
                 _newValue = newValue;
             }
 
+            /// <summary>访问并替换表达式树节点。</summary>
             public override Expression Visit(Expression node)
             {
                 if (node == _oldValue)

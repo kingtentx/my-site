@@ -2,6 +2,7 @@
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载模块相关数据。</summary>
     public class ModuleModel
     {
         /// <summary>
@@ -22,6 +23,7 @@ namespace MySite.Web.Models
         public List<MenuDto> Menus { get; set; }
     }
 
+    /// <summary>承载菜单相关数据。</summary>
     public class MenuDto
     {
         /// <summary>
@@ -41,9 +43,11 @@ namespace MySite.Web.Models
         /// </summary>
         public bool IsChecked { get; set; } = false;
 
+        /// <summary>菜单按钮权限配置。</summary>
         public List<ButtonDto> Buttons { get; set; }
     }
 
+    /// <summary>承载Button相关数据。</summary>
     public class ButtonDto
     {
         /// <summary>

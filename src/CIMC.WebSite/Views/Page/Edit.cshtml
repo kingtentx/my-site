@@ -19,6 +19,10 @@
         <div class="layui-card-header">@(Model.Id > 0 ? "修改页面" : "新增页面")</div>
         <div class="layui-card-body" style="padding:15px;">
             <div class="notice">页面树就是网站导航树。父级页面决定导航层级，排序决定同级顺序；关闭“显示在网站导航”后页面仍可通过 URL 访问。Header/Footer 的布局与样式在【全局区域设计】中维护。</div>
+            @if (ViewBag.HasChildren == true)
+            {
+                <div class="notice">该页面已有子页面，作为导航目录使用：不能装修自身内容，前台会进入首个已发布的子页面。原有装修草稿仍保留。</div>
+            }
             <form class="layui-form" lay-filter="page-form">
                 <div class="section-title">页面与层级</div>
                 <div class="layui-form-item">

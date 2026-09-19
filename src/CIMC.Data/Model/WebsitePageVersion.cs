@@ -9,6 +9,7 @@ namespace CIMC.Data
     /// </summary>
     public class WebsitePageVersion : ExtCreateModel
     {
+        /// <summary>主键。</summary>
         [Key]
         public int Id { get; set; }
 

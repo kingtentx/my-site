@@ -3,6 +3,7 @@ using System.Collections.Generic;
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载角色相关数据。</summary>
     public class RoleModel
     {
         /// <summary>
@@ -27,8 +28,10 @@ namespace MySite.Web.Models
         /// </summary>
         public bool IsActive { get; set; }
 
+        /// <summary>角色相关项目集合。</summary>
         public List<ModuleModel> MenuList { get; set; }
 
+        /// <summary>角色相关项目集合。</summary>
         public string[] PermissionList { get; set; } = new string[] { };
     }
 }

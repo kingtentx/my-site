@@ -2,8 +2,10 @@
 
 namespace MySite.Web
 {
+    /// <summary>表示当前请求所需的菜单操作权限。</summary>
     public class PermissionAuthorizationRequirement : IAuthorizationRequirement
     {
+        /// <summary>初始化权限。</summary>
         public PermissionAuthorizationRequirement(string name, PermissionType type)
         {
             Name = name;

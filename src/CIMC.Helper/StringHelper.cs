@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace CIMC.Helper
 {
+    /// <summary>提供字符串相关辅助操作。</summary>
     public class StringHelper
     {
         /// <summary>
@@ -28,10 +29,12 @@ namespace CIMC.Helper
             return text;
         }
 
+        /// <summary>判断文本是否包含不安全的 SQL 片段。</summary>
         public static bool IsSafeSqlString(string str)
         {
             return !Regex.IsMatch(str, "[-|;|,|\\/|\\(|\\)|\\[|\\]|\\}|\\{|%|@|\\*|!|\\']");
         }
+        /// <summary>从文本中移除 HTML 标记。</summary>
         public static string RemoveHtml(string content)
         {
             if (string.IsNullOrEmpty(content))
@@ -47,6 +50,7 @@ namespace CIMC.Helper
         /// </summary>
         /// <typeparam name="T">对象类型</typeparam>
         /// <param name="model">对象</param>
+        /// <param name="strSign">需要过滤的签名属性名称。</param>
         public static SortedDictionary<string, object> ForeachPropertiesToDictionary<T>(T model, string strSign = "sign")
         {
             SortedDictionary<string, object> dic = new SortedDictionary<string, object>();
@@ -66,9 +70,9 @@ namespace CIMC.Helper
         }
 
         /// <summary>
-        /// 拼接 &key=value 格式字符串
+        /// 拼接 &amp;key=value 格式字符串
         /// </summary>
-        /// <param name="dicList"></param>
+        /// <param name="dic">需要拼接的键值集合。</param>
         /// <returns></returns>
         public static string SpliceString(SortedDictionary<string, object> dic)
         {
@@ -215,6 +219,7 @@ namespace CIMC.Helper
             Regex regex = new Regex("[&\\?]" + key + "=[^\\s&#]*&?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
             return regex.Replace(url, new MatchEvaluator(PutAwayGarbageFromUrl));
         }
+        /// <summary>清理 URL 中的无效内容。</summary>
         private static string PutAwayGarbageFromUrl(Match match)
         {
             string value = match.Value;
@@ -225,18 +230,22 @@ namespace CIMC.Helper
             return string.Empty;
         }
 
+        /// <summary>判断文本是否表示有效时间。</summary>
         public static bool IsTime(string timeval)
         {
             return !string.IsNullOrEmpty(timeval) && Regex.IsMatch(timeval, "^((([0-1]?[0-9])|(2[0-3])):([0-5]?[0-9])(:[0-5]?[0-9])?)$");
         }
+        /// <summary>判断文本是否表示整数。</summary>
         public static bool IsInt(string str)
         {
             return !string.IsNullOrEmpty(str) && Regex.IsMatch(str, "^[0-9]*$");
         }
+        /// <summary>判断文本是否表示数值。</summary>
         public static bool IsNumeric(string str)
         {
             return str != null && str.Length > 0 && str.Length <= 11 && Regex.IsMatch(str, "^[-]?[0-9]*[.]?[0-9]*$") && (str.Length < 10 || (str.Length == 10 && str[0] == '1') || (str.Length == 11 && str[0] == '-' && str[1] == '1'));
         }
+        /// <summary>判断文本是否表示数值数组。</summary>
         public static bool IsNumericArray(string[] strNumber)
         {
             if (strNumber == null)
@@ -257,20 +266,23 @@ namespace CIMC.Helper
             }
             return true;
         }
+        /// <summary>判断文本是否表示双精度数值。</summary>
         public static bool IsDouble(string expression)
         {
             return expression != null && Regex.IsMatch(expression, "^([0-9])[0-9]*(\\.\\w*)?$");
         }
+        /// <summary>判断文本是否为 URL。</summary>
         public static bool IsUrl(string strUrl)
         {
             return !string.IsNullOrEmpty(strUrl) && (strUrl.StartsWith("http://") || strUrl.StartsWith("https://"));
         }
+        /// <summary>判断文本是否为电子邮箱地址。</summary>
         public static bool IsEmail(string strEmail)
         {
             return !string.IsNullOrEmpty(strEmail) && Regex.IsMatch(strEmail, "^([\\w-\\.]+)@((\\[[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.)|(([\\w-]+\\.)+))([a-zA-Z]{2,4}|[0-9]{1,3})(\\]?)$");
         }
         /// <summary>
-        /// 电话&手机
+        /// 电话和手机
         /// </summary>
         /// <param name="strTelphone"></param>
         /// <returns></returns>
@@ -278,14 +290,17 @@ namespace CIMC.Helper
         {
             return !string.IsNullOrEmpty(strTelphone) && Regex.IsMatch(strTelphone, "\\d{3,4}-\\d{7,8}$|^1[3456789]\\d{9}$");
         }
+        /// <summary>判断文本是否为电话号码。</summary>
         public static bool IsPhoneNumber(string strPhoneNumber)
         {
             return !string.IsNullOrEmpty(strPhoneNumber) && Regex.IsMatch(strPhoneNumber, "^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$");
         }
+        /// <summary>判断文本是否为 IP 地址。</summary>
         public static bool IsIPAddress(string ipAddress)
         {
             return !string.IsNullOrEmpty(ipAddress) && Regex.IsMatch(ipAddress, "^((2[0-4]\\d|25[0-5]|[01]?\\d\\d?)\\.){3}(2[0-4]\\d|25[0-5]|[01]?\\d\\d?)$");
         }
+        /// <summary>将文本转换为整数。</summary>
         public static int ToInt(string str, int def)
         {
             if (string.IsNullOrEmpty(str) || str.Trim().Length >= 11 || !Regex.IsMatch(str.Trim(), "^([-]|[0-9])[0-9]*(\\.\\w*)?$"))
@@ -299,6 +314,7 @@ namespace CIMC.Helper
             }
             return def;
         }
+        /// <summary>将文本转换为十进制数值。</summary>
         public static decimal ToDecimal(string str, decimal def)
         {
             decimal result;
@@ -312,6 +328,7 @@ namespace CIMC.Helper
             }
             return result;
         }
+        /// <summary>将文本转换为 64 位整数。</summary>
         public static long ToInt64(string str, long def)
         {
             long result;
@@ -321,6 +338,7 @@ namespace CIMC.Helper
             }
             return def;
         }
+        /// <summary>将文本转换为浮点数。</summary>
         public static float ToFloat(string strValue, float defValue)
         {
             if (strValue == null || strValue.Length > 10)
@@ -365,7 +383,7 @@ namespace CIMC.Helper
         /// <summary>
         /// 字符串转Unicode 
         /// </summary>
-        /// <param name="source">源字符串</param>
+        /// <param name="str">源字符串</param>
         /// <returns>Unicode编码后的字符串</returns>
         public static string StringToUnicode(string str)
         {

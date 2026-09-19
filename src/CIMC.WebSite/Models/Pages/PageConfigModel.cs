@@ -6,6 +6,7 @@ using System.Collections.Generic;
 
 namespace MySite.Web.Models
 {
+    /// <summary>承载页面相关数据。</summary>
     public class PageConfigModel
     {
         /// <summary>
@@ -18,6 +19,7 @@ namespace MySite.Web.Models
         /// </summary>
         public int NavigationId { get; set; }
 
+        /// <summary>页面控件的 JSON 配置。</summary>
         public string ControlJson { get; set; }
         /// <summary>
         /// 更新时间
@@ -38,6 +40,7 @@ namespace MySite.Web.Models
 
         //public List<PageControlModel> PageControlList { get; set; } = new List<PageControlModel>();
 
+        /// <summary>页面相关项目集合。</summary>
         public List<PageControlModel> PageControlList
         {
             get
@@ -56,8 +59,10 @@ namespace MySite.Web.Models
         private List<PageControlModel> controlJson { get; set; } = new List<PageControlModel>();
     }
 
+    /// <summary>承载页面相关数据。</summary>
     public class PageControlModel
     {
+        /// <summary>主键。</summary>
         public int Id { get; set; }
         /// <summary>
         /// 控件类型

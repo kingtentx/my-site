@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace CIMC.Core.Enums
 {
+    /// <summary>定义分类的可选类型。</summary>
     public enum CategoryType
     {
         /// <summary>

@@ -10,6 +10,7 @@ namespace CIMC.Data
     /// </summary>
     public class WebsitePage : ExtFullModifyModel, IActiveModel, ISortModel, IModifyModel
     {
+        /// <summary>主键。</summary>
         [Key]
         public int Id { get; set; }
 
@@ -23,10 +24,12 @@ namespace CIMC.Data
         /// </summary>
         public int ParentId { get; set; } = 0;
 
+        /// <summary>页面名称。</summary>
         [Required]
         [StringLength(ModelUnits.Len_100)]
         public string PageName { get; set; }
 
+        /// <summary>页面编码。</summary>
         [StringLength(ModelUnits.Len_50)]
         public string PageCode { get; set; }
 
@@ -37,12 +40,15 @@ namespace CIMC.Data
         [StringLength(ModelUnits.Len_200)]
         public string PagePath { get; set; }
 
+        /// <summary>浏览器页面标题。</summary>
         [StringLength(ModelUnits.Len_250)]
         public string PageTitle { get; set; }
 
+        /// <summary>页面 SEO 关键词。</summary>
         [StringLength(ModelUnits.Len_500)]
         public string SeoKeywords { get; set; }
 
+        /// <summary>页面 SEO 描述。</summary>
         [StringLength(ModelUnits.Len_500)]
         public string SeoDescription { get; set; }
 
@@ -57,6 +63,7 @@ namespace CIMC.Data
         [StringLength(ModelUnits.Len_100)]
         public string NavigationTitle { get; set; }
 
+        /// <summary>导航图标。</summary>
         [StringLength(ModelUnits.Len_100)]
         public string NavigationIcon { get; set; }
 
@@ -75,10 +82,15 @@ namespace CIMC.Data
         /// </summary>
         public int Status { get; set; } = 0;
 
+        /// <summary>是否为首页。</summary>
         public bool IsHome { get; set; }
+        /// <summary>排序值，数值越小越靠前。</summary>
         public int Sort { get; set; } = 0;
+        /// <summary>是否启用。</summary>
         public bool IsActive { get; set; } = true;
+        /// <summary>发布时间。</summary>
         public DateTime? PublishTime { get; set; }
+        /// <summary>是否已软删除。</summary>
         public bool IsDelete { get; set; } = false;
     }
 }

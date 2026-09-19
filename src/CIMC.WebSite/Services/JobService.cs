@@ -22,6 +22,7 @@ namespace MySite.Web.Services
         private readonly IServiceProvider _serviceProvider;
         private readonly AsyncLock _mutex = new AsyncLock();
 
+        /// <summary>初始化招聘岗位。</summary>
         public JobService(
             IMapper mapper, IConfiguration config,
             IServiceProvider serviceProvider
@@ -38,6 +39,7 @@ namespace MySite.Web.Services
             _serviceProvider = serviceProvider;
         }
 
+        /// <summary>运行后台处理任务。</summary>
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)

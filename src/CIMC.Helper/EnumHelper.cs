@@ -4,6 +4,7 @@ using System.Reflection;
 
 namespace CIMC.Helper
 {
+    /// <summary>提供Enum相关辅助操作。</summary>
     public static class EnumHelper
     {
         /// <summary> 

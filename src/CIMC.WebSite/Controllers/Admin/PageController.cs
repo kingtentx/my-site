@@ -11,6 +11,7 @@ using System.Linq;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理页面相关的网页请求。</summary>
     [Authorize]
     public class PageController : AdminBaseController
     {
@@ -26,6 +27,7 @@ namespace MySite.Web.Controllers
             "logo", "navigation", "search", "language", "contact", "social", "copyright"
         };
 
+        /// <summary>初始化页面。</summary>
         public PageController(
             IRepository<WebsitePage> pageRepository,
             IRepository<WebsitePageVersion> versionRepository,
@@ -36,6 +38,7 @@ namespace MySite.Web.Controllers
             _permission = permission;
         }
 
+        /// <summary>显示页面管理页面。</summary>
         [PermissionFilter(MenuCode.Website_Page, PermissionType.View)]
         public IActionResult Index()
         {
@@ -48,6 +51,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>显示页面的编辑内容。</summary>
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Edit)]
         public IActionResult Edit(int id = 0, int parentId = 0)
         {
@@ -68,6 +72,7 @@ namespace MySite.Web.Controllers
             }
 
             var allPages = GetManagedPages();
+            ViewBag.HasChildren = id > 0 && allPages.Any(p => p.ParentId == id);
             var blockedIds = id > 0 ? GetDescendantIds(id, allPages) : new HashSet<int>();
             if (id > 0) blockedIds.Add(id);
             ViewBag.ParentPages = allPages
@@ -80,6 +85,7 @@ namespace MySite.Web.Controllers
             return View(model);
         }
 
+        /// <summary>保存页面的编辑内容。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Edit)]
         public IActionResult Edit(int id, PageModel input)
@@ -157,12 +163,14 @@ namespace MySite.Web.Controllers
             return Json(result);
         }
 
+        /// <summary>查询页面列表。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.View)]
         public JsonResult GetList()
         {
             var keywords = HttpContext.Request.Query["keywords"].ToString().Trim();
             var pages = GetManagedPages();
+            var directoryIds = pages.Where(p => p.ParentId > 0).Select(p => p.ParentId).ToHashSet();
 
             if (!string.IsNullOrWhiteSpace(keywords))
             {
@@ -185,10 +193,15 @@ namespace MySite.Web.Controllers
                         current = parent;
                     }
                 }
+                // 命中目录时保留其子树，搜索结果仍可展开查看完整层级。
+                foreach (var id in matchedIds.ToList())
+                {
+                    matchedIds.UnionWith(GetDescendantIds(id, pages));
+                }
                 pages = pages.Where(p => matchedIds.Contains(p.Id)).ToList();
             }
 
-            var data = FlattenPages(pages);
+            var data = FlattenPages(pages, directoryIds);
             return Json(new ResultModel<object>
             {
                 Code = (int)ResultCode.Success,
@@ -198,6 +211,7 @@ namespace MySite.Web.Controllers
             });
         }
 
+        /// <summary>删除指定页面记录。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Delete)]
         public IActionResult Delete(int id, int[] ids = null, int isAll = 0)
@@ -229,6 +243,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "删除成功" });
         }
 
+        /// <summary>设置网站首页。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Edit)]
         public IActionResult SetHome(int id)
@@ -253,17 +268,20 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "设置成功" });
         }
 
+        /// <summary>打开页面装修界面。</summary>
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Design)]
         public IActionResult Design(int id)
         {
             var page = _pageRepository.GetOne(id);
             if (page == null || page.IsDelete) return NotFound();
+            if (HasChildren(page)) return BadRequest("目录页面已有子页面，不能装修页面内容；请装修子页面。");
             ViewBag.PageId = page.Id;
             ViewBag.PageName = page.PageName;
             ViewBag.PagePath = page.PagePath;
             return View();
         }
 
+        /// <summary>获取可用的链接目标。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Design)]
         public JsonResult LinkOptions()
@@ -274,12 +292,14 @@ namespace MySite.Web.Controllers
             return Json(new { code = (int)ResultCode.Success, data = pages });
         }
 
+        /// <summary>获取页面组件数据。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.View)]
         public JsonResult GetComponentData(int pageId)
         {
             var page = _pageRepository.GetOne(pageId);
             if (page == null || page.IsDelete) return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "页面不存在" });
+            if (HasChildren(page)) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "目录页面已有子页面，不能装修页面内容；请装修子页面。" });
 
             if (string.IsNullOrWhiteSpace(page.ComponentJson))
             {
@@ -313,12 +333,14 @@ namespace MySite.Web.Controllers
             });
         }
 
+        /// <summary>保存页面草稿。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Design)]
         public IActionResult SaveDraft(int id, string documentJson)
         {
             var page = _pageRepository.GetOne(id);
             if (page == null || page.IsDelete) return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "页面不存在" });
+            if (HasChildren(page)) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "目录页面已有子页面，不能保存页面内容；请装修子页面。" });
 
             var normalizedJson = NormalizeBuilderDocument(documentJson, out var error);
             if (!string.IsNullOrEmpty(error)) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = error });
@@ -354,6 +376,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "草稿已保存" });
         }
 
+        /// <summary>发布页面内容。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Website_Page, PermissionType.Publish)]
         public IActionResult Publish(int id)
@@ -362,8 +385,11 @@ namespace MySite.Web.Controllers
             if (page == null || page.IsDelete) return Json(new ResultModel { Code = (int)ResultCode.NULL, Message = "页面不存在" });
             if (!page.IsActive) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = "禁用页面不能发布" });
 
-            var documentJson = NormalizeBuilderDocument(page.ComponentJson, out var error);
-            if (!string.IsNullOrEmpty(error)) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = error });
+            var directory = HasChildren(page);
+            // 目录页只发布导航状态；保留原有草稿，避免以后移除子页面时丢失内容。
+            string error = null;
+            var documentJson = directory ? CreateEmptyDocumentJson(page.PageName) : NormalizeBuilderDocument(page.ComponentJson, out error);
+            if (!directory && !string.IsNullOrEmpty(error)) return Json(new ResultModel { Code = (int)ResultCode.ParmsError, Message = error });
 
             var lastVersion = _versionRepository.GetList(p => p.PageId == id).OrderByDescending(p => p.VersionNo).FirstOrDefault();
             var nextVersionNo = (lastVersion == null ? 0 : lastVersion.VersionNo) + 1;
@@ -380,7 +406,7 @@ namespace MySite.Web.Controllers
                 CreationTime = DateTime.Now
             });
 
-            page.ComponentJson = documentJson;
+            if (!directory) page.ComponentJson = documentJson;
             page.Status = 1;
             page.PublishTime = DateTime.Now;
             page.UpdateBy = LoginUser.UserName;
@@ -389,12 +415,14 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "发布成功" });
         }
 
+        /// <summary>预览指定页面。</summary>
         [PermissionFilter(MenuCode.Website_Page, PermissionType.View)]
         public IActionResult Preview(int id)
         {
             var page = _pageRepository.GetOne(id);
             if (page == null || page.IsDelete) return NotFound();
             if (IsGlobalPage(page)) return RedirectToAction("BuilderPreview", "Home", new { id });
+            if (HasChildren(page)) return BadRequest("目录页面没有独立内容，请预览子页面。");
             var json = NormalizeBuilderDocument(page.ComponentJson, out var error);
             if (!string.IsNullOrEmpty(error)) return BadRequest(error);
             ViewBag.PageId = page.Id;
@@ -404,6 +432,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>获取后台管理的页面集合。</summary>
         private List<WebsitePage> GetManagedPages()
         {
             return _pageRepository
@@ -414,6 +443,7 @@ namespace MySite.Web.Controllers
                 .ToList();
         }
 
+        /// <summary>判断页面是否为全局区域。</summary>
         private static bool IsGlobalPage(WebsitePage page)
         {
             if (page == null) return false;
@@ -421,6 +451,14 @@ namespace MySite.Web.Controllers
                    || (!string.IsNullOrWhiteSpace(page.PagePath) && page.PagePath.StartsWith("/__global/", StringComparison.OrdinalIgnoreCase));
         }
 
+        /// <summary>判断页面是否包含子页面。</summary>
+        private bool HasChildren(WebsitePage page)
+        {
+            return page != null && !IsGlobalPage(page) &&
+                   _pageRepository.GetList(p => p.ParentId == page.Id && !p.IsDelete).Any();
+        }
+
+        /// <summary>获取页面的所有后代主键。</summary>
         private static HashSet<int> GetDescendantIds(int pageId, List<WebsitePage> pages)
         {
             var result = new HashSet<int>();
@@ -437,7 +475,8 @@ namespace MySite.Web.Controllers
             return result;
         }
 
-        private static List<object> FlattenPages(List<WebsitePage> pages)
+        /// <summary>将页面树展开为列表。</summary>
+        private static List<object> FlattenPages(List<WebsitePage> pages, HashSet<int> directoryIds)
         {
             var result = new List<object>();
             var visited = new HashSet<int>();
@@ -470,7 +509,7 @@ namespace MySite.Web.Controllers
                         page.Sort,
                         page.CreationTime,
                         page.PublishTime,
-                        HasChildren = pages.Any(p => p.ParentId == page.Id)
+                        HasChildren = directoryIds.Contains(page.Id)
                     });
                     Walk(page.Id, level + 1);
                 }
@@ -497,12 +536,13 @@ namespace MySite.Web.Controllers
                     page.Sort,
                     page.CreationTime,
                     page.PublishTime,
-                    HasChildren = false
+                    HasChildren = directoryIds.Contains(page.Id)
                 });
             }
             return result;
         }
 
+        /// <summary>将实体转换为页面模型。</summary>
         private static PageModel ToModel(WebsitePage page)
         {
             return new PageModel
@@ -533,6 +573,7 @@ namespace MySite.Web.Controllers
             };
         }
 
+        /// <summary>规范化页面访问路径。</summary>
         private static string NormalizePagePath(string path)
         {
             path = (path ?? string.Empty).Trim();
@@ -544,11 +585,13 @@ namespace MySite.Web.Controllers
             return path;
         }
 
+        /// <summary>创建空白页面文档的 JSON 内容。</summary>
         private static string CreateEmptyDocumentJson(string name)
         {
             return JsonConvert.SerializeObject(new BuilderDocumentModel { SchemaVersion = 1, Name = name ?? string.Empty });
         }
 
+        /// <summary>规范化页面装修文档。</summary>
         private static string NormalizeBuilderDocument(string documentJson, out string error)
         {
             error = null;
@@ -590,6 +633,7 @@ namespace MySite.Web.Controllers
             }
         }
 
+        /// <summary>验证页面装修节点。</summary>
         private static bool ValidateNode(BuilderNodeModel node, HashSet<string> ids, out string error)
         {
             error = null;
@@ -632,6 +676,7 @@ namespace MySite.Web.Controllers
             return true;
         }
 
+        /// <summary>解析页面节点及其关联主键。</summary>
         private static List<int> ResolveIds(int id, int[] ids, int isAll)
         {
             var source = isAll == 1 ? (ids ?? Array.Empty<int>()) : new[] { id };

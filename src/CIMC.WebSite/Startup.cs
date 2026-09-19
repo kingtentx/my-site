@@ -35,17 +35,20 @@ using System.Text.Unicode;
 
 namespace MySite.Web
 {
+    /// <summary>配置站点服务和 HTTP 请求处理管道。</summary>
     public class Startup
     {
         private IConfiguration Configuration { get; }
         private readonly string SqlConnection = "Default";
         private readonly string AllowSpecificMethods = "AllowSpecificMethods";
 
+        /// <summary>初始化应用启动。</summary>
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
         }
 
+        /// <summary>注册应用所需的服务。</summary>
         public void ConfigureServices(IServiceCollection services)
         {
             #region 数据访问
@@ -238,6 +241,7 @@ namespace MySite.Web
             });
         }
 
+        /// <summary>配置请求处理管道。</summary>
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())

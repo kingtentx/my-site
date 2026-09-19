@@ -25,8 +25,8 @@
             <div style="padding-bottom:10px;">
                 @if ((bool)ViewData[PageCode.PAGE_Button_Add])
                 {
-                    <a class="layui-btn" href="/Album/BatchUpload">批量添加</a>
-                    <a class="layui-btn" href="/Album/Edit">添加产品</a>
+                    <a class="layui-btn" href="/Product/BatchUpload">批量添加</a>
+                    <a class="layui-btn" href="/Product/Edit">添加产品</a>
                 }
                 @if ((bool)ViewData[PageCode.PAGE_Button_Delete]) { <button class="layui-btn" id="batchDelete">删除</button> }
             </div>
@@ -44,10 +44,10 @@
 <script>
 layui.config({base:'@Url.Content("~/static/layuiadmin/")'}).extend({index:'lib/index'}).use(['index','table','form'],function(){
     var $=layui.$,table=layui.table,form=layui.form,layer=layui.layer;
-    table.render({elem:'#app-table',url:'/Album/GetList',response:{statusName:'code',statusCode:200,msgName:'message',countName:'count',dataName:'data'},request:{pageName:'pageIndex',limitName:'pageSize'},page:true,cols:[[{type:'checkbox'},{field:'id',width:70,title:'ID'},{field:'imageUrl',minWidth:180,title:'产品图片',templet:'#imageTpl'},{field:'title',width:220,title:'产品标题'},{field:'tagName',width:140,title:'分类'},{field:'sort',width:80,title:'排序'},{field:'isActive',width:100,title:'状态',templet:'#statusTpl'},{field:'creationTime',width:180,title:'创建时间'},{align:'center',width:180,title:'操作',toolbar:'#barTpl'}]]});
+    table.render({elem:'#app-table',url:'/Product/GetList',response:{statusName:'code',statusCode:200,msgName:'message',countName:'count',dataName:'data'},request:{pageName:'pageIndex',limitName:'pageSize'},page:true,cols:[[{type:'checkbox'},{field:'id',width:70,title:'ID'},{field:'imageUrl',minWidth:180,title:'产品图片',templet:'#imageTpl'},{field:'title',width:220,title:'产品标题'},{field:'tagName',width:140,title:'分类'},{field:'sort',width:80,title:'排序'},{field:'isActive',width:100,title:'状态',templet:'#statusTpl'},{field:'creationTime',width:180,title:'创建时间'},{align:'center',width:180,title:'操作',toolbar:'#barTpl'}]]});
     form.on('submit(app-search)',function(data){table.reload('app-table',{page:{curr:1},where:data.field});return false;});
-    table.on('tool(app-table)',function(obj){if(obj.event==='edit'){location.href='/Album/Edit/'+obj.data.id;return;}if(obj.event==='del')layer.confirm('确认删除？',function(index){$.post('/Album/Delete',{id:obj.data.id},function(res){layer.close(index);if(res.code===200)obj.del();layer.msg(res.message);});});});
-    $('#batchDelete').on('click',function(){var rows=table.checkStatus('app-table').data;if(!rows.length){layer.msg('请至少选择一项');return;}layer.confirm('确认删除选中的 '+rows.length+' 条数据？',function(index){$.ajax({type:'post',url:'/Album/Delete?isAll=1',data:{ids:rows.map(function(x){return x.id;})},traditional:true,success:function(res){layer.close(index);layer.msg(res.message);if(res.code===200)table.reload('app-table');}});});});
+    table.on('tool(app-table)',function(obj){if(obj.event==='edit'){location.href='/Product/Edit/'+obj.data.id;return;}if(obj.event==='del')layer.confirm('确认删除？',function(index){$.post('/Product/Delete',{id:obj.data.id},function(res){layer.close(index);if(res.code===200)obj.del();layer.msg(res.message);});});});
+    $('#batchDelete').on('click',function(){var rows=table.checkStatus('app-table').data;if(!rows.length){layer.msg('请至少选择一项');return;}layer.confirm('确认删除选中的 '+rows.length+' 条数据？',function(index){$.ajax({type:'post',url:'/Product/Delete?isAll=1',data:{ids:rows.map(function(x){return x.id;})},traditional:true,success:function(res){layer.close(index);layer.msg(res.message);if(res.code===200)table.reload('app-table');}});});});
 });
 </script>
 </body>

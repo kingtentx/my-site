@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 namespace MySite.Web.Controllers
 {
 
+    /// <summary>处理管理员相关的网页请求。</summary>
     [Authorize]
     public class AdminController : AdminBaseController
     {
@@ -29,6 +30,7 @@ namespace MySite.Web.Controllers
         private IRepository<Admin> _adminRepository;
 
 
+        /// <summary>初始化管理员。</summary>
         public AdminController(
             IConfiguration configuration,
             ICacheService cache,
@@ -46,12 +48,14 @@ namespace MySite.Web.Controllers
 
         }
 
+        /// <summary>显示登录页面或处理登录请求。</summary>
         [AllowAnonymous]
         public IActionResult Login()
         {
             return View();
         }
 
+        /// <summary>显示重新登录页面。</summary>
         [AllowAnonymous]
         public IActionResult ReLogin()
         {
@@ -59,6 +63,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>退出当前登录会话。</summary>
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
@@ -70,6 +75,7 @@ namespace MySite.Web.Controllers
         }
 
         // 主框架页面仅需要登录认证，左侧菜单已由 GetLeftMenus 按角色权限过滤
+        /// <summary>显示管理员管理页面。</summary>
         public IActionResult Index()
         {
             var user = LoginUser;
@@ -78,6 +84,7 @@ namespace MySite.Web.Controllers
             return View(model);
         }
 
+        /// <summary>显示后台主页面。</summary>
         public IActionResult Main()
         {
             ViewBag.UserName = LoginUser.UserName;
@@ -119,6 +126,7 @@ namespace MySite.Web.Controllers
             return diskInfo;
         }
 
+        /// <summary>读取后台配置的 JSON 内容。</summary>
         private T ReadJson<T>(string fileName, T defaultValue)
         {
             var path = GetSettingsPath(fileName);
@@ -131,6 +139,7 @@ namespace MySite.Web.Controllers
             return string.IsNullOrWhiteSpace(json) ? defaultValue : JsonConvert.DeserializeObject<T>(json);
         }
 
+        /// <summary>写入后台配置的 JSON 内容。</summary>
         private void WriteJson<T>(string fileName, T value)
         {
             var path = GetSettingsPath(fileName);
@@ -138,26 +147,31 @@ namespace MySite.Web.Controllers
             System.IO.File.WriteAllText(path, JsonConvert.SerializeObject(value, Formatting.Indented));
         }
 
+        /// <summary>获取后台配置文件路径。</summary>
         private string GetSettingsPath(string fileName)
         {
             return Path.Combine(Directory.GetCurrentDirectory(), "App_Data", fileName);
         }
 
+        /// <summary>显示图片选择页面。</summary>
         public IActionResult ImageSelector()
         {
             return View("~/Views/Shared/ImageSelector.cshtml");
         }
 
+        /// <summary>显示修改密码页面。</summary>
         public IActionResult Password()
         {
             return View();
         }
 
+        /// <summary>显示错误页面。</summary>
         public IActionResult Error()
         {
             return View();
         }
 
+        /// <summary>更新当前用户的密码。</summary>
         [HttpPost]
         public IActionResult UpdatePassword(string txtOld, string txtNew, string txtNew2)
         {

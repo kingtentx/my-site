@@ -9,18 +9,21 @@ using MySite.Web.Models;
 
 namespace MySite.Web.Controllers
 {
+    /// <summary>处理留言相关的网页请求。</summary>
     [Authorize]
     public class MessageController : AdminBaseController
     {
         private readonly IRepository<MessageBoard> _repository;
         private readonly IPermissionService _permission;
 
+        /// <summary>初始化留言。</summary>
         public MessageController(IRepository<MessageBoard> repository, IPermissionService permission)
         {
             _repository = repository;
             _permission = permission;
         }
 
+        /// <summary>显示留言管理页面。</summary>
         [PermissionFilter(MenuCode.Site_Message, PermissionType.View)]
         public IActionResult Index()
         {
@@ -28,6 +31,7 @@ namespace MySite.Web.Controllers
             return View();
         }
 
+        /// <summary>查询留言列表。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.Site_Message, PermissionType.View)]
         public IActionResult GetList(int pageIndex = 1, int pageSize = 10)
@@ -56,6 +60,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel<object> { Code = (int)ResultCode.Success, Message = "成功", Count = query.Count, Data = data });
         }
 
+        /// <summary>获取指定记录的信息。</summary>
         [HttpGet]
         [PermissionFilter(MenuCode.Site_Message, PermissionType.View)]
         public IActionResult GetInfo(long id)
@@ -71,6 +76,7 @@ namespace MySite.Web.Controllers
             return Json(new ResultModel { Code = (int)ResultCode.Success, Message = "成功", Data = entity });
         }
 
+        /// <summary>删除指定留言记录。</summary>
         [HttpPost]
         [PermissionFilter(MenuCode.Site_Message, PermissionType.Delete)]
         public IActionResult Delete(long id)

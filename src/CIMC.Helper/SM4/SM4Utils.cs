@@ -8,12 +8,17 @@ using System.Threading.Tasks;
 
 namespace CIMC.Helper.SM4
 {
+    /// <summary>提供 SM4 加解密的便捷方法。</summary>
     public class SM4Utils
     {
+        /// <summary>加解密密钥。</summary>
         public String secretKey = "";
+        /// <summary>CBC 模式的初始向量。</summary>
         public String iv = "";
+        /// <summary>十六进制编码文本。</summary>
         public bool hexString = false;
 
+        /// <summary>以 ECB 模式加密数据。</summary>
         public String Encrypt_ECB(String plainText)
         {
             SM4Context ctx = new SM4Context();
@@ -66,6 +71,7 @@ namespace CIMC.Helper.SM4
             return Convert.ToBase64String(encrypted);
         }
 
+        /// <summary>以 ECB 模式加密数据。</summary>
         public byte[] Encrypt_ECB(byte[] plainBytes, byte[] keyBytes)
         {
             SM4Context ctx = new SM4Context();
@@ -79,6 +85,7 @@ namespace CIMC.Helper.SM4
             //return Hex.Encode(encrypted);
         }
 
+        /// <summary>以 ECB 模式解密数据。</summary>
         public String Decrypt_ECB(String cipherText)
         {
             SM4Context ctx = new SM4Context();
@@ -104,7 +111,7 @@ namespace CIMC.Helper.SM4
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="cipherText"></param>
+        /// <param name="base64Str">Base64 编码的密文。</param>
         /// <returns></returns>
         public String Decrypt_ECB_ByBase64(String base64Str)
         {
@@ -130,6 +137,7 @@ namespace CIMC.Helper.SM4
         }
 
 
+        /// <summary>以 CBC 模式加密数据。</summary>
         public String Encrypt_CBC(String plainText)
         {
             SM4Context ctx = new SM4Context();
@@ -157,6 +165,7 @@ namespace CIMC.Helper.SM4
             return cipherText;
         }
 
+        /// <summary>以 CBC 模式解密数据。</summary>
         public String Decrypt_CBC(String cipherText)
         {
             SM4Context ctx = new SM4Context();

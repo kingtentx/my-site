@@ -1,5 +1,6 @@
 ﻿namespace MySite.Web
 {
+    /// <summary>保存RabbitMQ的配置。</summary>
     public class RabbitMQConfig
     {
         /// <summary>

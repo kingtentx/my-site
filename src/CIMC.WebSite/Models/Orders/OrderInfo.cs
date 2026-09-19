@@ -1,8 +1,10 @@
 ﻿namespace MySite.Web.Models
 {
+    /// <summary>承载订单的基础信息。</summary>
     public class OrderInfo
     {
         #region 订单
+        /// <summary>订单关联记录的主键。</summary>
         public long OrderId { get; set; }
         /// <summary>
         /// 订单编号

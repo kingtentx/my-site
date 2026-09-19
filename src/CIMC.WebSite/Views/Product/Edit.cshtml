@@ -1,4 +1,4 @@
-@model MySite.Web.Models.AlbumModel
+@model MySite.Web.Models.ProductModel
 @{ Layout = null; }
 <!DOCTYPE html>
 <html>
@@ -64,7 +64,7 @@
                 <div class="layui-form-item layui-form-text"><label class="layui-form-label">详情/参数(EN)</label><div class="layui-input-block"><div id="detailEn">@Html.Raw(Model.Detail_EN)</div></div></div>
                 <div class="layui-form-item"><label class="layui-form-label">作者</label><div class="layui-input-block"><input class="layui-input w500" name="Author" placeholder="请输入作者" value="@Model.Author"></div></div>
                 <div class="layui-form-item"><label class="layui-form-label">是否发布</label><div class="layui-input-block"><input type="radio" name="IsActive" value="true" title="是" checked="@(Model.IsActive ? "checked" : null)"><input type="radio" name="IsActive" value="false" title="否" checked="@(!Model.IsActive ? "checked" : null)"></div></div>
-                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="save">立即保存</button><a class="layui-btn layui-btn-primary" href="/Album/Index">返回列表</a></div></div></div>
+                <div class="layui-form-item layui-layout-admin"><div class="layui-input-block"><div class="layui-footer" style="left:0;z-index:20000"><button class="layui-btn" lay-submit lay-filter="save">立即保存</button><a class="layui-btn layui-btn-primary" href="/Product/Index">返回列表</a></div></div></div>
             </form>
         </div>
     </div>
@@ -81,7 +81,7 @@ layui.config({base:'@Url.Content("~/static/layuiadmin/")'}).extend({index:'lib/i
     window.addEventListener('message',function(e){if(e.data&&e.data.type==='imageSelected')setImage(e.data.url||'');});
     function createEditor(id){var editor=new E(id);editor.config.uploadFileName='file';editor.config.uploadImgServer='/Upload/UploadImage';editor.config.uploadImgHooks={customInsert:function(insert,res){if(res&&res.url)insert(res.url);}};editor.create();return editor;}
     var detail=createEditor('#detail'),detailEn=createEditor('#detailEn');
-    form.on('submit(save)',function(data){data.field.Detail=detail.txt.html();data.field.Detail_EN=detailEn.txt.html();$.post('/Album/Edit?id=@Model.Id',data.field,function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/Album/Index';});else layer.msg(res.message,{icon:5});});return false;});
+    form.on('submit(save)',function(data){data.field.Detail=detail.txt.html();data.field.Detail_EN=detailEn.txt.html();$.post('/Product/Edit?id=@Model.Id',data.field,function(res){if(res.code===200)layer.alert(res.message,function(){location.href='/Product/Index';});else layer.msg(res.message,{icon:5});});return false;});
 });
 </script>
 </body>

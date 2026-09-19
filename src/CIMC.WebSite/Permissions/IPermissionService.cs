@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace MySite.Web
 {
+    /// <summary>定义IPermission服务的接口。</summary>
     public interface IPermissionService
     {
 

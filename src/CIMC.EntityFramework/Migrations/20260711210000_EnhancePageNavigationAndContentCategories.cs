@@ -6,10 +6,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace CIMC.EntityFramework.Migrations
 {
+    /// <summary>扩展页面导航和内容分类结构的数据库迁移。</summary>
     [DbContext(typeof(AppDbContext))]
     [Migration("20260711210000_EnhancePageNavigationAndContentCategories")]
     public partial class EnhancePageNavigationAndContentCategories : Migration
     {
+        /// <summary>应用数据库迁移。</summary>
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<int>(name: "ParentId", table: "WebsitePage", type: "int", nullable: false, defaultValue: 0);
@@ -38,6 +40,7 @@ INNER JOIN `WebsitePage` parentPage ON parentPage.`PagePath` = parentNav.`Path` 
 SET childPage.`ParentId` = parentPage.`Id`;");
         }
 
+        /// <summary>回退数据库迁移。</summary>
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropIndex(name: "IX_WebsitePage_ParentId", table: "WebsitePage");

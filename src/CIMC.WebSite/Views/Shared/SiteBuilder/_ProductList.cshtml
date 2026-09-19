@@ -6,7 +6,7 @@
 @using System.Linq
 @using System.Net
 @model MySite.Web.Models.BuilderNodeRenderModel
-@inject IRepository<Album> ProductRepository
+@inject IRepository<Product> ProductRepository
 @inject IRepository<Tag> CategoryRepository
 @{
     var props = Model.Node.Props ?? new Dictionary<string, object>();
@@ -50,13 +50,13 @@
             foreach (var id in selectedIds)
             {
                 var category = CategoryRepository.GetOne(id);
-                if (category != null && category.IsActive && category.TagType == (int)CIMC.Core.Enums.TagType.Image) tabs.Add(category);
+                if (category != null && category.IsActive && category.TagType == (int)CIMC.Core.Enums.TagType.Product) tabs.Add(category);
             }
         }
         else if (selectedIds.Count == 0)
         {
             var used = activeProducts.Select(p => p.TagId).Where(v => v > 0).Distinct().ToHashSet();
-            tabs = CategoryRepository.GetList(p => p.IsActive && p.TagType == (int)CIMC.Core.Enums.TagType.Image, p => p.Sort, true).Where(p => used.Contains(p.Id)).ToList();
+            tabs = CategoryRepository.GetList(p => p.IsActive && p.TagType == (int)CIMC.Core.Enums.TagType.Product, p => p.Sort, true).Where(p => used.Contains(p.Id)).ToList();
         }
     }
     var request = ViewContext.HttpContext.Request;
