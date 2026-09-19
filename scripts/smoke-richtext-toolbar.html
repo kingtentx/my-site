@@ -23,7 +23,20 @@ window.SiteBuilder = { Registry: {
 <script src="../src/CIMC.WebSite/wwwroot/static/site-builder/richtext-editor.js"></script>
 <script>
 window.setTimeout(function () {
+    if (new URLSearchParams(location.search).has('interactive')) {
+        document.getElementById('propsPanel').style.width = '500px';
+        SiteBuilder.RichTextEditor.mount('interactive', false);
+        document.title = 'READY: interactive richtext';
+        return;
+    }
     var failures = [], updates = [];
+    var WangEditor = window.wangEditor;
+    window.wangEditor = function () {
+        var editor = new WangEditor(...arguments);
+        window.__smokeEditor = editor;
+        return editor;
+    };
+    window.wangEditor.prototype = WangEditor.prototype;
     var panel = document.getElementById('propsPanel');
     var manager = window.SiteBuilder.RichTextEditor;
     function check(name, passed) { if (!passed) failures.push(name); }
@@ -73,16 +86,59 @@ window.setTimeout(function () {
     panel.innerHTML = '<textarea data-richtext="true" data-area="props" data-key="html">&lt;p&gt;字号&lt;/p&gt;</textarea>';
     panel.style.width = '500px';
     manager.mount('font-probe', false);
+    panel.querySelector('[data-title="字号"]').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
     panel.querySelector('[data-title="字号"]').click();
-    var fontMenu = panel.querySelector('[data-title="字号"]'), drop = fontMenu.querySelector('.w-e-droplist'), bar = panel.querySelector('.w-e-toolbar');
-    check('两行工具栏的字号下拉不遮挡按钮', !!drop && drop.getBoundingClientRect().top >= bar.getBoundingClientRect().bottom - 1);
+    var fontMenu = panel.querySelector('[data-title="字号"]'), drop = fontMenu.querySelector('.w-e-droplist');
+    check('第一行字号按钮到下拉没有鼠标移出空隙', !!drop && Math.abs(drop.getBoundingClientRect().top - fontMenu.getBoundingClientRect().bottom) <= 1);
     check('字号选项完整显示', !!drop && drop.querySelectorAll('.w-e-item').length === 3);
     panel.querySelector('[data-title="对齐"]').click();
     var alignDrop = panel.querySelector('[data-title="对齐"] .w-e-droplist');
-    check('第二行菜单下拉不遮挡编辑区', !!alignDrop && alignDrop.getBoundingClientRect().top >= bar.getBoundingClientRect().bottom - 1);
+    check('对齐按钮到下拉没有鼠标移出空隙', !!alignDrop && Math.abs(alignDrop.getBoundingClientRect().top - panel.querySelector('[data-title="对齐"]').getBoundingClientRect().bottom) <= 1);
     panel.querySelector('[data-title="标题"]').click();
     var headingDrop = panel.querySelector('[data-title="标题"] .w-e-droplist');
-    check('标题下拉不遮挡第二行按钮', !!headingDrop && headingDrop.getBoundingClientRect().top >= bar.getBoundingClientRect().bottom - 1);
+    check('第一行标题按钮到下拉没有鼠标移出空隙', !!headingDrop && Math.abs(headingDrop.getBoundingClientRect().top - panel.querySelector('[data-title="标题"]').getBoundingClientRect().bottom) <= 1);
+    manager.destroy();
+    panel.innerHTML = '<textarea data-richtext="true" data-area="props" data-key="html">&lt;p&gt;测试字号&lt;/p&gt;</textarea>';
+    manager.mount('font-probe-2', false);
+    var fontText = panel.querySelector('.w-e-text');
+    fontText.focus();
+    var range = document.createRange();
+    range.selectNodeContents(fontText.querySelector('p'));
+    var selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    fontText.dispatchEvent(new MouseEvent('mouseup', { bubbles: true }));
+    if (window.__smokeEditor.selection && window.__smokeEditor.selection.saveRange) window.__smokeEditor.selection.saveRange();
+    panel.querySelector('[data-title="字号"]').dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    panel.querySelector('[data-title="字号"]').click();
+    var sizeOption = panel.querySelector('[data-title="字号"] .w-e-item:last-child');
+    var optionBounds = sizeOption.getBoundingClientRect();
+    check('字号选项可用鼠标点击', sizeOption.contains(document.elementFromPoint(optionBounds.left + 15, optionBounds.top + 15)));
+    sizeOption.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+    sizeOption.click();
+    check('编辑区即时显示选中的字号', !!fontText.querySelector('font[size="5"]') && getComputedStyle(fontText.querySelector('font[size="5"]')).fontSize === '24px');
+    manager.flush(true);
+    check('选择字号后内容实际变大', /sb-rte-size-lg/.test(panel.querySelector('textarea').value));
+    range = document.createRange();
+    range.selectNodeContents(fontText.querySelector('font'));
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__smokeEditor.selection.saveRange();
+    panel.querySelector('[data-title="加粗"]').click();
+    manager.flush(true);
+    check('加粗按钮实际修改内容', /<(strong|b)>/.test(panel.querySelector('textarea').value));
+    range = document.createRange();
+    range.selectNodeContents(fontText.querySelector('p'));
+    selection.removeAllRanges();
+    selection.addRange(range);
+    window.__smokeEditor.selection.saveRange();
+    panel.querySelector('[data-title="文字颜色"]').click();
+    var colorOption = panel.querySelector('[data-title="文字颜色"] .w-e-item');
+    optionBounds = colorOption.getBoundingClientRect();
+    check('文字颜色选项可用鼠标点击', colorOption.contains(document.elementFromPoint(optionBounds.left + 10, optionBounds.top + 10)));
+    colorOption.click();
+    manager.flush(true);
+    check('文字颜色实际修改内容', /sb-rte-color-red/.test(panel.querySelector('textarea').value));
     manager.destroy();
     var result = failures.length ? 'FAIL: ' + failures.join(', ') : 'PASS: wangEditor, sync, table, image, sanitizer, lifecycle';
     document.title = result;

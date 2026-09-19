@@ -222,10 +222,13 @@
 .sb-field-row>.sb-wangeditor {min-width:0;flex:1}
 .sb-wangeditor {width:100%;min-width:0;border:1px solid #cbd6e3;border-radius:8px;background:#fff}
 .sb-wangeditor:focus-within {border-color:#4d91ff;box-shadow:0 0 0 3px rgba(22,119,255,.10)}
-.sb-wangeditor .w-e-toolbar {display:flex;flex-wrap:wrap;border:0!important;border-bottom:1px solid #e4e9f0!important;border-radius:8px 8px 0 0;background:#f8fafc!important;z-index:20!important}
-.sb-wangeditor .w-e-toolbar .w-e-menu .w-e-droplist {top:var(--sb-menu-dropdown-top, 40px)!important;margin-top:0!important}
+.sb-wangeditor .w-e-toolbar {display:flex;flex-wrap:wrap;border:0!important;border-bottom:1px solid #e4e9f0!important;border-radius:8px 8px 0 0;background:#f8fafc!important;z-index:10001!important}
+/* 保留 wangEditor 菜单紧贴按钮的原生定位，避免第一行与下拉之间产生触发 mouseleave 的空隙。 */
 .sb-wangeditor .w-e-text-container {height:360px!important;min-height:240px;border:0!important}
 .sb-wangeditor .w-e-text {padding:12px 14px;font-size:14.5px;line-height:1.75;word-break:break-word}
+.sb-wangeditor .w-e-text font[size="2"] {font-size:13px}
+.sb-wangeditor .w-e-text font[size="3"] {font-size:16px}
+.sb-wangeditor .w-e-text font[size="5"] {font-size:24px}
 .sb-wangeditor .w-e-menu .w-e-panel-container {z-index:30}
 .sb-wangeditor.is-locked .w-e-toolbar {pointer-events:none;opacity:.55}
 .sb-wangeditor .sb-rte-size-sm {font-size:13px}.sb-wangeditor .sb-rte-size-md {font-size:16px}.sb-wangeditor .sb-rte-size-lg {font-size:24px}

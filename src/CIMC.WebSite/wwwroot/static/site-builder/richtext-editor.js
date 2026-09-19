@@ -21,8 +21,6 @@
         if (!active) return;
         var current = active;
         active = null;
-        if (current.resizeObserver) current.resizeObserver.disconnect();
-        if (current.alignDropdowns) window.removeEventListener('resize', current.alignDropdowns);
         current.editor.config.onchange = null;
         current.editor.config.onblur = null;
         if (typeof current.editor.destroy === 'function') current.editor.destroy();
@@ -76,22 +74,6 @@
         active = { nodeId: nodeId, source: source, container: container, editor: editor, lastHtml: source.value };
         try {
             editor.create();
-            var toolbar = container.querySelector('.w-e-toolbar');
-            if (toolbar) {
-                var alignDropdowns = function () {
-                    var bottom = toolbar.getBoundingClientRect().bottom;
-                    Array.prototype.forEach.call(toolbar.querySelectorAll('.w-e-menu'), function (menu) {
-                        menu.style.setProperty('--sb-menu-dropdown-top', Math.ceil(bottom - menu.getBoundingClientRect().top) + 'px');
-                    });
-                };
-                active.alignDropdowns = alignDropdowns;
-                alignDropdowns();
-                if (window.ResizeObserver) {
-                    active.resizeObserver = new window.ResizeObserver(alignDropdowns);
-                    active.resizeObserver.observe(toolbar);
-                }
-                window.addEventListener('resize', alignDropdowns);
-            }
             if (locked) {
                 container.classList.add('is-locked');
                 var content = container.querySelector('.w-e-text');

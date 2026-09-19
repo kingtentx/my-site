@@ -227,6 +227,7 @@
 .sb-runtime .sb-public-nav.is-item-plain > .sb-public-nav-item > a::after { display:none; }
 .sb-runtime .sb-public-subnav {
     display: block;
+    font-weight: 400;
     position: absolute;
     left: 0;
     top: 100%;

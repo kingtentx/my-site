@@ -105,7 +105,7 @@
         // Keep these versions identical to public/preview pages. Otherwise the browser can
         // retain different generations of the same rules and the canvas stops being WYSIWYG.
         addCss('sbPublicSiteCss', '/static/site/css/site.css?v=2026091901');
-        addCss('sbRuntimeCss', '/static/site/css/builder-runtime.css?v=2026091903');
+        addCss('sbRuntimeCss', '/static/site/css/builder-runtime.css?v=2026091907');
 
         if (!document.getElementById('sbDesignerWysiwygCss')) {
             var style = document.createElement('style');
@@ -133,7 +133,7 @@
         }
 
         $('#canvas').addClass('sb-runtime');
-        addCss('sbEditorCss', '/static/site-builder/editor.css?v=2026091904');
+        addCss('sbEditorCss', '/static/site-builder/editor.css?v=2026091906');
     }
 
     function ensureCanvasViewport() {
